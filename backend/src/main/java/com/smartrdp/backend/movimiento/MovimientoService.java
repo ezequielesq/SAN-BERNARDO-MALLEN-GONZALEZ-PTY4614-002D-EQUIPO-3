@@ -110,6 +110,7 @@ public class MovimientoService {
                 .stream().findFirst();
     }
 
+    @Transactional(readOnly = true)
     public List<MovimientoResponse> getAlertasVencimiento(int diasUmbral) {
         LocalDate umbral = LocalDate.now().plusDays(diasUmbral);
         return loteRepository

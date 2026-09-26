@@ -1,6 +1,7 @@
 package com.smartrdp.backend.exception;
 
 import org.springframework.http.*;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,12 @@ import java.util.*;
 public class GlobalExceptionHandler {
 
     record ErrorResponse(int status, String error, String message, LocalDateTime timestamp) {}
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleBadCredentials(BadCredentialsException ex) {
+        return new ErrorResponse(401, "Unauthorized", "Credenciales inválidas", LocalDateTime.now());
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)

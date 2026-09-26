@@ -5,6 +5,8 @@ import com.smartrdp.backend.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +20,12 @@ import java.util.List;
 @Table(name = "solicitudes")
 public class Solicitud extends BaseEntity {
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "solicitante_id")
     private Usuario solicitante;
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bodeguero_id")
     private Usuario bodeguero;
@@ -33,6 +37,7 @@ public class Solicitud extends BaseEntity {
     @Column(name = "observacion", length = 300)
     private String observacion;
 
+    @NotAudited
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleSolicitud> detalles = new ArrayList<>();
 }

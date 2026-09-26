@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -96,6 +98,14 @@ public class SolicitudService {
     @Transactional(readOnly = true)
     public List<SolicitudResponse> listarTodas() {
         return solicitudRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SolicitudResponse> listarPorFecha(LocalDate desde, LocalDate hasta) {
+        LocalDateTime desdeTime = desde.atStartOfDay();
+        LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
+        return solicitudRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(desdeTime, hastaTime)
+                .stream().map(this::toResponse).toList();
     }
 
     private SolicitudResponse toResponse(Solicitud s) {

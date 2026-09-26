@@ -22,6 +22,9 @@ public class UsuarioService {
 
     @Transactional
     public void register(RegisterRequest request) {
+        if (request.rol() == Rol.ADMIN) {
+            throw new BusinessException("No se puede registrar un usuario con rol ADMIN");
+        }
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new BusinessException("El email ya está registrado");
         }

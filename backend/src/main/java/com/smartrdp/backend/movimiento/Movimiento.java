@@ -6,6 +6,8 @@ import com.smartrdp.backend.usuario.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Getter
 @Setter
@@ -17,6 +19,7 @@ import org.hibernate.envers.Audited;
 public class Movimiento extends BaseEntity {
 
     @EqualsAndHashCode.Include
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
@@ -31,10 +34,12 @@ public class Movimiento extends BaseEntity {
     @Column(name = "motivo", length = 200)
     private String motivo;
 
+    @NotAudited
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
+    @NotAudited
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lote_id")
     private Lote lote;

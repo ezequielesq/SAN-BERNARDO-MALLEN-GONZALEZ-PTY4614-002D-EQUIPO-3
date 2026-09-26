@@ -3,13 +3,11 @@ package com.smartrdp.backend.producto;
 import com.smartrdp.backend.shared.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.envers.Audited;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
-@Audited
 @Entity
 @Table(name = "productos")
 public class Producto extends BaseEntity {
