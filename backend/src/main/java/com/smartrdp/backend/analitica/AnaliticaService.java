@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.time.*;
@@ -19,6 +20,7 @@ public class AnaliticaService {
     private final MovimientoRepository movimientoRepository;
     private final LoteRepository loteRepository;
 
+    @Transactional(readOnly = true)
     public List<ProductoMasUsadoDto> getProductosMasUsados(LocalDate desde, LocalDate hasta) {
         LocalDateTime desdeTime = desde.atStartOfDay();
         LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
@@ -30,6 +32,7 @@ public class AnaliticaService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<VencimientoDto> getVencimientos(int diasUmbral) {
         LocalDate umbral = LocalDate.now().plusDays(diasUmbral);
         return loteRepository.findByFechaVencimientoBeforeAndCantidadDisponibleGreaterThan(umbral, 0)
@@ -43,6 +46,7 @@ public class AnaliticaService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public byte[] exportarMovimientosExcel(LocalDate desde, LocalDate hasta) throws IOException {
         LocalDateTime desdeTime = desde.atStartOfDay();
         LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
