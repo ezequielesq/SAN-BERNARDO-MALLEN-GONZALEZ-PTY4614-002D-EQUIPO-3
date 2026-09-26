@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: smartrdp-db
+    environment:
+      POSTGRES_DB: smartrdp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - smartrdp_data:/var/lib/postgresql/data
+
+volumes:
+  smartrdp_data:
