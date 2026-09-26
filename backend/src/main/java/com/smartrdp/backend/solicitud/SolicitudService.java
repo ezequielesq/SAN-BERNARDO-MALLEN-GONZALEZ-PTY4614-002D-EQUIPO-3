@@ -6,8 +6,10 @@ import com.smartrdp.backend.movimiento.MovimientoService;
 import com.smartrdp.backend.movimiento.dto.SalidaRequest;
 import com.smartrdp.backend.producto.ProductoRepository;
 import com.smartrdp.backend.solicitud.dto.*;
+import com.smartrdp.backend.usuario.Usuario;
 import com.smartrdp.backend.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +27,9 @@ public class SolicitudService {
     private final MovimientoService movimientoService;
 
     @Transactional
-    public SolicitudResponse crear(SolicitudRequest request, Long solicitanteId) {
+    public SolicitudResponse crear(SolicitudRequest request) {
         var solicitud = new Solicitud();
-        usuarioRepository.findById(solicitanteId != null ? solicitanteId : 0L)
-                .ifPresent(solicitud::setSolicitante);
+        getCurrentUsuario().ifPresent(solicitud::setSolicitante);
 
         for (var item : request.items()) {
             var producto = productoRepository.findById(item.productoId())
@@ -43,14 +44,13 @@ public class SolicitudService {
     }
 
     @Transactional
-    public SolicitudResponse aprobar(Long id, AprobarSolicitudRequest request, Long bodegueroId) {
+    public SolicitudResponse aprobar(Long id, AprobarSolicitudRequest request) {
         var solicitud = solicitudRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud", id));
         if (solicitud.getEstado() != EstadoSolicitud.PENDIENTE) {
             throw new BusinessException("La solicitud ya fue procesada");
         }
 
-        // Mapa de cantidades entregadas por detalle (HU-16)
         Map<Long, Integer> cantidadesEntregadas = new HashMap<>();
         if (request.items() != null) {
             request.items().stream()
@@ -65,28 +65,23 @@ public class SolicitudService {
             if (entregada > 0) {
                 movimientoService.registrarSalida(
                         new SalidaRequest(detalle.getProducto().getId(), entregada,
-                                "Solicitud aprobada #" + id, bodegueroId),
-                        bodegueroId);
+                                "Solicitud aprobada #" + id));
             }
         }
         solicitud.setEstado(EstadoSolicitud.APROBADA);
-        if (bodegueroId != null) {
-            usuarioRepository.findById(bodegueroId).ifPresent(solicitud::setBodeguero);
-        }
+        getCurrentUsuario().ifPresent(solicitud::setBodeguero);
         return toResponse(solicitudRepository.save(solicitud));
     }
 
     @Transactional
-    public void rechazar(Long id, Long bodegueroId) {
+    public void rechazar(Long id) {
         var solicitud = solicitudRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud", id));
         if (solicitud.getEstado() != EstadoSolicitud.PENDIENTE) {
             throw new BusinessException("La solicitud ya fue procesada");
         }
         solicitud.setEstado(EstadoSolicitud.RECHAZADA);
-        if (bodegueroId != null) {
-            usuarioRepository.findById(bodegueroId).ifPresent(solicitud::setBodeguero);
-        }
+        getCurrentUsuario().ifPresent(solicitud::setBodeguero);
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +101,14 @@ public class SolicitudService {
         LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
         return solicitudRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(desdeTime, hastaTime)
                 .stream().map(this::toResponse).toList();
+    }
+
+    private Optional<Usuario> getCurrentUsuario() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return Optional.empty();
+        }
+        return usuarioRepository.findByEmailAndActivoTrue(auth.getName());
     }
 
     private SolicitudResponse toResponse(Solicitud s) {

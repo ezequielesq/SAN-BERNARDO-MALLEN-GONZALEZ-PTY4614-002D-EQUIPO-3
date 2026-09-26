@@ -29,14 +29,14 @@ public class MovimientoController {
     public ResponseEntity<MovimientoResponse> entrada(
             @Valid @RequestBody EntradaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(movimientoService.registrarEntrada(request, null));
+                .body(movimientoService.registrarEntrada(request));
     }
 
     @PostMapping("/salidas")
     public ResponseEntity<MovimientoResponse> salida(
             @Valid @RequestBody SalidaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(movimientoService.registrarSalida(request, null));
+                .body(movimientoService.registrarSalida(request));
     }
 
     @GetMapping("/productos/{id}/stock")

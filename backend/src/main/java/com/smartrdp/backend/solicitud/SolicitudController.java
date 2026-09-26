@@ -17,8 +17,7 @@ public class SolicitudController {
 
     @PostMapping
     public ResponseEntity<SolicitudResponse> crear(@Valid @RequestBody SolicitudRequest request) {
-        // TODO: obtener id del usuario autenticado via SecurityContext
-        return ResponseEntity.status(HttpStatus.CREATED).body(solicitudService.crear(request, null));
+        return ResponseEntity.status(HttpStatus.CREATED).body(solicitudService.crear(request));
     }
 
     @GetMapping
@@ -34,12 +33,12 @@ public class SolicitudController {
     @PutMapping("/{id}/aprobar")
     public SolicitudResponse aprobar(@PathVariable Long id,
                                       @RequestBody AprobarSolicitudRequest request) {
-        return solicitudService.aprobar(id, request, null);
+        return solicitudService.aprobar(id, request);
     }
 
     @PutMapping("/{id}/rechazar")
     public ResponseEntity<Void> rechazar(@PathVariable Long id) {
-        solicitudService.rechazar(id, null);
+        solicitudService.rechazar(id);
         return ResponseEntity.noContent().build();
     }
 }

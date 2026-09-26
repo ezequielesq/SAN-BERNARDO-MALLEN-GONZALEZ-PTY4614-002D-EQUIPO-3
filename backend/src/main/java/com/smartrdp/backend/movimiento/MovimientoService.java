@@ -6,8 +6,10 @@ import com.smartrdp.backend.movimiento.dto.EntradaRequest;
 import com.smartrdp.backend.movimiento.dto.MovimientoResponse;
 import com.smartrdp.backend.movimiento.dto.SalidaRequest;
 import com.smartrdp.backend.producto.ProductoRepository;
+import com.smartrdp.backend.usuario.Usuario;
 import com.smartrdp.backend.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +27,7 @@ public class MovimientoService {
     private final UsuarioRepository usuarioRepository;
 
     @Transactional
-    public MovimientoResponse registrarEntrada(EntradaRequest request, Long usuarioId) {
+    public MovimientoResponse registrarEntrada(EntradaRequest request) {
         var producto = productoRepository.findById(request.productoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto", request.productoId()));
 
@@ -43,15 +45,12 @@ public class MovimientoService {
         movimiento.setCantidad(request.cantidad());
         movimiento.setMotivo(request.motivo());
         movimiento.setLote(lote);
-        if (usuarioId != null) {
-            usuarioRepository.findById(usuarioId).ifPresent(movimiento::setUsuario);
-        }
-        var saved = movimientoRepository.save(movimiento);
-        return toResponse(saved);
+        getCurrentUsuario().ifPresent(movimiento::setUsuario);
+        return toResponse(movimientoRepository.save(movimiento));
     }
 
     @Transactional
-    public MovimientoResponse registrarSalida(SalidaRequest request, Long usuarioId) {
+    public MovimientoResponse registrarSalida(SalidaRequest request) {
         var producto = productoRepository.findById(request.productoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto", request.productoId()));
 
@@ -65,7 +64,6 @@ public class MovimientoService {
                     + ", solicitado: " + request.cantidad());
         }
 
-        // Descontar usando FEFO (First Expired, First Out)
         int restante = request.cantidad();
         Lote loteUsado = null;
         for (Lote lote : lotesFefo) {
@@ -82,9 +80,7 @@ public class MovimientoService {
         movimiento.setCantidad(request.cantidad());
         movimiento.setMotivo(request.motivo());
         movimiento.setLote(loteUsado);
-        if (usuarioId != null) {
-            usuarioRepository.findById(usuarioId).ifPresent(movimiento::setUsuario);
-        }
+        getCurrentUsuario().ifPresent(movimiento::setUsuario);
         return toResponse(movimientoRepository.save(movimiento));
     }
 
@@ -124,6 +120,14 @@ public class MovimientoService {
                     m.setMotivo("Alerta vencimiento: " + l.getFechaVencimiento());
                     return toResponse(m);
                 }).toList();
+    }
+
+    private Optional<Usuario> getCurrentUsuario() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return Optional.empty();
+        }
+        return usuarioRepository.findByEmailAndActivoTrue(auth.getName());
     }
 
     private MovimientoResponse toResponse(Movimiento m) {

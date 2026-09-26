@@ -7,6 +7,5 @@ import jakarta.validation.constraints.NotNull;
 public record SalidaRequest(
         @NotNull Long productoId,
         @NotNull @Min(1) Integer cantidad,
-        @NotBlank String motivo,
-        Long usuarioSolicitanteId
+        @NotBlank String motivo
 ) {}
