@@ -12,13 +12,12 @@ import org.hibernate.envers.RelationTargetAuditMode;
 @Getter
 @Setter
 @NoArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Audited
 @Entity
 @Table(name = "movimientos")
 public class Movimiento extends BaseEntity {
 
-    @EqualsAndHashCode.Include
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "producto_id", nullable = false)
