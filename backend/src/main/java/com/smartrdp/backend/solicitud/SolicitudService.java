@@ -51,7 +51,9 @@ public class SolicitudService {
         // Mapa de cantidades entregadas por detalle (HU-16)
         Map<Long, Integer> cantidadesEntregadas = new HashMap<>();
         if (request.items() != null) {
-            request.items().forEach(i -> cantidadesEntregadas.put(i.detalleId(), i.cantidadEntregada()));
+            request.items().stream()
+                    .filter(i -> i.cantidadEntregada() != null)
+                    .forEach(i -> cantidadesEntregadas.put(i.detalleId(), i.cantidadEntregada()));
         }
 
         for (var detalle : solicitud.getDetalles()) {
@@ -85,11 +87,13 @@ public class SolicitudService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<SolicitudResponse> listarPendientes() {
         return solicitudRepository.findByEstadoOrderByCreatedAtDesc(EstadoSolicitud.PENDIENTE)
                 .stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<SolicitudResponse> listarTodas() {
         return solicitudRepository.findAll().stream().map(this::toResponse).toList();
     }
