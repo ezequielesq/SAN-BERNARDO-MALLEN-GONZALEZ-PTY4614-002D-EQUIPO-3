@@ -7,6 +7,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
@@ -20,6 +21,7 @@ public class AuditoriaController {
 
     private final SolicitudRepository solicitudRepository;
 
+    @Transactional(readOnly = true)
     @GetMapping("/historial")
     public List<SolicitudResponse> historial(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
@@ -45,6 +47,7 @@ public class AuditoriaController {
                 }).toList();
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/historial/pdf")
     public ResponseEntity<byte[]> exportarPdf(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
