@@ -17,4 +17,16 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
     Integer sumSalidasByProductoId(Long productoId);
 
     List<Movimiento> findByCreatedAtBetweenAndTipo(LocalDateTime desde, LocalDateTime hasta, TipoMovimiento tipo);
+
+    List<Movimiento> findByCreatedAtBetween(LocalDateTime desde, LocalDateTime hasta);
+
+    @Query("""
+        SELECT m.producto.id, m.producto.nombre, SUM(m.cantidad)
+        FROM Movimiento m
+        WHERE m.tipo = 'SALIDA'
+        AND m.createdAt BETWEEN :desde AND :hasta
+        GROUP BY m.producto.id, m.producto.nombre
+        ORDER BY SUM(m.cantidad) DESC
+        """)
+    List<Object[]> findConsumoEntreFechas(LocalDateTime desde, LocalDateTime hasta);
 }
