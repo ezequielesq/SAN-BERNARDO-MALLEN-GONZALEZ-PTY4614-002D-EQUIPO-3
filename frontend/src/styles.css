@@ -1,0 +1,23 @@
+/* Complementos a W3.CSS 5.01: solo lo que W3.CSS no cubre (spec §3.3). */
+:root { --alto-barra: 3.5rem; --ancho-menu: 15rem; }
+html { scroll-padding-top: calc(var(--alto-barra) + 0.5rem); }
+:focus-visible { outline: 3px solid #0050ef; outline-offset: 2px; }
+.w3-asphalt :focus-visible, .w3-crimson :focus-visible, .w3-emerald :focus-visible { outline-color: #fff; }
+.w3-button { min-height: 44px; }
+.w3-input, .w3-select { border: 1px solid #767676; }
+main a:not(.w3-button) { color: #0050ef; text-decoration: underline; }
+main .w3-crimson a, main .w3-emerald a { color: #fff; }
+.texto-error { color: #a20025; }
+.boton-peligro { background-color: #fff; color: #a20025; border: 2px solid #a20025; }
+.saltar-contenido { position: absolute; left: 0.5rem; top: -10rem; z-index: 10; }
+.saltar-contenido:focus { top: 0.5rem; }
+.visualmente-oculto { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.shell-barra { min-height: var(--alto-barra); border-bottom: 3px solid #0050ef; }
+.shell-menu { width: var(--ancho-menu); z-index: 4; top: var(--alto-barra); height: calc(100% - var(--alto-barra)); }
+.shell-main { padding-top: var(--alto-barra); }
+.menu-activo { border-left: 4px solid #0050ef; font-weight: 600; }
+.login-tarjeta { max-width: 28rem; }
+@media (min-width: 993px) { .shell-main { margin-left: var(--ancho-menu); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
