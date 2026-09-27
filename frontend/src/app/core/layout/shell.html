@@ -1,0 +1,57 @@
+<a class="saltar-contenido w3-button w3-cobalt" href="#contenido" (click)="saltarAlContenido($event)">Saltar al contenido principal</a>
+
+<header class="w3-top">
+  <div class="w3-bar w3-asphalt shell-barra">
+    <button #botonMenu type="button" class="w3-bar-item w3-button w3-hide-large" aria-label="Abrir menú"
+            aria-controls="menu-principal" [attr.aria-expanded]="menuAbierto()" (click)="abrirMenu()">
+      <span aria-hidden="true">☰</span>
+    </button>
+    <span class="w3-bar-item w3-large"><b>Smart RDP</b></span>
+    <div class="w3-right w3-hide-small w3-hide-medium">
+      <span class="w3-bar-item">{{ auth.sesion()?.nombre }} · {{ etiquetaRol() }}</span>
+      <button type="button" class="w3-bar-item w3-button" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+@if (menuAbierto()) {
+  <button type="button" class="w3-overlay w3-hide-large" tabindex="-1" aria-hidden="true"
+          [style.display]="'block'" (click)="cerrarMenu()"></button>
+}
+
+<nav id="menu-principal" aria-label="Principal" class="w3-sidebar w3-bar-block w3-collapse w3-asphalt shell-menu"
+     [style.display]="menuAbierto() ? 'block' : null"
+     [cdkTrapFocus]="menuAbierto()" [cdkTrapFocusAutoCapture]="true">
+  <button type="button" class="w3-bar-item w3-button w3-hide-large w3-right-align" (click)="cerrarMenu()">
+    Cerrar menú <span aria-hidden="true">✕</span>
+  </button>
+
+  @for (grupo of grupos(); track grupo.clave) {
+    @if (grupo.titulo) {
+      <p [id]="'grupo-' + grupo.clave" class="w3-bar-item w3-small w3-text-light-grey w3-margin-top">{{ grupo.titulo }}</p>
+    }
+    <div role="group" [attr.aria-labelledby]="grupo.titulo ? 'grupo-' + grupo.clave : null">
+      @for (item of grupo.items; track item.ruta) {
+        <a class="w3-bar-item w3-button" [routerLink]="item.ruta"
+           routerLinkActive="w3-paper menu-activo" ariaCurrentWhenActive="page">{{ item.etiqueta }}</a>
+      }
+    </div>
+  }
+
+  <div class="w3-hide-large w3-border-top w3-padding">
+    <p class="w3-small">{{ auth.sesion()?.nombre }} · {{ etiquetaRol() }}</p>
+    <button type="button" class="w3-button w3-block w3-left-align" (click)="cerrarSesion()">Cerrar sesión</button>
+  </div>
+</nav>
+
+<main #main id="contenido" tabindex="-1" class="shell-main">
+  <div class="w3-container w3-padding-16">
+    @if (notificaciones.actual(); as n) {
+      <div class="w3-panel" [class.w3-emerald]="n.tipo === 'exito'" [class.w3-crimson]="n.tipo === 'error'">
+        <p>{{ n.texto }}</p>
+        <p><button type="button" class="w3-button w3-white w3-border" (click)="notificaciones.limpiar()">Cerrar aviso</button></p>
+      </div>
+    }
+    <router-outlet />
+  </div>
+</main>
