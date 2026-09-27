@@ -1,0 +1,14 @@
+@if (cargando()) {
+  <p role="status">{{ mensajeCarga() }}</p>
+} @else if (mensajeError(); as mensaje) {
+  <div class="w3-panel w3-crimson" role="alert">
+    <p>{{ mensaje }}</p>
+    <p>
+      <button type="button" class="w3-button w3-white w3-border" (click)="reintentar.emit()">Reintentar</button>
+    </p>
+  </div>
+} @else if (vacio()) {
+  <p role="status">{{ mensajeVacio() }}</p>
+} @else {
+  <ng-content />
+}
