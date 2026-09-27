@@ -1,0 +1,127 @@
+<p><a routerLink="/productos"><span aria-hidden="true">← </span>Volver a Productos</a></p>
+<h1 tabindex="-1">{{ titulo() }}</h1>
+
+@if (esEdicion() && idNumerico() === null) {
+  <div class="w3-panel w3-crimson" role="alert"><p>El registro que buscas ya no existe.</p></div>
+} @else {
+  <app-estado-vista [cargando]="cargandoDatos()" [error]="errorCarga()" mensajeCarga="Cargando datos del producto…"
+                    (reintentar)="recargar()">
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-white w3-padding w3-card">
+      <p>Todos los campos son obligatorios.</p>
+
+      @if (errorGeneral(); as mensaje) {
+        <div class="w3-panel w3-crimson" role="alert"><p>{{ mensaje }}</p></div>
+      }
+
+      @if (camposConError().length > 0) {
+        <div class="w3-panel w3-crimson" role="alert">
+          <p><b>Revisa {{ camposConError().length === 1 ? '1 campo' : camposConError().length + ' campos' }} antes de guardar:</b></p>
+          <ul>
+            @for (campo of camposConError(); track campo) {
+              <li><a [href]="'#campo-' + campo" (click)="irACampo($event, campo)">{{ ETIQUETAS[campo] }}</a></li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="w3-section">
+        <label for="campo-codigoPtb"><b>Código PTB</b></label>
+        <p id="ayuda-codigoPtb" class="w3-small">Código del maestro SAP, por ejemplo PTB0012. Máximo 20 caracteres.</p>
+        <input id="campo-codigoPtb" class="w3-input" type="text" formControlName="codigoPtb" maxlength="20" autocomplete="off"
+               [attr.aria-invalid]="mensajeError('codigoPtb') ? 'true' : null" [attr.aria-describedby]="describedBy('codigoPtb')">
+        @if (mensajeError('codigoPtb'); as m) {
+          <p id="error-codigoPtb" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+        }
+      </div>
+
+      <div class="w3-section">
+        <label for="campo-nombre"><b>Nombre</b></label>
+        <input id="campo-nombre" class="w3-input" type="text" formControlName="nombre" maxlength="150" autocomplete="off"
+               [attr.aria-invalid]="mensajeError('nombre') ? 'true' : null" [attr.aria-describedby]="describedBy('nombre')">
+        @if (mensajeError('nombre'); as m) {
+          <p id="error-nombre" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+        }
+      </div>
+
+      <div class="w3-row">
+        <div class="w3-half w3-section w3-padding-small">
+          <label for="campo-categoriaId"><b>Categoría</b></label>
+          <select id="campo-categoriaId" class="w3-select" formControlName="categoriaId"
+                  [attr.aria-invalid]="mensajeError('categoriaId') ? 'true' : null" [attr.aria-describedby]="describedBy('categoriaId')">
+            <option [ngValue]="null" disabled>Elige una categoría</option>
+            @for (c of opcionesCategoria(); track c.id) {
+              <option [ngValue]="c.id">{{ c.nombre }}{{ c.activo ? '' : ' (desactivada)' }}</option>
+            }
+          </select>
+          @if (mensajeError('categoriaId'); as m) {
+            <p id="error-categoriaId" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+          }
+        </div>
+        <div class="w3-half w3-section w3-padding-small">
+          <label for="campo-unidadMedidaId"><b>Unidad de medida</b></label>
+          <select id="campo-unidadMedidaId" class="w3-select" formControlName="unidadMedidaId"
+                  [attr.aria-invalid]="mensajeError('unidadMedidaId') ? 'true' : null" [attr.aria-describedby]="describedBy('unidadMedidaId')">
+            <option [ngValue]="null" disabled>Elige una unidad de medida</option>
+            @for (u of opcionesUnidad(); track u.id) {
+              <option [ngValue]="u.id">{{ u.nombre }}{{ u.activo ? '' : ' (desactivada)' }}</option>
+            }
+          </select>
+          @if (mensajeError('unidadMedidaId'); as m) {
+            <p id="error-unidadMedidaId" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+          }
+        </div>
+      </div>
+
+      <div class="w3-section">
+        <input id="campo-esPerecible" class="w3-check" type="checkbox" formControlName="esPerecible" aria-describedby="ayuda-esPerecible">
+        <label for="campo-esPerecible"> <b>Es perecible</b></label>
+        <p id="ayuda-esPerecible" class="w3-small">Tiene fecha de vencimiento; se controla por lotes FEFO.</p>
+      </div>
+
+      <fieldset class="w3-section" aria-describedby="ayuda-umbrales">
+        <legend><b>Umbrales de alerta de stock</b></legend>
+        <p id="ayuda-umbrales" class="w3-small">Bajo el mínimo el producto aparece como "Bajo"; en o bajo el crítico, como "Crítico". El crítico debe ser menor o igual al mínimo.</p>
+        <div class="w3-row">
+          <div class="w3-half w3-padding-small">
+            <label for="campo-stockMinimo"><b>Stock mínimo</b></label>
+            <input id="campo-stockMinimo" class="w3-input" type="number" min="0" step="1" inputmode="numeric" formControlName="stockMinimo"
+                   [attr.aria-invalid]="mensajeError('stockMinimo') ? 'true' : null" [attr.aria-describedby]="describedBy('stockMinimo')">
+            @if (mensajeError('stockMinimo'); as m) {
+              <p id="error-stockMinimo" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+            }
+          </div>
+          <div class="w3-half w3-padding-small">
+            <label for="campo-stockCritico"><b>Stock crítico</b></label>
+            <input id="campo-stockCritico" class="w3-input" type="number" min="0" step="1" inputmode="numeric" formControlName="stockCritico"
+                   [attr.aria-invalid]="mensajeError('stockCritico') ? 'true' : null" [attr.aria-describedby]="describedBy('stockCritico')">
+            @if (mensajeError('stockCritico'); as m) {
+              <p id="error-stockCritico" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+            }
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="w3-section">
+        <button type="submit" class="w3-button w3-cobalt" [attr.aria-disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : (esEdicion() ? 'Guardar cambios' : 'Guardar producto') }}
+        </button>
+        <a routerLink="/productos" class="w3-button w3-white w3-border w3-margin-left">Cancelar</a>
+      </div>
+    </form>
+
+    @if (productoActual(); as p) {
+      <section class="w3-section" aria-labelledby="titulo-estado-producto">
+        <hr>
+        @if (p.activo) {
+          <h2 id="titulo-estado-producto" class="w3-large">Deshabilitar producto</h2>
+          <p>Deja de aparecer para registrar movimientos y solicitudes. Su historial se conserva y puedes reactivarlo después.</p>
+          <button type="button" class="w3-button boton-peligro" (click)="deshabilitar(p)">Deshabilitar producto…</button>
+        } @else {
+          <h2 id="titulo-estado-producto" class="w3-large">Producto deshabilitado</h2>
+          <p>Este producto no aparece para registrar movimientos ni solicitudes.</p>
+          <button type="button" class="w3-button w3-cobalt" (click)="reactivar(p)">Reactivar producto</button>
+        }
+      </section>
+    }
+  </app-estado-vista>
+}
