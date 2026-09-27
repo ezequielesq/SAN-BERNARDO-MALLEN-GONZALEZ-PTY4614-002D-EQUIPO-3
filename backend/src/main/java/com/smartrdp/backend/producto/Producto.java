@@ -1,5 +1,7 @@
 package com.smartrdp.backend.producto;
 
+import com.smartrdp.backend.catalogo.Categoria;
+import com.smartrdp.backend.catalogo.UnidadMedida;
 import com.smartrdp.backend.shared.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,11 +21,13 @@ public class Producto extends BaseEntity {
     @Column(name = "nombre", nullable = false, length = 150)
     private String nombre;
 
-    @Column(name = "categoria", nullable = false, length = 50)
-    private String categoria;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private Categoria categoria;
 
-    @Column(name = "unidad_medida", nullable = false, length = 20)
-    private String unidadMedida;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "unidad_medida_id", nullable = false)
+    private UnidadMedida unidadMedida;
 
     @Column(name = "es_perecible", nullable = false)
     private boolean esPerecible;
