@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
-    boolean existsByCodigoPtb(String codigoPtb);
-    boolean existsByCodigoPtbAndIdNot(String codigoPtb, Long id);
-    Optional<Producto> findByCodigoPtb(String codigoPtb);
+    boolean existsByCodigoPtv(String codigoPtv);
+    boolean existsByCodigoPtvAndIdNot(String codigoPtv, Long id);
+    Optional<Producto> findByCodigoPtv(String codigoPtv);
     List<Producto> findByActivoTrue();
 }

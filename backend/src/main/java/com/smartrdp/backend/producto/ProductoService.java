@@ -25,12 +25,12 @@ public class ProductoService {
     @Transactional
     public ProductoResponse crear(ProductoRequest request) {
         validarUmbrales(request);
-        String codigoPtb = request.codigoPtb().trim();
-        if (productoRepository.existsByCodigoPtb(codigoPtb)) {
-            throw ptbDuplicado(codigoPtb);
+        String codigoPtv = request.codigoPtv().trim();
+        if (productoRepository.existsByCodigoPtv(codigoPtv)) {
+            throw ptvDuplicado(codigoPtv);
         }
         Producto producto = new Producto();
-        aplicar(producto, request, codigoPtb);
+        aplicar(producto, request, codigoPtv);
         return toResponse(productoRepository.save(producto));
     }
 
@@ -38,11 +38,11 @@ public class ProductoService {
     public ProductoResponse editar(Long id, ProductoRequest request) {
         Producto producto = findOrThrow(id);
         validarUmbrales(request);
-        String codigoPtb = request.codigoPtb().trim();
-        if (productoRepository.existsByCodigoPtbAndIdNot(codigoPtb, id)) {
-            throw ptbDuplicado(codigoPtb);
+        String codigoPtv = request.codigoPtv().trim();
+        if (productoRepository.existsByCodigoPtvAndIdNot(codigoPtv, id)) {
+            throw ptvDuplicado(codigoPtv);
         }
-        aplicar(producto, request, codigoPtb);
+        aplicar(producto, request, codigoPtv);
         return toResponse(producto);
     }
 
@@ -69,8 +69,8 @@ public class ProductoService {
         findOrThrow(id).setActivo(true);
     }
 
-    private void aplicar(Producto producto, ProductoRequest request, String codigoPtb) {
-        producto.setCodigoPtb(codigoPtb);
+    private void aplicar(Producto producto, ProductoRequest request, String codigoPtv) {
+        producto.setCodigoPtv(codigoPtv);
         producto.setNombre(request.nombre().trim());
         producto.setCategoria(resolverCategoria(request.categoriaId(), producto.getCategoria()));
         producto.setUnidadMedida(resolverUnidad(request.unidadMedidaId(), producto.getUnidadMedida()));
@@ -108,8 +108,8 @@ public class ProductoService {
         return unidad;
     }
 
-    private BusinessException ptbDuplicado(String codigoPtb) {
-        return new BusinessException("Ya existe un producto con el código " + codigoPtb + ".", "codigoPtb");
+    private BusinessException ptvDuplicado(String codigoPtv) {
+        return new BusinessException("Ya existe un producto con el código " + codigoPtv + ".", "codigoPtv");
     }
 
     private Producto findOrThrow(Long id) {
@@ -120,7 +120,7 @@ public class ProductoService {
     private ProductoResponse toResponse(Producto p) {
         return new ProductoResponse(
                 p.getId(),
-                p.getCodigoPtb(),
+                p.getCodigoPtv(),
                 p.getNombre(),
                 p.getCategoria().getId(),
                 p.getCategoria().getNombre(),

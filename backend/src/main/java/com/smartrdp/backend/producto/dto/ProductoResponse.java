@@ -2,7 +2,7 @@ package com.smartrdp.backend.producto.dto;
 
 public record ProductoResponse(
     Long id,
-    String codigoPtb,
+    String codigoPtv,
     String nombre,
     Long categoriaId,
     String categoriaNombre,

@@ -15,8 +15,8 @@ import lombok.*;
 public class Producto extends BaseEntity {
 
     @EqualsAndHashCode.Include
-    @Column(name = "codigo_ptb", nullable = false, unique = true, length = 20)
-    private String codigoPtb;
+    @Column(name = "codigo_ptv", nullable = false, unique = true, length = 20)
+    private String codigoPtv;
 
     @Column(name = "nombre", nullable = false, length = 150)
     private String nombre;
