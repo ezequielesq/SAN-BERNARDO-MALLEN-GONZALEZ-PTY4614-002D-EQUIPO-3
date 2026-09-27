@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, invitadoGuard } from './core/auth/auth.guards';
+import { authGuard, invitadoGuard, rolGuard } from './core/auth/auth.guards';
 import { Shell } from './core/layout/shell';
 
 export const routes: Routes = [
@@ -18,7 +18,11 @@ export const routes: Routes = [
         path: 'productos',
         loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES),
       },
-      // Task 7 agrega aquí la ruta 'administracion'.
+      {
+        path: 'administracion',
+        canActivate: [rolGuard(['ADMIN'])],
+        loadChildren: () => import('./features/administracion/administracion.routes').then(m => m.ADMINISTRACION_ROUTES),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'productos' },
     ],
   },
