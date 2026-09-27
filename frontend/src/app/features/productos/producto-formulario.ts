@@ -43,8 +43,11 @@ const MAXIMO: Partial<Record<Campo, number>> = { codigoPtb: 20, nombre: 150 };
 const AYUDA: Partial<Record<Campo, string>> = { codigoPtb: 'ayuda-codigoPtb', stockCritico: 'ayuda-umbrales' };
 
 function criticoMenorOIgualAMinimo(grupo: AbstractControl): ValidationErrors | null {
-  const minimo: unknown = grupo.get('stockMinimo')?.value;
-  const critico: unknown = grupo.get('stockCritico')?.value;
+  const controlMinimo = grupo.get('stockMinimo');
+  const controlCritico = grupo.get('stockCritico');
+  if (!controlMinimo?.valid || !controlCritico?.valid) return null;
+  const minimo: unknown = controlMinimo.value;
+  const critico: unknown = controlCritico.value;
   return typeof minimo === 'number' && typeof critico === 'number' && critico > minimo
     ? { criticoMayorQueMinimo: true }
     : null;
@@ -134,6 +137,10 @@ export class ProductoFormulario implements ConCambiosPendientes {
     effect(() => {
       const p = this.productoActual();
       if (!p) return;
+      // No pisar ediciones en curso: solo aplicar el patch mientras el form
+      // sigue intacto (evita que un reload() disparado por reactivar()/recargar()
+      // borre silenciosamente cambios que el usuario ya escribió).
+      if (!this.form.pristine) return;
       untracked(() => {
         this.form.reset({
           codigoPtb: p.codigoPtb,
@@ -274,8 +281,12 @@ export class ProductoFormulario implements ConCambiosPendientes {
   private aplicarErrorServidor(err: unknown): void {
     const error = traducirError(err);
     let asignado = false;
+    const sinAsignar: string[] = [];
     const asignar = (campo: string, mensaje: string): void => {
-      if (!esCampo(campo)) return;
+      if (!esCampo(campo)) {
+        sinAsignar.push(mensaje);
+        return;
+      }
       const control = this.form.controls[campo];
       control.setErrors({ ...(control.errors ?? {}), servidor: mensaje });
       control.markAsTouched();
@@ -283,11 +294,15 @@ export class ProductoFormulario implements ConCambiosPendientes {
     };
     if (error.campo) asignar(error.campo, error.mensaje);
     for (const [campo, mensaje] of Object.entries(error.camposValidacion)) asignar(campo, mensaje);
-    if (asignado) {
-      this.enfocarPrimerError();
-    } else {
+    // Cualquier campo que el backend haya señalado pero que no exista en este
+    // formulario debe seguir siendo visible, aunque otros campos sí se hayan
+    // asignado correctamente: no lo descartamos en silencio.
+    if (sinAsignar.length > 0) {
+      this.errorGeneral.set(sinAsignar.join(' '));
+    } else if (!asignado) {
       this.errorGeneral.set(error.mensaje);
     }
+    if (asignado) this.enfocarPrimerError();
   }
 
   private enfocarPrimerError(): void {
