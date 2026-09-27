@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
@@ -23,6 +25,7 @@ function normalizar(texto: string): string {
 export class ProductoLista {
   private readonly productoService = inject(ProductoService);
   private readonly auth = inject(AuthService);
+  private readonly injector = inject(Injector);
 
   protected readonly puedeGestionar = computed(() => {
     const rol = this.auth.rol();
@@ -61,5 +64,6 @@ export class ProductoLista {
   protected limpiarFiltros(): void {
     this.busqueda.set('');
     this.categoriaId.set(null);
+    afterNextRender(() => document.getElementById('buscar-producto')?.focus(), { injector: this.injector });
   }
 }

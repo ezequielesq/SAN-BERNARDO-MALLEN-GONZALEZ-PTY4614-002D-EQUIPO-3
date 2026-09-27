@@ -23,6 +23,7 @@ export class Shell {
 
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
   private readonly botonMenu = viewChild<ElementRef<HTMLButtonElement>>('botonMenu');
+  private readonly botonCerrarMenu = viewChild<ElementRef<HTMLButtonElement>>('botonCerrarMenu');
 
   protected readonly menuAbierto = signal(false);
   protected readonly grupos = computed(() => agruparNavegacion(this.auth.rol()));
@@ -45,6 +46,7 @@ export class Shell {
 
   protected abrirMenu(): void {
     this.menuAbierto.set(true);
+    afterNextRender(() => this.botonCerrarMenu()?.nativeElement.focus(), { injector: this.injector });
   }
 
   protected cerrarMenu(): void {
@@ -60,6 +62,11 @@ export class Shell {
 
   protected cerrarSesion(): void {
     this.auth.logout();
+  }
+
+  protected cerrarAviso(): void {
+    this.notificaciones.limpiar();
+    this.main().nativeElement.focus();
   }
 
   private enfocarTitulo(): void {

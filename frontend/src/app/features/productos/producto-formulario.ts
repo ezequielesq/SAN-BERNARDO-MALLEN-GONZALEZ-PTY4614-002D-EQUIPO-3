@@ -42,6 +42,11 @@ const MAXIMO: Partial<Record<Campo, number>> = { codigoPtb: 20, nombre: 150 };
 
 const AYUDA: Partial<Record<Campo, string>> = { codigoPtb: 'ayuda-codigoPtb', stockCritico: 'ayuda-umbrales' };
 
+function noSoloEspacios(control: AbstractControl): ValidationErrors | null {
+  const valor: unknown = control.value;
+  return typeof valor === 'string' && valor !== '' && valor.trim() === '' ? { soloEspacios: true } : null;
+}
+
 function criticoMenorOIgualAMinimo(grupo: AbstractControl): ValidationErrors | null {
   const controlMinimo = grupo.get('stockMinimo');
   const controlCritico = grupo.get('stockCritico');
@@ -120,8 +125,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
     this.producto.error() ?? this.categorias.error() ?? this.unidades.error());
 
   protected readonly form = this.fb.group({
-    codigoPtb: ['', [Validators.required, Validators.maxLength(20)]],
-    nombre: ['', [Validators.required, Validators.maxLength(150)]],
+    codigoPtb: ['', [Validators.required, Validators.maxLength(20), noSoloEspacios]],
+    nombre: ['', [Validators.required, Validators.maxLength(150), noSoloEspacios]],
     categoriaId: this.fb.control<number | null>(null, Validators.required),
     unidadMedidaId: this.fb.control<number | null>(null, Validators.required),
     esPerecible: [false],
@@ -132,6 +137,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
   protected readonly enviado = signal(false);
   protected readonly guardando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
+  private readonly enfocarTrasReactivar = signal(false);
 
   constructor() {
     effect(() => {
@@ -153,6 +159,13 @@ export class ProductoFormulario implements ConCambiosPendientes {
         });
       });
     });
+
+    effect(() => {
+      if (this.enfocarTrasReactivar() && this.producto.status() === 'resolved') {
+        this.enfocarTrasReactivar.set(false);
+        afterNextRender(() => document.getElementById('titulo-estado-producto')?.focus(), { injector: this.injector });
+      }
+    });
   }
 
   tieneCambiosPendientes(): boolean {
@@ -173,7 +186,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
     if (errores) {
       const servidor: unknown = errores['servidor'];
       if (typeof servidor === 'string') return servidor;
-      if (errores['required']) return REQUERIDO[campo];
+      if (errores['required'] || errores['soloEspacios']) return REQUERIDO[campo];
       if (errores['maxlength']) return `${ETIQUETAS[campo]} admite como máximo ${MAXIMO[campo] ?? 0} caracteres.`;
       if (errores['min']) return `${ETIQUETAS[campo]} no puede ser negativo.`;
       if (errores['pattern']) return `${ETIQUETAS[campo]} debe ser un número entero.`;
@@ -269,6 +282,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
       next: () => {
         this.guardando.set(false);
         this.notificaciones.exito(`Producto '${p.nombre}' reactivado.`);
+        this.enfocarTrasReactivar.set(true);
         this.producto.reload();
       },
       error: (err: unknown) => {
