@@ -1,0 +1,97 @@
+<h1 tabindex="-1">Productos</h1>
+@if (puedeGestionar()) {
+  <p>
+    <a routerLink="/productos/nuevo" class="w3-button w3-cobalt">
+      <span aria-hidden="true">+ </span>Nuevo producto
+    </a>
+  </p>
+}
+
+<div class="w3-row w3-section">
+  <div class="w3-col m5 w3-padding-small">
+    <label for="buscar-producto"><b>Buscar por nombre o código PTB</b></label>
+    <input #campoBusqueda id="buscar-producto" class="w3-input" type="search"
+           [value]="busqueda()" (input)="busqueda.set(campoBusqueda.value)">
+  </div>
+  <div class="w3-col m4 w3-padding-small">
+    <label for="filtro-categoria"><b>Categoría</b></label>
+    <select #selectCategoria id="filtro-categoria" class="w3-select" (change)="cambiarCategoria(selectCategoria.value)">
+      <option value="" [selected]="categoriaId() === null">Todas</option>
+      @for (c of categorias(); track c.id) {
+        <option [value]="c.id" [selected]="categoriaId() === c.id">{{ c.nombre }}</option>
+      }
+    </select>
+  </div>
+  @if (puedeGestionar()) {
+    <div class="w3-col m3 w3-padding-small w3-padding-24">
+      <input #checkDeshabilitados id="mostrar-deshabilitados" class="w3-check" type="checkbox"
+             [checked]="!soloActivos()" (change)="soloActivos.set(!checkDeshabilitados.checked)">
+      <label for="mostrar-deshabilitados"> Mostrar deshabilitados</label>
+    </div>
+  }
+</div>
+
+<app-estado-vista [cargando]="productos.status() === 'loading'" [error]="productos.error()"
+                  [vacio]="todos().length === 0" mensajeCarga="Cargando productos…"
+                  [mensajeVacio]="mensajeVacio()" (reintentar)="productos.reload()">
+  <p aria-live="polite">Mostrando {{ filtrados().length }} de {{ todos().length }} productos</p>
+
+  @if (filtrados().length === 0) {
+    <p>Ningún producto coincide con los filtros.</p>
+    <button type="button" class="w3-button w3-white w3-border" (click)="limpiarFiltros()">Limpiar filtros</button>
+  } @else {
+    <div class="w3-hide-small w3-responsive">
+      <table class="w3-table w3-bordered w3-white">
+        <caption class="visualmente-oculto">Lista de productos</caption>
+        <thead>
+          <tr class="w3-asphalt">
+            <th scope="col">Código PTB</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Categoría</th>
+            <th scope="col">Unidad</th>
+            <th scope="col">Perecible</th>
+            <th scope="col">Mín / Crítico</th>
+            <th scope="col">Estado</th>
+            @if (puedeGestionar()) {
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of filtrados(); track p.id) {
+            <tr>
+              <td>{{ p.codigoPtb }}</td>
+              <td>{{ p.nombre }}</td>
+              <td>{{ p.categoriaNombre }}</td>
+              <td>{{ p.unidadMedidaNombre }}</td>
+              <td>{{ p.esPerecible ? 'Sí' : 'No' }}</td>
+              <td>{{ p.stockMinimo }} / {{ p.stockCritico }}</td>
+              <td>
+                @if (p.activo) { Activo } @else { <app-estado-badge estado="deshabilitado" /> }
+              </td>
+              @if (puedeGestionar()) {
+                <td><a [routerLink]="['/productos', p.id]">Editar<span class="visualmente-oculto"> {{ p.nombre }}</span></a></td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="w3-hide-medium w3-hide-large">
+      @for (p of filtrados(); track p.id) {
+        <article class="w3-card w3-white w3-padding w3-margin-bottom">
+          <h2 class="w3-medium"><b>{{ p.nombre }}</b></h2>
+          <p>{{ p.codigoPtb }} · {{ p.categoriaNombre }} · {{ p.unidadMedidaNombre }}</p>
+          <p>Mín / Crítico: {{ p.stockMinimo }} / {{ p.stockCritico }} · Perecible: {{ p.esPerecible ? 'Sí' : 'No' }}</p>
+          <p>
+            @if (p.activo) { Activo } @else { <app-estado-badge estado="deshabilitado" /> }
+            @if (puedeGestionar()) {
+              · <a [routerLink]="['/productos', p.id]">Editar<span class="visualmente-oculto"> {{ p.nombre }}</span></a>
+            }
+          </p>
+        </article>
+      }
+    </div>
+  }
+</app-estado-vista>
