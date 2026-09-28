@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,6 +85,17 @@ public class MovimientoService {
         return toResponse(movimientoRepository.save(movimiento));
     }
 
+    @Transactional(readOnly = true)
+    public List<MovimientoResponse> listar(Long productoId, LocalDate desde, LocalDate hasta) {
+        LocalDateTime desdeDt = (desde != null ? desde : LocalDate.now().minusDays(30)).atStartOfDay();
+        LocalDateTime hastaDt = (hasta != null ? hasta : LocalDate.now()).atTime(23, 59, 59);
+        List<Movimiento> movimientos = productoId != null
+                ? movimientoRepository.findByProductoIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+                        productoId, desdeDt, hastaDt)
+                : movimientoRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(desdeDt, hastaDt);
+        return movimientos.stream().map(this::toResponse).toList();
+    }
+
     public Integer getStockActual(Long productoId) {
         Integer entradas = movimientoRepository.sumEntradasByProductoId(productoId);
         Integer salidas = movimientoRepository.sumSalidasByProductoId(productoId);
@@ -138,7 +150,8 @@ public class MovimientoService {
                 m.getTipo(),
                 m.getCantidad(),
                 m.getMotivo(),
-                m.getCreatedAt()
+                m.getCreatedAt(),
+                m.getUsuario() != null ? m.getUsuario().getEmail() : null
         );
     }
 }

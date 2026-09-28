@@ -10,6 +10,11 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
 
     List<Movimiento> findByProductoIdOrderByCreatedAtDesc(Long productoId);
 
+    List<Movimiento> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime desde, LocalDateTime hasta);
+
+    List<Movimiento> findByProductoIdAndCreatedAtBetweenOrderByCreatedAtDesc(
+            Long productoId, LocalDateTime desde, LocalDateTime hasta);
+
     @Query("SELECT SUM(m.cantidad) FROM Movimiento m WHERE m.producto.id = :productoId AND m.tipo = 'ENTRADA'")
     Integer sumEntradasByProductoId(Long productoId);
 
