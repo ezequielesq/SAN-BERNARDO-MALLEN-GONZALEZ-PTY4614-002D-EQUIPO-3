@@ -1,0 +1,56 @@
+<p>
+  <a routerLink="/movimientos"><span aria-hidden="true">← </span>Volver a Movimientos</a>
+</p>
+<h1 tabindex="-1">Registrar salida</h1>
+
+@if (errorGeneral(); as mensaje) {
+  <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+    <p>{{ mensaje }}</p>
+  </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card">
+  <div class="w3-section">
+    <label for="salida-producto"><b>Producto</b></label>
+    <select id="salida-producto" class="w3-select" formControlName="productoId">
+      <option [ngValue]="null" disabled>Elige un producto</option>
+      @for (p of opcionesProducto(); track p.id) {
+        <option [ngValue]="p.id">{{ p.nombre }} ({{ p.codigoPtv }})</option>
+      }
+    </select>
+    @if (enviado() && form.controls.productoId.invalid) {
+      <p class="texto-error"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="salida-cantidad"><b>Cantidad</b></label>
+    <input
+      id="salida-cantidad"
+      class="w3-input"
+      type="number"
+      min="1"
+      step="1"
+      inputmode="numeric"
+      formControlName="cantidad"
+    />
+    @if (enviado() && form.controls.cantidad.invalid) {
+      <p class="texto-error"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="salida-motivo"><b>Motivo</b></label>
+    <input id="salida-motivo" class="w3-input" type="text" maxlength="200" formControlName="motivo" />
+    @if (enviado() && form.controls.motivo.invalid) {
+      <p class="texto-error"><span aria-hidden="true">⚠ </span>Ingresa el motivo de la salida.</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <button type="submit" class="w3-button w3-crimson w3-round" [attr.aria-disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : 'Registrar salida' }}
+    </button>
+    <a routerLink="/movimientos" class="w3-button w3-white w3-border w3-round w3-margin-left">Cancelar</a>
+  </div>
+</form>
