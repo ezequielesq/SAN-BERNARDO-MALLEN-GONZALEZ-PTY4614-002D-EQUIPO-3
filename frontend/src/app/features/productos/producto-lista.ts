@@ -1,16 +1,23 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
+import { Paginacion } from '../../shared/paginacion/paginacion';
+import { descargarArchivo } from '../../shared/utils/descargar-archivo';
 import { ProductoService } from './producto.service';
 
 interface OpcionCategoria {
@@ -28,7 +35,7 @@ function normalizar(texto: string): string {
 
 @Component({
   selector: 'app-producto-lista',
-  imports: [RouterLink, EstadoVista, EstadoBadge],
+  imports: [RouterLink, EstadoVista, EstadoBadge, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './producto-lista.html',
 })
@@ -36,6 +43,8 @@ export class ProductoLista {
   private readonly productoService = inject(ProductoService);
   private readonly auth = inject(AuthService);
   private readonly injector = inject(Injector);
+  private readonly notificaciones = inject(NotificacionService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly puedeGestionar = computed(() => {
     const rol = this.auth.rol();
@@ -44,6 +53,9 @@ export class ProductoLista {
   protected readonly soloActivos = signal(true);
   protected readonly busqueda = signal('');
   protected readonly categoriaId = signal<number | null>(null);
+  protected readonly paginaActual = signal(1);
+  protected readonly tamanoPagina = signal(10);
+  protected readonly exportando = signal(false);
 
   protected readonly productos = this.productoService.listar(this.soloActivos);
   protected readonly todos = computed(() =>
@@ -76,6 +88,18 @@ export class ProductoLista {
       : 'Aún no hay productos registrados.',
   );
 
+  protected readonly paginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
+    return this.filtrados().slice(inicio, inicio + this.tamanoPagina());
+  });
+
+  constructor() {
+    effect(() => {
+      this.filtrados();
+      untracked(() => this.paginaActual.set(1));
+    });
+  }
+
   protected cambiarCategoria(valor: string): void {
     this.categoriaId.set(valor === '' ? null : Number(valor));
   }
@@ -85,6 +109,34 @@ export class ProductoLista {
     this.categoriaId.set(null);
     afterNextRender(() => document.getElementById('buscar-producto')?.focus(), {
       injector: this.injector,
+    });
+  }
+
+  protected cambiarPagina(pagina: number): void {
+    this.paginaActual.set(pagina);
+  }
+
+  protected cambiarTamanoPagina(tamano: number): void {
+    this.tamanoPagina.set(tamano);
+    this.paginaActual.set(1);
+  }
+
+  protected exportar(formato: 'xlsx' | 'pdf'): void {
+    if (this.exportando()) return;
+    this.exportando.set(true);
+    const operacion$ =
+      formato === 'xlsx'
+        ? this.productoService.exportarXlsx(this.soloActivos())
+        : this.productoService.exportarPdf(this.soloActivos());
+    operacion$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        this.exportando.set(false);
+        descargarArchivo(blob, `productos.${formato}`);
+      },
+      error: () => {
+        this.exportando.set(false);
+        this.notificaciones.error(`No se pudo generar el archivo ${formato.toUpperCase()}. Inténtalo de nuevo.`);
+      },
     });
   }
 }

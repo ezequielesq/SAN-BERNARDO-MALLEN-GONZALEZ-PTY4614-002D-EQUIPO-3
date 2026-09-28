@@ -40,4 +40,12 @@ export class ProductoService {
   reactivar(id: number): Observable<void> {
     return this.http.put<void>(`${this.url}/${id}/reactivar`, {});
   }
+
+  exportarXlsx(soloActivos: boolean): Observable<Blob> {
+    return this.http.get(`${this.url}/exportar/xlsx`, { params: { soloActivos }, responseType: 'blob' });
+  }
+
+  exportarPdf(soloActivos: boolean): Observable<Blob> {
+    return this.http.get(`${this.url}/exportar/pdf`, { params: { soloActivos }, responseType: 'blob' });
+  }
 }

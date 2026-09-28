@@ -7,7 +7,7 @@
   </p>
 }
 
-<div class="w3-row w3-section">
+<div class="w3-row w3-section w3-container w3-border w3-padding w3-light-grey">
   <div class="w3-col m5 w3-padding-small">
     <label for="buscar-producto"><b>Buscar por nombre o código PTV</b></label>
     <input
@@ -70,7 +70,7 @@
           Lista de productos
         </caption>
         <thead>
-          <tr class="w3-asphalt">
+          <tr class="w3-light-grey">
             <th scope="col">Código PTV</th>
             <th scope="col">Nombre</th>
             <th scope="col">Categoría</th>
@@ -84,7 +84,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (p of filtrados(); track p.id) {
+          @for (p of paginados(); track p.id) {
             <tr>
               <td>{{ p.codigoPtv }}</td>
               <td>{{ p.nombre }}</td>
@@ -101,9 +101,9 @@
               </td>
               @if (puedeGestionar()) {
                 <td>
-                  <a [routerLink]="['/productos', p.id]"
-                    >Editar<span class="visualmente-oculto"> {{ p.nombre }}</span></a
-                  >
+                  <a [routerLink]="['/productos', p.id]">
+                    <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span>
+                  </a>
                 </td>
               }
             </tr>
@@ -112,8 +112,20 @@
       </table>
     </div>
 
+    <div class="w3-bar w3-margin-top">
+      <div class="w3-dropdown-hover">
+        <button type="button" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="exportando()">
+          <i class="fa fa-download" aria-hidden="true"></i> Exportar
+        </button>
+        <div class="w3-dropdown-content w3-bar-block w3-border w3-card">
+          <button type="button" class="w3-bar-item w3-button" (click)="exportar('xlsx')">XLSX</button>
+          <button type="button" class="w3-bar-item w3-button" (click)="exportar('pdf')">PDF</button>
+        </div>
+      </div>
+    </div>
+
     <div class="w3-hide-medium w3-hide-large">
-      @for (p of filtrados(); track p.id) {
+      @for (p of paginados(); track p.id) {
         <article class="w3-card w3-white w3-padding w3-margin-bottom">
           <h2 class="w3-medium">
             <b>{{ p.nombre }}</b>
@@ -139,5 +151,13 @@
         </article>
       }
     </div>
+
+    <app-paginacion
+      [pagina]="paginaActual()"
+      [totalItems]="filtrados().length"
+      [tamanoPagina]="tamanoPagina()"
+      (paginaCambiada)="cambiarPagina($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+    />
   }
 </app-estado-vista>
