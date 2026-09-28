@@ -70,6 +70,7 @@
           class="w3-bar-item w3-button"
           [routerLink]="item.ruta"
           routerLinkActive="w3-paper menu-activo"
+          [routerLinkActiveOptions]="{ exact: true }"
           ariaCurrentWhenActive="page"
           >{{ item.etiqueta }}</a
         >
