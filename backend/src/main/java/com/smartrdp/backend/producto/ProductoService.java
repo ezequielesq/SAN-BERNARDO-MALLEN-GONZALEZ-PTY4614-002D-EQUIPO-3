@@ -59,6 +59,75 @@ public class ProductoService {
         return toResponse(findOrThrow(id));
     }
 
+    @Transactional(readOnly = true)
+    public byte[] exportarXlsx(boolean soloActivos) {
+        List<ProductoResponse> productos = listar(soloActivos);
+        try (var wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+             var out = new java.io.ByteArrayOutputStream()) {
+            var sheet = wb.createSheet("Productos");
+            var header = sheet.createRow(0);
+            String[] columnas = {"Código PTV", "Nombre", "Categoría", "Unidad", "Perecible",
+                    "Stock mínimo", "Stock crítico", "Activo"};
+            for (int i = 0; i < columnas.length; i++) header.createCell(i).setCellValue(columnas[i]);
+
+            int fila = 1;
+            for (ProductoResponse p : productos) {
+                var row = sheet.createRow(fila++);
+                row.createCell(0).setCellValue(p.codigoPtv());
+                row.createCell(1).setCellValue(p.nombre());
+                row.createCell(2).setCellValue(p.categoriaNombre());
+                row.createCell(3).setCellValue(p.unidadMedidaNombre());
+                row.createCell(4).setCellValue(p.esPerecible() ? "Sí" : "No");
+                row.createCell(5).setCellValue(p.stockMinimo());
+                row.createCell(6).setCellValue(p.stockCritico());
+                row.createCell(7).setCellValue(p.activo() ? "Sí" : "No");
+            }
+            wb.write(out);
+            return out.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException("No se pudo generar el XLSX de productos", e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportarPdf(boolean soloActivos) {
+        List<ProductoResponse> productos = listar(soloActivos);
+        // ByteArrayOutputStream.close() no hace nada realmente, pero declara "throws
+        // IOException" en su firma — por eso NO va en un try-with-resources junto al
+        // resto (que solo puede lanzar DocumentException); envolverlo ahí sería un
+        // error de compilación por una excepción chequeada que nunca ocurre en la práctica.
+        var out = new java.io.ByteArrayOutputStream();
+        try {
+            var documento = new com.lowagie.text.Document(com.lowagie.text.PageSize.A4.rotate());
+            com.lowagie.text.pdf.PdfWriter.getInstance(documento, out);
+            documento.open();
+            documento.add(new com.lowagie.text.Paragraph("Productos — Smart RDP"));
+            documento.add(new com.lowagie.text.Paragraph(" "));
+
+            var tabla = new com.lowagie.text.pdf.PdfPTable(8);
+            tabla.setWidthPercentage(100);
+            for (String columna : new String[]{"Código PTV", "Nombre", "Categoría", "Unidad",
+                    "Perecible", "Stock mínimo", "Stock crítico", "Activo"}) {
+                tabla.addCell(columna);
+            }
+            for (ProductoResponse p : productos) {
+                tabla.addCell(p.codigoPtv());
+                tabla.addCell(p.nombre());
+                tabla.addCell(p.categoriaNombre());
+                tabla.addCell(p.unidadMedidaNombre());
+                tabla.addCell(p.esPerecible() ? "Sí" : "No");
+                tabla.addCell(String.valueOf(p.stockMinimo()));
+                tabla.addCell(String.valueOf(p.stockCritico()));
+                tabla.addCell(p.activo() ? "Sí" : "No");
+            }
+            documento.add(tabla);
+            documento.close();
+            return out.toByteArray();
+        } catch (com.lowagie.text.DocumentException e) {
+            throw new IllegalStateException("No se pudo generar el PDF de productos", e);
+        }
+    }
+
     @Transactional
     public void deshabilitar(Long id) {
         findOrThrow(id).setActivo(false);
