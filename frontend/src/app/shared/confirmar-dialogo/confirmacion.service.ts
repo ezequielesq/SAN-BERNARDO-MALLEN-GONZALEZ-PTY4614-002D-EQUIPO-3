@@ -29,7 +29,13 @@ export class ConfirmacionService {
             elementoActivo?.focus();
           },
         )
-        .set('labels', { ok: datos.textoConfirmar, cancel: 'Cancelar' });
+        .set('labels', { ok: datos.textoConfirmar, cancel: 'Cancelar' })
+        // alertify vuelve a fijar el foco por su cuenta ~1s después de abrir
+        // (al terminar su transición CSS, o por su temporizador de respaldo si
+        // esta no dispara) usando este ajuste — sin él, ese segundo enfoque
+        // interno pisaría nuestro foco manual de abajo y volvería a dejar el
+        // foco en OK, el botón destructivo.
+        .set('defaultFocus', 'cancel');
 
       // alertify no agrega ningún atributo ARIA — se suple a mano para no
       // perder lo que ya daba el Dialog de CDK (rol de diálogo + foco inicial).
@@ -48,10 +54,23 @@ export class ConfirmacionService {
           cuerpo.id = 'ajs-cuerpo-confirmacion';
           nodo.setAttribute('aria-describedby', cuerpo.id);
         }
-        nodo.querySelector<HTMLElement>('.ajs-cancel, .ajs-ok')?.focus();
+        // Preferir el botón Cancelar: querySelector con una lista de selectores
+        // devuelve el primero en orden de DOM (no de la lista), y alertify enfoca
+        // el OK (índice 0) por defecto — eso dejaría un Enter reflejo confirmando
+        // una acción destructiva.
+        const cancelar = nodo.querySelector<HTMLElement>('.ajs-cancel');
+        const ok = nodo.querySelector<HTMLElement>('.ajs-ok');
+        (cancelar ?? ok)?.focus();
       });
 
-      void dialogo;
+      // Cierra el diálogo si el suscriptor se da de baja antes de que el
+      // usuario responda (p. ej. cambios-pendientes.guard.ts cancela la
+      // suscripción pendiente ante una navegación que la reemplaza). alertify
+      // ignora close() si el diálogo ya está cerrado, así que esto es un
+      // no-op tras una respuesta normal y nunca vuelve a disparar onok/oncancel.
+      return () => {
+        dialogo.close();
+      };
     });
   }
 }

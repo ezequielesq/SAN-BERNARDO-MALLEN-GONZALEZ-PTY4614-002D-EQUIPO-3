@@ -1,6 +1,8 @@
 declare module 'alertifyjs' {
   interface AlertifyConfirmDialog {
     set(key: 'labels', value: { ok: string; cancel: string }): AlertifyConfirmDialog;
+    set(key: 'defaultFocus', value: 'ok' | 'cancel'): AlertifyConfirmDialog;
+    close(): void;
   }
 
   interface Alertify {
