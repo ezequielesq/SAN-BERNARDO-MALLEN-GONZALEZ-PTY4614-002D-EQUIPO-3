@@ -204,13 +204,13 @@
             puedes reactivarlo después.
           </p>
           <button type="button" class="w3-button boton-peligro" (click)="deshabilitar(p)">
-            Deshabilitar producto…
+            <i class="fa fa-ban" aria-hidden="true"></i> Deshabilitar producto…
           </button>
         } @else {
           <h2 id="titulo-estado-producto" tabindex="-1" class="w3-large">Producto deshabilitado</h2>
           <p>Este producto no aparece para registrar movimientos ni solicitudes.</p>
           <button type="button" class="w3-button w3-cobalt" (click)="reactivar(p)">
-            Reactivar producto
+            <i class="fa fa-undo" aria-hidden="true"></i> Reactivar producto
           </button>
         }
       </section>
