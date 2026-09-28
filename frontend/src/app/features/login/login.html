@@ -53,7 +53,7 @@
         }
         <button
           type="button"
-          class="w3-button w3-white w3-border w3-margin-top"
+          class="w3-button w3-white w3-border w3-margin-top w3-round"
           aria-controls="login-password"
           [attr.aria-pressed]="mostrarPassword()"
           (click)="alternarPassword()"
@@ -62,7 +62,7 @@
         </button>
       </div>
 
-      <button type="submit" class="w3-button w3-cobalt w3-block" [attr.aria-disabled]="enviando()">
+      <button type="submit" class="w3-button w3-cobalt w3-block w3-round" [attr.aria-disabled]="enviando()">
         {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
       </button>
     </form>

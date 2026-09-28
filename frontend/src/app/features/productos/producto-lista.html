@@ -1,7 +1,7 @@
 <h1 tabindex="-1">Productos</h1>
 @if (puedeGestionar()) {
   <p>
-    <a routerLink="/productos/nuevo" class="w3-button w3-cobalt">
+    <a routerLink="/productos/nuevo" class="w3-button w3-cobalt w3-round">
       <span aria-hidden="true">+ </span>Nuevo producto
     </a>
   </p>
@@ -60,7 +60,7 @@
 
   @if (filtrados().length === 0) {
     <p>Ningún producto coincide con los filtros.</p>
-    <button type="button" class="w3-button w3-white w3-border" (click)="limpiarFiltros()">
+    <button type="button" class="w3-button w3-white w3-border w3-round" (click)="limpiarFiltros()">
       Limpiar filtros
     </button>
   } @else {
@@ -101,7 +101,7 @@
               </td>
               @if (puedeGestionar()) {
                 <td>
-                  <a [routerLink]="['/productos', p.id]">
+                  <a [routerLink]="['/productos', p.id]" class="w3-button w3-warning w3-round">
                     <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span>
                   </a>
                 </td>
@@ -114,7 +114,7 @@
 
     <div class="w3-bar w3-margin-top">
       <div class="w3-dropdown-hover">
-        <button type="button" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="exportando()">
+        <button type="button" class="w3-button w3-info w3-round" [attr.aria-disabled]="exportando()">
           <i class="fa fa-download" aria-hidden="true"></i> Exportar
         </button>
         <div class="w3-dropdown-content w3-bar-block w3-border w3-card">
@@ -143,8 +143,8 @@
             }
             @if (puedeGestionar()) {
               ·
-              <a [routerLink]="['/productos', p.id]"
-                >Editar<span class="visualmente-oculto"> {{ p.nombre }}</span></a
+              <a [routerLink]="['/productos', p.id]" class="w3-button w3-warning w3-round">
+                <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span></a
               >
             }
           </p>

@@ -24,7 +24,7 @@
   }
   <button
     type="submit"
-    class="w3-button w3-cobalt w3-margin-top"
+    class="w3-button w3-cobalt w3-margin-top w3-round"
     [attr.aria-disabled]="procesando()"
   >
     <i class="fa fa-plus" aria-hidden="true"></i> Agregar
@@ -66,12 +66,12 @@
               </p>
             }
             <div class="w3-margin-top">
-              <button type="submit" class="w3-button w3-cobalt" [attr.aria-disabled]="procesando()">
+              <button type="submit" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="procesando()">
                 Guardar
               </button>
               <button
                 type="button"
-                class="w3-button w3-white w3-border w3-margin-left"
+                class="w3-button w3-white w3-border w3-margin-left w3-round"
                 (click)="cancelarEdicion(item)"
               >
                 Cancelar
@@ -92,14 +92,14 @@
               <button
                 [id]="'renombrar-' + item.id"
                 type="button"
-                class="w3-button"
+                class="w3-button w3-warning w3-round"
                 (click)="iniciarEdicion(item)"
               >
                 <i class="fa fa-pencil" aria-hidden="true"></i> Renombrar<span class="visualmente-oculto"> {{ item.nombre }}</span>
               </button>
               <button
                 type="button"
-                class="w3-button"
+                class="w3-button w3-round"
                 [attr.aria-disabled]="procesando()"
                 (click)="alternar(item)"
               >

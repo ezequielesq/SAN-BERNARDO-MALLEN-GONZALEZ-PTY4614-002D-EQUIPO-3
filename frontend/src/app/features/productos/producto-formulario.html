@@ -187,10 +187,10 @@
       </fieldset>
 
       <div class="w3-section">
-        <button type="submit" class="w3-button w3-cobalt" [attr.aria-disabled]="guardando()">
+        <button type="submit" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="guardando()">
           {{ guardando() ? 'Guardando…' : esEdicion() ? 'Guardar cambios' : 'Guardar producto' }}
         </button>
-        <a routerLink="/productos" class="w3-button w3-white w3-border w3-margin-left">Cancelar</a>
+        <a routerLink="/productos" class="w3-button w3-white w3-border w3-margin-left w3-round">Cancelar</a>
       </div>
     </form>
 
@@ -203,13 +203,13 @@
             Deja de aparecer para registrar movimientos y solicitudes. Su historial se conserva y
             puedes reactivarlo después.
           </p>
-          <button type="button" class="w3-button boton-peligro" (click)="deshabilitar(p)">
+          <button type="button" class="w3-button boton-peligro w3-round" (click)="deshabilitar(p)">
             <i class="fa fa-ban" aria-hidden="true"></i> Deshabilitar producto…
           </button>
         } @else {
           <h2 id="titulo-estado-producto" tabindex="-1" class="w3-large">Producto deshabilitado</h2>
           <p>Este producto no aparece para registrar movimientos ni solicitudes.</p>
-          <button type="button" class="w3-button w3-cobalt" (click)="reactivar(p)">
+          <button type="button" class="w3-button w3-cobalt w3-round" (click)="reactivar(p)">
             <i class="fa fa-undo" aria-hidden="true"></i> Reactivar producto
           </button>
         }
