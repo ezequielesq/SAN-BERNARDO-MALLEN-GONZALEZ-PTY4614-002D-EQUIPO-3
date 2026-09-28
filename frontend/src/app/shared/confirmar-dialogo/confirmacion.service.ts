@@ -1,22 +1,57 @@
-import { Dialog } from '@angular/cdk/dialog';
-import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
-import { ConfirmarDialogo, DatosConfirmacion } from './confirmar-dialogo';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import alertify from 'alertifyjs';
+
+export interface DatosConfirmacion {
+  titulo: string;
+  descripcion: string;
+  textoConfirmar: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ConfirmacionService {
-  private readonly dialog = inject(Dialog);
-
   confirmar(datos: DatosConfirmacion): Observable<boolean> {
-    const ref = this.dialog.open<boolean, DatosConfirmacion>(ConfirmarDialogo, {
-      data: datos,
-      ariaLabelledBy: 'confirmar-dialogo-titulo',
-      ariaDescribedBy: 'confirmar-dialogo-descripcion',
-      autoFocus: '#confirmar-dialogo-cancelar',
-      restoreFocus: true,
-      width: '28rem',
-      maxWidth: 'calc(100vw - 32px)',
+    return new Observable<boolean>((subscriber) => {
+      const elementoActivo = document.activeElement as HTMLElement | null;
+
+      const dialogo = alertify
+        .confirm(
+          datos.titulo,
+          datos.descripcion,
+          () => {
+            subscriber.next(true);
+            subscriber.complete();
+            elementoActivo?.focus();
+          },
+          () => {
+            subscriber.next(false);
+            subscriber.complete();
+            elementoActivo?.focus();
+          },
+        )
+        .set('labels', { ok: datos.textoConfirmar, cancel: 'Cancelar' });
+
+      // alertify no agrega ningún atributo ARIA — se suple a mano para no
+      // perder lo que ya daba el Dialog de CDK (rol de diálogo + foco inicial).
+      queueMicrotask(() => {
+        const nodo = document.querySelector<HTMLElement>('.ajs-dialog');
+        if (!nodo) return;
+        nodo.setAttribute('role', 'alertdialog');
+        nodo.setAttribute('aria-modal', 'true');
+        const titulo = nodo.querySelector<HTMLElement>('.ajs-header');
+        const cuerpo = nodo.querySelector<HTMLElement>('.ajs-body');
+        if (titulo) {
+          titulo.id = 'ajs-titulo-confirmacion';
+          nodo.setAttribute('aria-labelledby', titulo.id);
+        }
+        if (cuerpo) {
+          cuerpo.id = 'ajs-cuerpo-confirmacion';
+          nodo.setAttribute('aria-describedby', cuerpo.id);
+        }
+        nodo.querySelector<HTMLElement>('.ajs-cancel, .ajs-ok')?.focus();
+      });
+
+      void dialogo;
     });
-    return ref.closed.pipe(map(resultado => resultado === true));
   }
 }

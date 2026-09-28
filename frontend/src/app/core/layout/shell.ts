@@ -1,9 +1,24 @@
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import {
-  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, inject, signal, viewChild,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  NavigationEnd,
+  NavigationStart,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { NotificacionService } from '../notificaciones/notificacion.service';
 import { ETIQUETA_ROL, agruparNavegacion } from './navegacion';
@@ -33,7 +48,7 @@ export class Shell {
   });
 
   constructor() {
-    this.router.events.pipe(takeUntilDestroyed()).subscribe(evento => {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((evento) => {
       if (evento instanceof NavigationStart) {
         this.notificaciones.limpiar();
       }
@@ -46,7 +61,9 @@ export class Shell {
 
   protected abrirMenu(): void {
     this.menuAbierto.set(true);
-    afterNextRender(() => this.botonCerrarMenu()?.nativeElement.focus(), { injector: this.injector });
+    afterNextRender(() => this.botonCerrarMenu()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   protected cerrarMenu(): void {
@@ -64,14 +81,12 @@ export class Shell {
     this.auth.logout();
   }
 
-  protected cerrarAviso(): void {
-    this.notificaciones.limpiar();
-    this.main().nativeElement.focus();
-  }
-
   private enfocarTitulo(): void {
-    afterNextRender(() => {
-      this.main().nativeElement.querySelector<HTMLElement>('h1')?.focus();
-    }, { injector: this.injector });
+    afterNextRender(
+      () => {
+        this.main().nativeElement.querySelector<HTMLElement>('h1')?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 }
