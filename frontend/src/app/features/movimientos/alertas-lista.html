@@ -1,0 +1,36 @@
+<h1 tabindex="-1">Alertas de vencimiento</h1>
+
+<div class="w3-section w3-padding-small">
+  <label for="alertas-umbral"><b>Avisar con</b></label>
+  <select
+    #selectUmbral
+    id="alertas-umbral"
+    class="w3-select"
+    style="width: auto; display: inline-block"
+    [value]="diasUmbral()"
+    (change)="cambiarUmbral(selectUmbral.value)"
+  >
+    <option value="3">3 días de anticipación</option>
+    <option value="7">7 días de anticipación</option>
+    <option value="15">15 días de anticipación</option>
+    <option value="30">30 días de anticipación</option>
+  </select>
+</div>
+
+<app-estado-vista
+  [cargando]="alertas.status() === 'loading'"
+  [error]="alertas.error()"
+  [vacio]="todos().length === 0"
+  mensajeCarga="Cargando alertas…"
+  mensajeVacio="No hay lotes por vencer en el rango seleccionado."
+  (reintentar)="alertas.reload()"
+>
+  <ul class="w3-ul w3-white w3-border">
+    @for (a of todos(); track a.id) {
+      <li class="w3-padding">
+        <app-estado-badge estado="pendiente" />
+        <b>{{ a.productoNombre }}</b> — {{ a.motivo }}
+      </li>
+    }
+  </ul>
+</app-estado-vista>
