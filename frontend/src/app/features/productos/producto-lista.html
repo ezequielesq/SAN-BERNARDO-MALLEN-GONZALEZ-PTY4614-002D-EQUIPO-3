@@ -113,15 +113,22 @@
     </div>
 
     <div class="w3-bar w3-margin-top">
-      <div class="w3-dropdown-hover">
-        <button type="button" class="w3-button w3-info w3-round" [attr.aria-disabled]="exportando()">
-          <i class="fa fa-download" aria-hidden="true"></i> Exportar
-        </button>
-        <div class="w3-dropdown-content w3-bar-block w3-border w3-card">
-          <button type="button" class="w3-bar-item w3-button" (click)="exportar('xlsx')">XLSX</button>
-          <button type="button" class="w3-bar-item w3-button" (click)="exportar('pdf')">PDF</button>
-        </div>
-      </div>
+      <button
+        type="button"
+        class="w3-button w3-info w3-round w3-margin-right"
+        [attr.aria-disabled]="exportando()"
+        (click)="exportar('xlsx')"
+      >
+        <i class="fa fa-download" aria-hidden="true"></i> Exportar XLSX
+      </button>
+      <button
+        type="button"
+        class="w3-button w3-info w3-round"
+        [attr.aria-disabled]="exportando()"
+        (click)="exportar('pdf')"
+      >
+        <i class="fa fa-download" aria-hidden="true"></i> Exportar PDF
+      </button>
     </div>
 
     <div class="w3-hide-medium w3-hide-large">

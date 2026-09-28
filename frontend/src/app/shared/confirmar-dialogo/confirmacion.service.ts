@@ -35,7 +35,8 @@ export class ConfirmacionService {
         // esta no dispara) usando este ajuste — sin él, ese segundo enfoque
         // interno pisaría nuestro foco manual de abajo y volvería a dejar el
         // foco en OK, el botón destructivo.
-        .set('defaultFocus', 'cancel');
+        .set('defaultFocus', 'cancel')
+        .set('closable', false);
 
       // alertify no agrega ningún atributo ARIA — se suple a mano para no
       // perder lo que ya daba el Dialog de CDK (rol de diálogo + foco inicial).

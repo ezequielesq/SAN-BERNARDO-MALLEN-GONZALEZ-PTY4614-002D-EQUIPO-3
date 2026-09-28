@@ -21,3 +21,26 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* ── Tema de alertify: usar la paleta del proyecto y cumplir contraste AA ── */
+.ajs-message.ajs-success {
+  background-color: #008a00 !important;
+  color: #fff !important;
+}
+.ajs-message.ajs-error {
+  background-color: #a20025 !important;
+  color: #fff !important;
+}
+.ajs-dialog .ajs-ok {
+  background-color: #a20025 !important;
+  color: #fff !important;
+  border: none;
+}
+.ajs-dialog .ajs-cancel {
+  background-color: #fff !important;
+  color: #333 !important;
+  /* !important necesario: .alertify .ajs-footer .ajs-buttons .ajs-button
+     del tema vendored fija border:0 con mayor especificidad (4 clases
+     contra 2), así que sin esto el borde nunca se pinta. */
+  border: 1px solid #767676 !important;
+}
