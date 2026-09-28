@@ -34,4 +34,12 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
         ORDER BY SUM(m.cantidad) DESC
         """)
     List<Object[]> findConsumoEntreFechas(LocalDateTime desde, LocalDateTime hasta);
+
+    @Query("""
+        SELECT m.producto.id,
+               SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE -m.cantidad END)
+        FROM Movimiento m
+        GROUP BY m.producto.id
+        """)
+    List<Object[]> sumStockPorProducto();
 }

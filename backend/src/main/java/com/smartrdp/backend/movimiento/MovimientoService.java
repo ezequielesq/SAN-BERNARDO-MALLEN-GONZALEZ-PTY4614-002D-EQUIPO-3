@@ -5,6 +5,7 @@ import com.smartrdp.backend.exception.ResourceNotFoundException;
 import com.smartrdp.backend.movimiento.dto.EntradaRequest;
 import com.smartrdp.backend.movimiento.dto.MovimientoResponse;
 import com.smartrdp.backend.movimiento.dto.SalidaRequest;
+import com.smartrdp.backend.movimiento.dto.StockStatusResponse;
 import com.smartrdp.backend.producto.ProductoRepository;
 import com.smartrdp.backend.usuario.Usuario;
 import com.smartrdp.backend.usuario.UsuarioRepository;
@@ -16,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -110,6 +113,33 @@ public class MovimientoService {
         if (stock <= producto.getStockCritico()) return EstadoStock.CRITICO;
         if (stock <= producto.getStockMinimo()) return EstadoStock.BAJO;
         return EstadoStock.NORMAL;
+    }
+
+    @Transactional(readOnly = true)
+    public List<StockStatusResponse> listarStock() {
+        Map<Long, Integer> stockPorProducto = movimientoRepository.sumStockPorProducto().stream()
+                .collect(Collectors.toMap(
+                        fila -> (Long) fila[0],
+                        fila -> ((Number) fila[1]).intValue()));
+
+        return productoRepository.findByActivoTrue().stream()
+                .map(producto -> {
+                    int stock = stockPorProducto.getOrDefault(producto.getId(), 0);
+                    EstadoStock estado;
+                    if (stock <= 0) estado = EstadoStock.AGOTADO;
+                    else if (stock <= producto.getStockCritico()) estado = EstadoStock.CRITICO;
+                    else if (stock <= producto.getStockMinimo()) estado = EstadoStock.BAJO;
+                    else estado = EstadoStock.NORMAL;
+
+                    LocalDate proximoVencimiento = loteRepository
+                            .findByProductoIdAndCantidadDisponibleGreaterThanOrderByFechaVencimientoAsc(
+                                    producto.getId(), 0)
+                            .stream().findFirst().map(Lote::getFechaVencimiento).orElse(null);
+
+                    return new StockStatusResponse(
+                            producto.getId(), producto.getNombre(), stock, estado, proximoVencimiento);
+                })
+                .toList();
     }
 
     public Optional<Lote> getLoteFEFO(Long productoId) {

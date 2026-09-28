@@ -49,6 +49,11 @@ public class MovimientoController {
         return movimientoService.listar(productoId, desde, hasta);
     }
 
+    @GetMapping("/stock")
+    public List<StockStatusResponse> listarStock() {
+        return movimientoService.listarStock();
+    }
+
     @GetMapping("/productos/{id}/stock")
     public StockStatusResponse stock(@PathVariable Long id) {
         int stockActual = movimientoService.getStockActual(id);
