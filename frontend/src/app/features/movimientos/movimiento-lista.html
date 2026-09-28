@@ -1,4 +1,4 @@
-<h1 tabindex="-1">Movimientos</h1>
+<h1 id="titulo-movimientos" tabindex="-1">Movimientos</h1>
 
 @if (puedeGestionar()) {
   <p>
@@ -11,13 +11,12 @@
   </p>
 }
 
-<div class="w3-bar w3-margin-bottom" role="tablist" aria-label="Vista de movimientos">
+<div class="w3-bar w3-margin-bottom" aria-label="Vista de movimientos">
   <button
     type="button"
     class="w3-bar-item w3-button"
     [class.w3-cobalt]="vista() === 'historial'"
-    role="tab"
-    [attr.aria-selected]="vista() === 'historial'"
+    [attr.aria-pressed]="vista() === 'historial'"
     (click)="vista.set('historial')"
   >
     Historial
@@ -26,8 +25,7 @@
     type="button"
     class="w3-bar-item w3-button"
     [class.w3-cobalt]="vista() === 'calendario'"
-    role="tab"
-    [attr.aria-selected]="vista() === 'calendario'"
+    [attr.aria-pressed]="vista() === 'calendario'"
     (click)="vista.set('calendario')"
   >
     Calendario
@@ -35,7 +33,10 @@
 </div>
 
 @if (vista() === 'calendario') {
-  <app-movimiento-calendario (diaSeleccionado)="alSeleccionarDiaCalendario($event)" />
+  <app-movimiento-calendario
+    [productoId]="productoIdFiltro()"
+    (diaSeleccionado)="alSeleccionarDiaCalendario($event)"
+  />
 } @else {
   <div class="w3-row w3-section w3-container w3-border w3-padding w3-light-grey">
     <div class="w3-col m4 w3-padding-small">
@@ -104,9 +105,9 @@
               <td>{{ m.productoNombre }}</td>
               <td>
                 @if (m.tipo === 'ENTRADA') {
-                  <app-estado-badge estado="normal" />
+                  <app-estado-badge estado="entrada" />
                 } @else {
-                  <app-estado-badge estado="critico" />
+                  <app-estado-badge estado="salida" />
                 }
               </td>
               <td>{{ m.cantidad }}</td>

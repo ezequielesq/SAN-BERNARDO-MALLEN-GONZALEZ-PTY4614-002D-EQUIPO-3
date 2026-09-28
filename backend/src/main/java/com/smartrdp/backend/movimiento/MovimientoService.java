@@ -90,7 +90,8 @@ public class MovimientoService {
 
     @Transactional(readOnly = true)
     public List<MovimientoResponse> listar(Long productoId, LocalDate desde, LocalDate hasta) {
-        LocalDateTime desdeDt = (desde != null ? desde : LocalDate.now().minusDays(30)).atStartOfDay();
+        LocalDate baseParaDesde = hasta != null ? hasta : LocalDate.now();
+        LocalDateTime desdeDt = (desde != null ? desde : baseParaDesde.minusDays(30)).atStartOfDay();
         LocalDateTime hastaDt = (hasta != null ? hasta : LocalDate.now()).atTime(23, 59, 59);
         List<Movimiento> movimientos = productoId != null
                 ? movimientoRepository.findByProductoIdAndCreatedAtBetweenOrderByCreatedAtDesc(

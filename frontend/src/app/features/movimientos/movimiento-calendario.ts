@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { MovimientoService } from './movimiento.service';
 
 interface DiaSemana {
@@ -30,6 +38,7 @@ function inicioDeSemana(fecha: Date): Date {
 export class MovimientoCalendario {
   private readonly movimientoService = inject(MovimientoService);
 
+  readonly productoId = input<number | null>(null);
   readonly diaSeleccionado = output<string | null>();
 
   protected readonly inicioSemana = signal(inicioDeSemana(new Date()));
@@ -51,7 +60,7 @@ export class MovimientoCalendario {
 
   private readonly filtroSemana = computed(() => {
     const dias = this.diasSemana();
-    return { productoId: null, desde: dias[0].fecha, hasta: dias[6].fecha };
+    return { productoId: this.productoId(), desde: dias[0].fecha, hasta: dias[6].fecha };
   });
 
   protected readonly movimientos = this.movimientoService.listar(this.filtroSemana);
