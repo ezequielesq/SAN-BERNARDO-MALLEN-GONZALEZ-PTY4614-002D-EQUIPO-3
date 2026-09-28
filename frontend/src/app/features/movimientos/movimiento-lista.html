@@ -1,0 +1,129 @@
+<h1 tabindex="-1">Movimientos</h1>
+
+@if (puedeGestionar()) {
+  <p>
+    <a routerLink="/movimientos/entradas/nueva" class="w3-button w3-emerald w3-round">
+      <span aria-hidden="true">+ </span>Registrar entrada
+    </a>
+    <a routerLink="/movimientos/salidas/nueva" class="w3-button w3-crimson w3-round w3-margin-left">
+      <span aria-hidden="true">+ </span>Registrar salida
+    </a>
+  </p>
+}
+
+<div class="w3-bar w3-margin-bottom" role="tablist" aria-label="Vista de movimientos">
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-cobalt]="vista() === 'historial'"
+    role="tab"
+    [attr.aria-selected]="vista() === 'historial'"
+    (click)="vista.set('historial')"
+  >
+    Historial
+  </button>
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-cobalt]="vista() === 'calendario'"
+    role="tab"
+    [attr.aria-selected]="vista() === 'calendario'"
+    (click)="vista.set('calendario')"
+  >
+    Calendario
+  </button>
+</div>
+
+@if (vista() === 'calendario') {
+  <app-movimiento-calendario (diaSeleccionado)="alSeleccionarDiaCalendario($event)" />
+} @else {
+  <div class="w3-row w3-section w3-container w3-border w3-padding w3-light-grey">
+    <div class="w3-col m4 w3-padding-small">
+      <label for="filtro-producto-movimiento"><b>Producto</b></label>
+      <select
+        #selectProducto
+        id="filtro-producto-movimiento"
+        class="w3-select"
+        (change)="cambiarProductoFiltro(selectProducto.value)"
+      >
+        <option value="" [selected]="productoIdFiltro() === null">Todos</option>
+        @for (p of opcionesProducto(); track p.id) {
+          <option [value]="p.id" [selected]="productoIdFiltro() === p.id">{{ p.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="w3-col m4 w3-padding-small">
+      <label for="filtro-desde"><b>Desde</b></label>
+      <input
+        #campoDesde
+        id="filtro-desde"
+        class="w3-input"
+        type="date"
+        [value]="desdeFiltro() ?? ''"
+        (change)="cambiarDesde(campoDesde.value)"
+      />
+    </div>
+    <div class="w3-col m4 w3-padding-small">
+      <label for="filtro-hasta"><b>Hasta</b></label>
+      <input
+        #campoHasta
+        id="filtro-hasta"
+        class="w3-input"
+        type="date"
+        [value]="hastaFiltro() ?? ''"
+        (change)="cambiarHasta(campoHasta.value)"
+      />
+    </div>
+  </div>
+
+  <app-estado-vista
+    [cargando]="movimientos.status() === 'loading'"
+    [error]="movimientos.error()"
+    [vacio]="todos().length === 0"
+    mensajeCarga="Cargando movimientos…"
+    mensajeVacio="No hay movimientos en el rango seleccionado."
+    (reintentar)="movimientos.reload()"
+  >
+    <div class="w3-responsive">
+      <table class="w3-table w3-bordered w3-white">
+        <caption class="visualmente-oculto">Historial de movimientos</caption>
+        <thead>
+          <tr class="w3-light-grey">
+            <th scope="col">Fecha</th>
+            <th scope="col">Producto</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Cantidad</th>
+            <th scope="col">Motivo</th>
+            <th scope="col">Usuario</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of paginados(); track m.id) {
+            <tr>
+              <td>{{ m.fecha | date: 'dd-MM-yyyy HH:mm' }}</td>
+              <td>{{ m.productoNombre }}</td>
+              <td>
+                @if (m.tipo === 'ENTRADA') {
+                  <app-estado-badge estado="normal" />
+                } @else {
+                  <app-estado-badge estado="critico" />
+                }
+              </td>
+              <td>{{ m.cantidad }}</td>
+              <td>{{ m.motivo || '—' }}</td>
+              <td>{{ m.usuarioEmail || '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion
+      [pagina]="paginaActual()"
+      [totalItems]="todos().length"
+      [tamanoPagina]="tamanoPagina()"
+      (paginaCambiada)="cambiarPagina($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+    />
+  </app-estado-vista>
+}

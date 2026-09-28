@@ -1,0 +1,46 @@
+.calendario-semana-grilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendario-semana-dia {
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 8px 4px;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.calendario-semana-dia:hover {
+  background: #f0f0f0;
+}
+.calendario-semana-dia.seleccionado {
+  background-color: var(--w3-cobalt);
+  border-color: var(--w3-cobalt);
+}
+.calendario-semana-dia.seleccionado .w3-text-grey {
+  color: #fff !important;
+}
+.numero-dia {
+  font-weight: bold;
+}
+.calendario-semana-dia.seleccionado .numero-dia {
+  color: #fff;
+}
+.puntos-dia {
+  display: flex;
+  gap: 3px;
+  min-height: 8px;
+}
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.punto-entrada { background: #008a00; }
+.punto-salida { background: #a20025; }
