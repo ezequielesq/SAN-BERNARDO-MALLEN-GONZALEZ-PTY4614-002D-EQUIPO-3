@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/categorias/**", "/api/unidades-medida/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/productos/**").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
                 .requestMatchers("/api/productos/**").hasAnyRole("ADMIN","BODEGUERO")
+                .requestMatchers(HttpMethod.GET, "/api/movimientos/**").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
                 .requestMatchers("/api/movimientos/**").hasAnyRole("ADMIN","BODEGUERO")
                 .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
                 .requestMatchers("/api/solicitudes/**").hasAnyRole("ADMIN","BODEGUERO")
