@@ -557,19 +557,17 @@ Crear `frontend/src/app/features/movimientos/movimiento-calendario.html`:
   <button
     type="button"
     class="w3-button w3-border w3-white w3-margin w3-round"
-    aria-label="Semana anterior"
     (click)="cambiarSemana(-1)"
   >
-    <i class="fa fa-chevron-left" aria-hidden="true"></i>
+    <i class="fa fa-chevron-left" aria-hidden="true"></i> Semana anterior
   </button>
   <span class="w3-center" style="flex: 1; font-weight: bold">Semana del {{ etiquetaSemana() }}</span>
   <button
     type="button"
     class="w3-button w3-border w3-white w3-margin w3-round"
-    aria-label="Semana siguiente"
     (click)="cambiarSemana(1)"
   >
-    <i class="fa fa-chevron-right" aria-hidden="true"></i>
+    Semana siguiente <i class="fa fa-chevron-right" aria-hidden="true"></i>
   </button>
 </div>
 
