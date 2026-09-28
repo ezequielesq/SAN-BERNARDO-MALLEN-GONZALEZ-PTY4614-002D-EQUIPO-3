@@ -21,11 +21,12 @@ import {
 } from '@angular/router';
 import { AuthService } from '../auth/auth.service';
 import { NotificacionService } from '../notificaciones/notificacion.service';
+import { Footer } from '../../shared/footer/footer';
 import { ETIQUETA_ROL, agruparNavegacion } from './navegacion';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdkTrapFocus],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CdkTrapFocus, Footer],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.html',
   host: { '(document:keydown.escape)': 'cerrarMenu()' },

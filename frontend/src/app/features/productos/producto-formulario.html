@@ -16,13 +16,13 @@
       <p>Todos los campos son obligatorios.</p>
 
       @if (errorGeneral(); as mensaje) {
-        <div class="w3-panel w3-crimson" role="alert">
+        <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
           <p>{{ mensaje }}</p>
         </div>
       }
 
       @if (camposConError().length > 0) {
-        <div class="w3-panel w3-crimson" role="alert">
+        <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
           <p>
             <b
               >Revisa

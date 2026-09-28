@@ -1,17 +1,26 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { traducirError } from '../../core/errores/traducir-error';
+import { Footer } from '../../shared/footer/footer';
 import { paginaInicialPara } from '../../core/layout/navegacion';
 
 type CampoLogin = 'email' | 'password';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Footer],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
 })
@@ -45,7 +54,7 @@ export class Login {
   }
 
   protected alternarPassword(): void {
-    this.mostrarPassword.update(v => !v);
+    this.mostrarPassword.update((v) => !v);
   }
 
   protected ingresar(): void {
@@ -59,18 +68,20 @@ export class Login {
       return;
     }
     this.enviando.set(true);
-    this.auth.login(this.form.getRawValue())
+    this.auth
+      .login(this.form.getRawValue())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: sesion => {
+        next: (sesion) => {
           this.enviando.set(false);
           void this.router.navigateByUrl(this.destino(paginaInicialPara(sesion.rol)));
         },
         error: (err: unknown) => {
           this.enviando.set(false);
-          const mensaje = err instanceof HttpErrorResponse && err.status === 401
-            ? 'Correo o contraseña incorrectos.'
-            : traducirError(err).mensaje;
+          const mensaje =
+            err instanceof HttpErrorResponse && err.status === 401
+              ? 'Correo o contraseña incorrectos.'
+              : traducirError(err).mensaje;
           this.errorGeneral.set(mensaje);
           this.enfocar('login-error');
         },
@@ -79,8 +90,11 @@ export class Login {
 
   private destino(porDefecto: string): string {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    const esInterna = returnUrl !== null && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
-      && !returnUrl.startsWith('/login');
+    const esInterna =
+      returnUrl !== null &&
+      returnUrl.startsWith('/') &&
+      !returnUrl.startsWith('//') &&
+      !returnUrl.startsWith('/login');
     return esInterna ? returnUrl : porDefecto;
   }
 
