@@ -20,6 +20,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES),
       },
       {
+        path: 'movimientos',
+        loadChildren: () => import('./features/movimientos/movimientos.routes').then(m => m.MOVIMIENTOS_ROUTES),
+      },
+      {
         path: 'administracion',
         canActivate: [rolGuard(['ADMIN'])],
         loadChildren: () => import('./features/administracion/administracion.routes').then(m => m.ADMINISTRACION_ROUTES),

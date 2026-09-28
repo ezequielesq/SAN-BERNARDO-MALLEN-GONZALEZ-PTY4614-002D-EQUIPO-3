@@ -15,6 +15,9 @@ export interface GrupoNavegacion {
 
 export const NAVEGACION: readonly ItemNavegacion[] = [
   { etiqueta: 'Productos', ruta: '/productos', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
+  { etiqueta: 'Movimientos', ruta: '/movimientos', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
+  { etiqueta: 'Estado de stock', ruta: '/movimientos/stock', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
+  { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
   { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['ADMIN'], grupo: 'Administración' },
   { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['ADMIN'], grupo: 'Administración' },
 ];
