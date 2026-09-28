@@ -40,6 +40,10 @@
             <span class="punto punto-salida" aria-hidden="true"></span>
           }
         </span>
+        <span class="visualmente-oculto">
+          @if (resumenPorDia().get(dia.fecha)?.entrada) { con entradas }
+          @if (resumenPorDia().get(dia.fecha)?.salida) { con salidas }
+        </span>
       </button>
     }
   </div>

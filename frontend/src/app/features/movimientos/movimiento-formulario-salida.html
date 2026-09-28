@@ -12,14 +12,20 @@
 <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card">
   <div class="w3-section">
     <label for="salida-producto"><b>Producto</b></label>
-    <select id="salida-producto" class="w3-select" formControlName="productoId">
+    <select
+      id="salida-producto"
+      class="w3-select"
+      formControlName="productoId"
+      [attr.aria-invalid]="enviado() && form.controls.productoId.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.productoId.invalid ? 'error-salida-producto' : null"
+    >
       <option [ngValue]="null" disabled>Elige un producto</option>
       @for (p of opcionesProducto(); track p.id) {
         <option [ngValue]="p.id">{{ p.nombre }} ({{ p.codigoPtv }})</option>
       }
     </select>
     @if (enviado() && form.controls.productoId.invalid) {
-      <p class="texto-error"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
+      <p class="texto-error" id="error-salida-producto"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
     }
   </div>
 
@@ -33,17 +39,27 @@
       step="1"
       inputmode="numeric"
       formControlName="cantidad"
+      [attr.aria-invalid]="enviado() && form.controls.cantidad.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.cantidad.invalid ? 'error-salida-cantidad' : null"
     />
     @if (enviado() && form.controls.cantidad.invalid) {
-      <p class="texto-error"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
+      <p class="texto-error" id="error-salida-cantidad"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
     }
   </div>
 
   <div class="w3-section">
     <label for="salida-motivo"><b>Motivo</b></label>
-    <input id="salida-motivo" class="w3-input" type="text" maxlength="200" formControlName="motivo" />
+    <input
+      id="salida-motivo"
+      class="w3-input"
+      type="text"
+      maxlength="200"
+      formControlName="motivo"
+      [attr.aria-invalid]="enviado() && form.controls.motivo.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.motivo.invalid ? 'error-salida-motivo' : null"
+    />
     @if (enviado() && form.controls.motivo.invalid) {
-      <p class="texto-error"><span aria-hidden="true">⚠ </span>Ingresa el motivo de la salida.</p>
+      <p class="texto-error" id="error-salida-motivo"><span aria-hidden="true">⚠ </span>Ingresa el motivo de la salida.</p>
     }
   </div>
 

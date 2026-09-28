@@ -1,5 +1,13 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
@@ -20,6 +28,7 @@ type Vista = 'historial' | 'calendario';
 export class MovimientoLista {
   private readonly movimientoService = inject(MovimientoService);
   private readonly productoService = inject(ProductoService);
+  private readonly injector = inject(Injector);
   protected readonly auth = inject(AuthService);
 
   protected readonly puedeGestionar = computed(() => {
@@ -84,5 +93,12 @@ export class MovimientoLista {
     this.hastaFiltro.set(fecha);
     this.paginaActual.set(1);
     this.vista.set('historial');
+    // Al volver a 'historial' el botón del calendario que originó el click
+    // desaparece del DOM y el foco cae a <body>: lo movemos al título de la
+    // página, siguiendo el mismo patrón de shell.ts (enfocarTitulo) y
+    // producto-lista.ts (limpiarFiltros).
+    afterNextRender(() => document.getElementById('titulo-movimientos')?.focus(), {
+      injector: this.injector,
+    });
   }
 }

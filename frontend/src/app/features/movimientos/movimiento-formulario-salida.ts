@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
@@ -19,6 +27,7 @@ export class MovimientoFormularioSalida {
   private readonly productoService = inject(ProductoService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   protected readonly productos = this.productoService.listar(signal(true));
   protected readonly opcionesProducto = computed(() =>
@@ -41,6 +50,7 @@ export class MovimientoFormularioSalida {
     this.errorGeneral.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerError();
       return;
     }
     const v = this.form.getRawValue();
@@ -59,5 +69,20 @@ export class MovimientoFormularioSalida {
         this.errorGeneral.set(traducirError(err).mensaje);
       },
     });
+  }
+
+  private enfocarPrimerError(): void {
+    afterNextRender(
+      () => {
+        const orden: { id: string; invalido: boolean }[] = [
+          { id: 'salida-producto', invalido: this.form.controls.productoId.invalid },
+          { id: 'salida-cantidad', invalido: this.form.controls.cantidad.invalid },
+          { id: 'salida-motivo', invalido: this.form.controls.motivo.invalid },
+        ];
+        const primero = orden.find((c) => c.invalido);
+        if (primero) document.getElementById(primero.id)?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 }

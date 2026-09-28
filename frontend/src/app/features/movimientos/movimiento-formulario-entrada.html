@@ -12,14 +12,20 @@
 <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card">
   <div class="w3-section">
     <label for="entrada-producto"><b>Producto</b></label>
-    <select id="entrada-producto" class="w3-select" formControlName="productoId">
+    <select
+      id="entrada-producto"
+      class="w3-select"
+      formControlName="productoId"
+      [attr.aria-invalid]="enviado() && form.controls.productoId.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.productoId.invalid ? 'error-entrada-producto' : null"
+    >
       <option [ngValue]="null" disabled>Elige un producto</option>
       @for (p of opcionesProducto(); track p.id) {
         <option [ngValue]="p.id">{{ p.nombre }} ({{ p.codigoPtv }})</option>
       }
     </select>
     @if (enviado() && form.controls.productoId.invalid) {
-      <p class="texto-error"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
+      <p class="texto-error" id="error-entrada-producto"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
     }
   </div>
 
@@ -33,16 +39,30 @@
       step="1"
       inputmode="numeric"
       formControlName="cantidad"
+      [attr.aria-invalid]="enviado() && form.controls.cantidad.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.cantidad.invalid ? 'error-entrada-cantidad' : null"
     />
     @if (enviado() && form.controls.cantidad.invalid) {
-      <p class="texto-error"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
+      <p class="texto-error" id="error-entrada-cantidad"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
     }
   </div>
 
   @if (productoSeleccionado()?.esPerecible) {
     <div class="w3-section">
       <label for="entrada-vencimiento"><b>Fecha de vencimiento</b></label>
-      <input id="entrada-vencimiento" class="w3-input" type="date" formControlName="fechaVencimiento" />
+      <input
+        id="entrada-vencimiento"
+        class="w3-input"
+        type="date"
+        formControlName="fechaVencimiento"
+        [attr.aria-invalid]="enviado() && form.controls.fechaVencimiento.invalid ? 'true' : null"
+        [attr.aria-describedby]="enviado() && form.controls.fechaVencimiento.invalid ? 'error-entrada-vencimiento' : null"
+      />
+      @if (enviado() && form.controls.fechaVencimiento.invalid) {
+        <p class="texto-error" id="error-entrada-vencimiento">
+          <span aria-hidden="true">⚠ </span>Ingresa la fecha de vencimiento: este producto es perecible.
+        </p>
+      }
     </div>
   }
 

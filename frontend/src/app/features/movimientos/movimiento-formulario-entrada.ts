@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -19,6 +28,7 @@ export class MovimientoFormularioEntrada {
   private readonly productoService = inject(ProductoService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
 
   protected readonly productos = this.productoService.listar(signal(true));
   protected readonly opcionesProducto = computed(() =>
@@ -52,12 +62,32 @@ export class MovimientoFormularioEntrada {
     return this.opcionesProducto().find((p) => p.id === id) ?? null;
   });
 
+  constructor() {
+    // La fecha de vencimiento solo es obligatoria cuando el producto elegido
+    // es perecible. Si el usuario cambia a un producto no perecible después
+    // de haber ingresado una fecha (de un producto perecible previamente
+    // seleccionado), esa fecha residual se limpia para que no se envíe por
+    // error.
+    effect(() => {
+      const requerido = this.productoSeleccionado()?.esPerecible === true;
+      const control = this.form.controls.fechaVencimiento;
+      if (requerido) {
+        control.addValidators(Validators.required);
+      } else {
+        control.removeValidators(Validators.required);
+        control.setValue('');
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    });
+  }
+
   protected guardar(): void {
     if (this.guardando()) return;
     this.enviado.set(true);
     this.errorGeneral.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocarPrimerError();
       return;
     }
     const v = this.form.getRawValue();
@@ -82,5 +112,20 @@ export class MovimientoFormularioEntrada {
         this.errorGeneral.set('No se pudo registrar la entrada. Inténtalo de nuevo.');
       },
     });
+  }
+
+  private enfocarPrimerError(): void {
+    afterNextRender(
+      () => {
+        const orden: { id: string; invalido: boolean }[] = [
+          { id: 'entrada-producto', invalido: this.form.controls.productoId.invalid },
+          { id: 'entrada-cantidad', invalido: this.form.controls.cantidad.invalid },
+          { id: 'entrada-vencimiento', invalido: this.form.controls.fechaVencimiento.invalid },
+        ];
+        const primero = orden.find((c) => c.invalido);
+        if (primero) document.getElementById(primero.id)?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 }
