@@ -69,6 +69,11 @@ export class ProductoLista {
     return m === 'nuevo' ? 'Nuevo producto' : 'Editar producto';
   });
 
+  protected readonly productoIdModal = computed<number | null>(() => {
+    const m = this.modalProducto();
+    return m === 'nuevo' ? null : m;
+  });
+
   protected readonly productos = this.productoService.listar(this.soloActivos);
   protected readonly todos = computed(() =>
     this.productos.hasValue() ? this.productos.value() : [],

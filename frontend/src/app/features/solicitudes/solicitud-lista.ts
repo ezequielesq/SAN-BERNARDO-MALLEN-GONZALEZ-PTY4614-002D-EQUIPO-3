@@ -1,7 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { filter, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { traducirError } from '../../core/errores/traducir-error';
@@ -19,7 +18,7 @@ type Vista = 'pendientes' | 'todas';
 
 @Component({
   selector: 'app-solicitud-lista',
-  imports: [RouterLink, DatePipe, EstadoVista, EstadoBadge, Paginacion, Modal, SolicitudCrear],
+  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, Modal, SolicitudCrear],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './solicitud-lista.html',
 })

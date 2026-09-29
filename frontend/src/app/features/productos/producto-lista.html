@@ -194,7 +194,7 @@
   <app-modal [titulo]="tituloModal()" (cerrar)="formularioProducto.solicitarCierre()">
     <app-producto-formulario
       #formularioProducto
-      [productoId]="modalProducto() === 'nuevo' ? null : modalProducto()"
+      [productoId]="productoIdModal()"
       (guardado)="alGuardarProducto()"
       (cerrarSolicitado)="cerrarModalProducto()"
     />
