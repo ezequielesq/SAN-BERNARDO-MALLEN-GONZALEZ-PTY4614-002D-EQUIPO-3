@@ -20,6 +20,8 @@ import { Paginacion } from '../../shared/paginacion/paginacion';
 import { descargarArchivo } from '../../shared/utils/descargar-archivo';
 import { ProductoService } from './producto.service';
 
+type ColumnaOrdenProducto = 'codigoPtv' | 'nombre' | 'categoriaNombre' | 'estado';
+
 interface OpcionCategoria {
   id: number;
   nombre: string;
@@ -56,6 +58,8 @@ export class ProductoLista {
   protected readonly paginaActual = signal(1);
   protected readonly tamanoPagina = signal(10);
   protected readonly exportando = signal(false);
+  protected readonly columnaOrden = signal<ColumnaOrdenProducto | null>(null);
+  protected readonly direccionOrden = signal<'asc' | 'desc'>('asc');
 
   protected readonly productos = this.productoService.listar(this.soloActivos);
   protected readonly todos = computed(() =>
@@ -82,6 +86,26 @@ export class ProductoLista {
     );
   });
 
+  protected readonly ordenados = computed(() => {
+    const columna = this.columnaOrden();
+    const lista = [...this.filtrados()];
+    if (columna === null) return lista;
+    const dir = this.direccionOrden() === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      switch (columna) {
+        case 'codigoPtv':
+          return a.codigoPtv.localeCompare(b.codigoPtv, 'es') * dir;
+        case 'nombre':
+          return a.nombre.localeCompare(b.nombre, 'es') * dir;
+        case 'categoriaNombre':
+          return a.categoriaNombre.localeCompare(b.categoriaNombre, 'es') * dir;
+        case 'estado':
+          return (Number(a.activo) - Number(b.activo)) * dir;
+      }
+    });
+    return lista;
+  });
+
   protected readonly mensajeVacio = computed(() =>
     this.puedeGestionar()
       ? "Aún no hay productos. Crea el primero con 'Nuevo producto'."
@@ -90,7 +114,7 @@ export class ProductoLista {
 
   protected readonly paginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
-    return this.filtrados().slice(inicio, inicio + this.tamanoPagina());
+    return this.ordenados().slice(inicio, inicio + this.tamanoPagina());
   });
 
   constructor() {
@@ -110,6 +134,25 @@ export class ProductoLista {
     afterNextRender(() => document.getElementById('buscar-producto')?.focus(), {
       injector: this.injector,
     });
+  }
+
+  protected ordenarPor(columna: ColumnaOrdenProducto): void {
+    if (this.columnaOrden() === columna) {
+      this.direccionOrden.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.columnaOrden.set(columna);
+      this.direccionOrden.set('asc');
+    }
+  }
+
+  protected iconoOrden(columna: ColumnaOrdenProducto): string {
+    if (this.columnaOrden() !== columna) return 'fa-sort';
+    return this.direccionOrden() === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  protected ariaSort(columna: ColumnaOrdenProducto): 'ascending' | 'descending' | null {
+    if (this.columnaOrden() !== columna) return null;
+    return this.direccionOrden() === 'asc' ? 'ascending' : 'descending';
   }
 
   protected cambiarPagina(pagina: number): void {

@@ -63,3 +63,20 @@ app-login {
   min-height: 100dvh;
 }
 app-login > main { flex: 1 0 auto; }
+
+/* ── Botón de orden en encabezados de tabla (Productos/Movimientos/Stock) ── */
+.boton-orden {
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.boton-orden:hover,
+.boton-orden:focus-visible {
+  text-decoration: underline;
+}

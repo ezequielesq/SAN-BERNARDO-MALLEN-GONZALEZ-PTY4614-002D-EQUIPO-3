@@ -72,13 +72,29 @@
         </caption>
         <thead>
           <tr class="w3-light-grey">
-            <th scope="col">Código PTV</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Categoría</th>
+            <th scope="col" [attr.aria-sort]="ariaSort('codigoPtv')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('codigoPtv')">
+                Código PTV <i class="fa {{ iconoOrden('codigoPtv') }}" aria-hidden="true"></i>
+              </button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ariaSort('nombre')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('nombre')">
+                Nombre <i class="fa {{ iconoOrden('nombre') }}" aria-hidden="true"></i>
+              </button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ariaSort('categoriaNombre')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('categoriaNombre')">
+                Categoría <i class="fa {{ iconoOrden('categoriaNombre') }}" aria-hidden="true"></i>
+              </button>
+            </th>
             <th scope="col">Unidad</th>
             <th scope="col">Perecible</th>
             <th scope="col">Mín / Crítico</th>
-            <th scope="col">Estado</th>
+            <th scope="col" [attr.aria-sort]="ariaSort('estado')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('estado')">
+                Estado <i class="fa {{ iconoOrden('estado') }}" aria-hidden="true"></i>
+              </button>
+            </th>
             @if (puedeGestionar()) {
               <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             }
