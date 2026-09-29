@@ -14,7 +14,13 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
 .visualmente-oculto { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .shell-barra { min-height: var(--alto-barra); border-bottom: 3px solid var(--w3-cobalt); }
 .shell-menu { width: var(--ancho-menu); z-index: 4; top: var(--alto-barra); height: calc(100% - var(--alto-barra)); }
-.shell-main { padding-top: var(--alto-barra); }
+.shell-main {
+  padding-top: var(--alto-barra);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+.shell-main > .w3-container { flex: 1 0 auto; }
 .menu-activo { border-left: 4px solid var(--w3-cobalt); font-weight: 600; }
 .login-tarjeta { max-width: 28rem; }
 @media (min-width: 993px) { .shell-main { margin-left: var(--ancho-menu); } }
@@ -44,3 +50,14 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
      contra 2), así que sin esto el borde nunca se pinta. */
   border: 1px solid #767676 !important;
 }
+
+/* ── Densidad tipográfica igual a la referencia SDI (mismo w3.css base) ── */
+body { font-size: 80%; }
+
+/* ── Login no usa el shell — mismo patrón de footer pegado al fondo ── */
+app-login {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+app-login > main { flex: 1 0 auto; }
