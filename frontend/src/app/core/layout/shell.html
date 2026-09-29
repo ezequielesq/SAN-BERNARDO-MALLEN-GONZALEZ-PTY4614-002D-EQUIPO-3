@@ -38,41 +38,45 @@
   [style.display]="menuAbierto() ? 'block' : null"
   [cdkTrapFocus]="menuAbierto()"
 >
-  <h4 class="w3-bar-item w3-large" style="margin: 0">Smart RDP</h4>
+  <div class="shell-menu__header w3-bar-item">
+    <h4 class="w3-large" style="margin: 0">Smart RDP</h4>
 
-  <button
-    #botonCerrarMenu
-    type="button"
-    class="w3-bar-item w3-button w3-hide-large w3-right-align"
-    (click)="cerrarMenu()"
-  >
-    Cerrar menú <span aria-hidden="true">✕</span>
-  </button>
+    <button
+      #botonCerrarMenu
+      type="button"
+      class="w3-button w3-hide-large w3-right-align"
+      (click)="cerrarMenu()"
+    >
+      Cerrar menú <span aria-hidden="true">✕</span>
+    </button>
+  </div>
 
-  @for (grupo of grupos(); track grupo.clave) {
-    @if (grupo.titulo) {
-      <p
-        [id]="'grupo-' + grupo.clave"
-        class="w3-bar-item w3-small w3-text-light-grey w3-margin-top"
-      >
-        {{ grupo.titulo }}
-      </p>
-    }
-    <div role="group" [attr.aria-labelledby]="grupo.titulo ? 'grupo-' + grupo.clave : null">
-      @for (item of grupo.items; track item.ruta) {
-        <a
-          class="w3-bar-item w3-button"
-          [routerLink]="item.ruta"
-          routerLinkActive="w3-crimson"
-          [routerLinkActiveOptions]="{ exact: true }"
-          ariaCurrentWhenActive="page"
-          >{{ item.etiqueta }}</a
+  <div class="shell-menu__nav">
+    @for (grupo of grupos(); track grupo.clave) {
+      @if (grupo.titulo) {
+        <p
+          [id]="'grupo-' + grupo.clave"
+          class="shell-menu__grupo-titulo"
         >
+          {{ grupo.titulo }}
+        </p>
       }
-    </div>
-  }
+      <div role="group" [attr.aria-labelledby]="grupo.titulo ? 'grupo-' + grupo.clave : null">
+        @for (item of grupo.items; track item.ruta) {
+          <a
+            class="w3-bar-item w3-button"
+            [routerLink]="item.ruta"
+            routerLinkActive="w3-crimson"
+            [routerLinkActiveOptions]="{ exact: true }"
+            ariaCurrentWhenActive="page"
+            >{{ item.etiqueta }}</a
+          >
+        }
+      </div>
+    }
+  </div>
 
-  <div class="w3-border-top w3-margin-top w3-padding">
+  <div class="shell-menu__pie w3-border-top w3-padding">
     <p class="w3-small">{{ auth.sesion()?.nombre }} · {{ etiquetaRol() }}</p>
     <button type="button" class="w3-button w3-block w3-left-align" (click)="cerrarSesion()">
       Cerrar sesión
