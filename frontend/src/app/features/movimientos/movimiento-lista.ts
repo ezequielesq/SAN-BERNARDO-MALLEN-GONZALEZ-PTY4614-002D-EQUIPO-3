@@ -13,7 +13,10 @@ import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { ProductoService } from '../productos/producto.service';
 import { MovimientoCalendario } from './movimiento-calendario';
+import { TipoMovimiento } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
+
+type ColumnaOrdenMovimiento = 'fecha' | 'productoNombre' | 'tipo' | 'cantidad' | 'usuarioEmail';
 
 @Component({
   selector: 'app-movimiento-lista',
@@ -36,6 +39,10 @@ export class MovimientoLista {
   protected readonly hastaFiltro = signal<string | null>(null);
   protected readonly paginaActual = signal(1);
   protected readonly tamanoPagina = signal(10);
+  protected readonly tipoFiltro = signal<TipoMovimiento | null>(null);
+  protected readonly usuarioFiltro = signal('');
+  protected readonly columnaOrden = signal<ColumnaOrdenMovimiento | null>(null);
+  protected readonly direccionOrden = signal<'asc' | 'desc'>('asc');
 
   protected readonly productos = this.productoService.listar(signal(true));
   protected readonly opcionesProducto = computed(() =>
@@ -53,9 +60,41 @@ export class MovimientoLista {
     this.movimientos.hasValue() ? this.movimientos.value() : [],
   );
 
+  protected readonly filtrados = computed(() => {
+    const tipo = this.tipoFiltro();
+    const texto = this.usuarioFiltro().trim().toLowerCase();
+    return this.todos().filter(
+      (m) =>
+        (tipo === null || m.tipo === tipo) &&
+        (texto === '' || (m.usuarioEmail ?? '').toLowerCase().includes(texto)),
+    );
+  });
+
+  protected readonly ordenados = computed(() => {
+    const columna = this.columnaOrden();
+    const lista = [...this.filtrados()];
+    if (columna === null) return lista;
+    const dir = this.direccionOrden() === 'asc' ? 1 : -1;
+    lista.sort((a, b) => {
+      switch (columna) {
+        case 'fecha':
+          return (new Date(a.fecha).getTime() - new Date(b.fecha).getTime()) * dir;
+        case 'productoNombre':
+          return a.productoNombre.localeCompare(b.productoNombre, 'es') * dir;
+        case 'tipo':
+          return a.tipo.localeCompare(b.tipo, 'es') * dir;
+        case 'cantidad':
+          return (a.cantidad - b.cantidad) * dir;
+        case 'usuarioEmail':
+          return (a.usuarioEmail ?? '').localeCompare(b.usuarioEmail ?? '', 'es') * dir;
+      }
+    });
+    return lista;
+  });
+
   protected readonly paginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
-    return this.todos().slice(inicio, inicio + this.tamanoPagina());
+    return this.ordenados().slice(inicio, inicio + this.tamanoPagina());
   });
 
   protected cambiarProductoFiltro(valor: string): void {
@@ -86,5 +125,40 @@ export class MovimientoLista {
     this.desdeFiltro.set(fecha);
     this.hastaFiltro.set(fecha);
     this.paginaActual.set(1);
+  }
+
+  protected cambiarTipoFiltro(valor: string): void {
+    this.tipoFiltro.set(valor === '' ? null : (valor as TipoMovimiento));
+    this.paginaActual.set(1);
+  }
+
+  protected cambiarUsuarioFiltro(valor: string): void {
+    this.usuarioFiltro.set(valor);
+    this.paginaActual.set(1);
+  }
+
+  protected limpiarFiltrosCliente(): void {
+    this.tipoFiltro.set(null);
+    this.usuarioFiltro.set('');
+    this.paginaActual.set(1);
+  }
+
+  protected ordenarPor(columna: ColumnaOrdenMovimiento): void {
+    if (this.columnaOrden() === columna) {
+      this.direccionOrden.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.columnaOrden.set(columna);
+      this.direccionOrden.set('asc');
+    }
+  }
+
+  protected iconoOrden(columna: ColumnaOrdenMovimiento): string {
+    if (this.columnaOrden() !== columna) return 'fa-sort';
+    return this.direccionOrden() === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+  }
+
+  protected ariaSort(columna: ColumnaOrdenMovimiento): 'ascending' | 'descending' | null {
+    if (this.columnaOrden() !== columna) return null;
+    return this.direccionOrden() === 'asc' ? 'ascending' : 'descending';
   }
 }
