@@ -57,6 +57,9 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
 @media (min-width: 993px) {
   .shell-main { margin-left: var(--ancho-menu); padding-top: 0; }
   .shell-menu { top: 0; height: 100dvh; }
+  /* w3.css forces `.w3-sidebar.w3-collapse { display: block !important }` at this width,
+     which would silently break the flex column layout below without this override. */
+  #menu-principal { display: flex !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
