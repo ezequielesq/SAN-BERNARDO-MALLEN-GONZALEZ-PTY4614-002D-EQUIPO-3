@@ -1,0 +1,46 @@
+.calendario-mes-grilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendario-mes-dia {
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 6px 2px 4px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  cursor: pointer;
+}
+.calendario-mes-dia:hover {
+  background: #f0f0f0;
+}
+.calendario-mes-dia.seleccionado {
+  background-color: var(--w3-cobalt);
+  border-color: var(--w3-cobalt);
+}
+.calendario-mes-dia.seleccionado .numero-dia {
+  color: #fff;
+}
+.numero-dia {
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+}
+.puntos-dia {
+  display: flex;
+  gap: 3px;
+  min-height: 8px;
+}
+.punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.punto-proximo { background: #ff9800; }
+.punto-vencido { background: #f44336; }

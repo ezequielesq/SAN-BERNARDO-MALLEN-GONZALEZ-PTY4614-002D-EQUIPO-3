@@ -11,7 +11,9 @@ export type TipoEstado =
   | 'deshabilitado'
   | 'inactiva'
   | 'entrada'
-  | 'salida';
+  | 'salida'
+  | 'vencido'
+  | 'proximo';
 
 interface ConfigBadge {
   clase: string;
@@ -31,6 +33,8 @@ const BADGES: Record<TipoEstado, ConfigBadge> = {
   inactiva: { clase: 'w3-light-grey', icono: 'fa-ban', texto: 'Inactiva' },
   entrada: { clase: 'w3-emerald', icono: 'fa-arrow-down', texto: 'Entrada' },
   salida: { clase: 'w3-crimson', icono: 'fa-arrow-up', texto: 'Salida' },
+  vencido: { clase: 'w3-crimson', icono: 'fa-times-circle', texto: 'Vencido' },
+  proximo: { clase: 'w3-amber', icono: 'fa-exclamation-triangle', texto: 'Próximo a vencer' },
 };
 
 @Component({

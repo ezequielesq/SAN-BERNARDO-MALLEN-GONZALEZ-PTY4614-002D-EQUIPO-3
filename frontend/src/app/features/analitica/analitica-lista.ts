@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { AnaliticaConsumo } from './analitica-consumo';
 import { AnaliticaMasUsados } from './analitica-mas-usados';
+import { AnaliticaVencimientos } from './analitica-vencimientos';
 
 type Pestana = 'consumo' | 'mas-usados' | 'vencimientos' | 'exportar';
 
 @Component({
   selector: 'app-analitica-lista',
-  imports: [AnaliticaConsumo, AnaliticaMasUsados],
+  imports: [AnaliticaConsumo, AnaliticaMasUsados, AnaliticaVencimientos],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-lista.html',
 })
