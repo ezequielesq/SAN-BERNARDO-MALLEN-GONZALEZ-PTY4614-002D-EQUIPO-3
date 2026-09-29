@@ -13,7 +13,7 @@ import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { ProductoService } from '../productos/producto.service';
 import { MovimientoCalendario } from './movimiento-calendario';
-import { TipoMovimiento } from './movimiento.modelo';
+import { Movimiento, TipoMovimiento } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
 type ColumnaOrdenMovimiento = 'fecha' | 'productoNombre' | 'tipo' | 'cantidad' | 'usuarioEmail';
@@ -160,5 +160,9 @@ export class MovimientoLista {
   protected ariaSort(columna: ColumnaOrdenMovimiento): 'ascending' | 'descending' | null {
     if (this.columnaOrden() !== columna) return null;
     return this.direccionOrden() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  protected costoTotal(m: Movimiento): number | null {
+    return m.costoUnitario !== null ? m.costoUnitario * m.cantidad : null;
   }
 }

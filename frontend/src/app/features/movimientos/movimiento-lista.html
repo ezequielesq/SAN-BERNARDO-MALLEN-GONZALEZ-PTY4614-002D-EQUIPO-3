@@ -131,6 +131,8 @@
                 Cantidad <i class="fa {{ iconoOrden('cantidad') }}" aria-hidden="true"></i>
               </button>
             </th>
+            <th scope="col">Costo unitario</th>
+            <th scope="col">Costo total</th>
             <th scope="col">Motivo</th>
             <th scope="col" [attr.aria-sort]="ariaSort('usuarioEmail')">
               <button type="button" class="boton-orden" (click)="ordenarPor('usuarioEmail')">
@@ -152,6 +154,8 @@
                 }
               </td>
               <td>{{ m.cantidad }}</td>
+              <td>{{ m.costoUnitario !== null ? '$' + m.costoUnitario : '—' }}</td>
+              <td>{{ costoTotal(m) !== null ? '$' + costoTotal(m) : '—' }}</td>
               <td>{{ m.motivo || '—' }}</td>
               <td>{{ m.usuarioEmail || '—' }}</td>
             </tr>

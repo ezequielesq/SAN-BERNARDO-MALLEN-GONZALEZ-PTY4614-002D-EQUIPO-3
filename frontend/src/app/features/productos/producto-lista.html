@@ -90,6 +90,7 @@
             <th scope="col">Unidad</th>
             <th scope="col">Perecible</th>
             <th scope="col">Mín / Crítico</th>
+            <th scope="col">Costo unitario</th>
             <th scope="col" [attr.aria-sort]="ariaSort('estado')">
               <button type="button" class="boton-orden" (click)="ordenarPor('estado')">
                 Estado <i class="fa {{ iconoOrden('estado') }}" aria-hidden="true"></i>
@@ -109,6 +110,7 @@
               <td>{{ p.unidadMedidaNombre }}</td>
               <td>{{ p.esPerecible ? 'Sí' : 'No' }}</td>
               <td>{{ p.stockMinimo }} / {{ p.stockCritico }}</td>
+              <td>{{ p.costoUnitario !== null ? '$' + p.costoUnitario : '—' }}</td>
               <td>
                 @if (p.activo) {
                   Activo
@@ -157,7 +159,8 @@
           <p>{{ p.codigoPtv }} · {{ p.categoriaNombre }} · {{ p.unidadMedidaNombre }}</p>
           <p>
             Mín / Crítico: {{ p.stockMinimo }} / {{ p.stockCritico }} · Perecible:
-            {{ p.esPerecible ? 'Sí' : 'No' }}
+            {{ p.esPerecible ? 'Sí' : 'No' }} · Costo unitario:
+            {{ p.costoUnitario !== null ? '$' + p.costoUnitario : '—' }}
           </p>
           <p>
             @if (p.activo) {
