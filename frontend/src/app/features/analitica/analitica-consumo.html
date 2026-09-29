@@ -1,92 +1,95 @@
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
   <div class="w3-row">
-    <div class="w3-col s12 m4 w3-padding">
-      <p><b>Ver por</b></p>
-      <button
-        type="button"
-        class="w3-button w3-round"
-        [class.w3-crimson]="verPor() === 'SEMANA'"
-        [class.w3-cobalt]="verPor() !== 'SEMANA'"
-        [attr.aria-pressed]="verPor() === 'SEMANA'"
-        (click)="cambiarVerPor('SEMANA')"
-      >
-        Semana
-      </button>
-      <button
-        type="button"
-        class="w3-button w3-round w3-margin-left"
-        [class.w3-crimson]="verPor() === 'MES'"
-        [class.w3-cobalt]="verPor() !== 'MES'"
-        [attr.aria-pressed]="verPor() === 'MES'"
-        (click)="cambiarVerPor('MES')"
-      >
-        Mes
-      </button>
-    </div>
-    <div class="w3-col s12 m8 w3-padding">
+    <div class="w3-col s12 m5 l4 w3-padding">
       <app-movimiento-calendario [productoId]="null" [diaActivo]="null" (diaSeleccionado)="alSeleccionarDiaCalendario($event)" />
     </div>
-  </div>
-
-  <div class="w3-row">
-    <div class="w3-col s12 m3 w3-padding">
-      <label for="consumo-desde"><b>Desde</b></label>
-      <input
-        #campoDesde
-        id="consumo-desde"
-        class="w3-input"
-        type="date"
-        [value]="desdeFiltro()"
-        (change)="cambiarDesde(campoDesde.value)"
-      />
-    </div>
-    <div class="w3-col s12 m3 w3-padding">
-      <label for="consumo-hasta"><b>Hasta</b></label>
-      <input
-        #campoHasta
-        id="consumo-hasta"
-        class="w3-input"
-        type="date"
-        [value]="hastaFiltro()"
-        (change)="cambiarHasta(campoHasta.value)"
-      />
-    </div>
-    <div class="w3-col s12 m3 w3-padding">
-      <label for="consumo-categoria"><b>Categoría</b></label>
-      <select
-        #selectCategoria
-        id="consumo-categoria"
-        class="w3-select"
-        (change)="cambiarCategoria(selectCategoria.value)"
-      >
-        <option value="">Todas</option>
-        @for (c of categorias(); track c.id) {
-          <option [value]="c.id">{{ c.nombre }}</option>
-        }
-      </select>
-    </div>
-    <div class="w3-col s12 m3 w3-padding">
-      <p><b>Agrupar por</b></p>
-      <button
-        type="button"
-        class="w3-button w3-round"
-        [class.w3-crimson]="agruparPor() === 'PRODUCTO'"
-        [class.w3-cobalt]="agruparPor() !== 'PRODUCTO'"
-        [attr.aria-pressed]="agruparPor() === 'PRODUCTO'"
-        (click)="cambiarAgruparPor('PRODUCTO')"
-      >
-        Producto
-      </button>
-      <button
-        type="button"
-        class="w3-button w3-round w3-margin-left"
-        [class.w3-crimson]="agruparPor() === 'CATEGORIA'"
-        [class.w3-cobalt]="agruparPor() !== 'CATEGORIA'"
-        [attr.aria-pressed]="agruparPor() === 'CATEGORIA'"
-        (click)="cambiarAgruparPor('CATEGORIA')"
-      >
-        Categoría
-      </button>
+    <div class="w3-col s12 m7 l8">
+      <div class="w3-row">
+        <div class="w3-col s12 m4 w3-padding">
+          <p><b>Ver por</b></p>
+          <button
+            type="button"
+            class="w3-button w3-round"
+            [class.w3-crimson]="verPor() === 'SEMANA'"
+            [class.w3-cobalt]="verPor() !== 'SEMANA'"
+            [attr.aria-pressed]="verPor() === 'SEMANA'"
+            (click)="cambiarVerPor('SEMANA')"
+          >
+            Semana
+          </button>
+          <button
+            type="button"
+            class="w3-button w3-round w3-margin-left"
+            [class.w3-crimson]="verPor() === 'MES'"
+            [class.w3-cobalt]="verPor() !== 'MES'"
+            [attr.aria-pressed]="verPor() === 'MES'"
+            (click)="cambiarVerPor('MES')"
+          >
+            Mes
+          </button>
+        </div>
+        <div class="w3-col s12 m4 w3-padding">
+          <label for="consumo-desde"><b>Desde</b></label>
+          <input
+            #campoDesde
+            id="consumo-desde"
+            class="w3-input"
+            type="date"
+            [value]="desdeFiltro()"
+            (change)="cambiarDesde(campoDesde.value)"
+          />
+        </div>
+        <div class="w3-col s12 m4 w3-padding">
+          <label for="consumo-hasta"><b>Hasta</b></label>
+          <input
+            #campoHasta
+            id="consumo-hasta"
+            class="w3-input"
+            type="date"
+            [value]="hastaFiltro()"
+            (change)="cambiarHasta(campoHasta.value)"
+          />
+        </div>
+      </div>
+      <div class="w3-row">
+        <div class="w3-col s12 m6 w3-padding">
+          <label for="consumo-categoria"><b>Categoría</b></label>
+          <select
+            #selectCategoria
+            id="consumo-categoria"
+            class="w3-select"
+            (change)="cambiarCategoria(selectCategoria.value)"
+          >
+            <option value="">Todas</option>
+            @for (c of categorias(); track c.id) {
+              <option [value]="c.id">{{ c.nombre }}</option>
+            }
+          </select>
+        </div>
+        <div class="w3-col s12 m6 w3-padding">
+          <p><b>Agrupar por</b></p>
+          <button
+            type="button"
+            class="w3-button w3-round"
+            [class.w3-crimson]="agruparPor() === 'PRODUCTO'"
+            [class.w3-cobalt]="agruparPor() !== 'PRODUCTO'"
+            [attr.aria-pressed]="agruparPor() === 'PRODUCTO'"
+            (click)="cambiarAgruparPor('PRODUCTO')"
+          >
+            Producto
+          </button>
+          <button
+            type="button"
+            class="w3-button w3-round w3-margin-left"
+            [class.w3-crimson]="agruparPor() === 'CATEGORIA'"
+            [class.w3-cobalt]="agruparPor() !== 'CATEGORIA'"
+            [attr.aria-pressed]="agruparPor() === 'CATEGORIA'"
+            (click)="cambiarAgruparPor('CATEGORIA')"
+          >
+            Categoría
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
