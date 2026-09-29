@@ -39,4 +39,13 @@ public class AnaliticaController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(data);
     }
+
+    @GetMapping("/consumo")
+    public List<ConsumoDto> consumo(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam AgruparPor agruparPor,
+            @RequestParam(required = false) Long categoriaId) {
+        return analiticaService.getConsumo(desde, hasta, agruparPor, categoriaId);
+    }
 }

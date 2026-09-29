@@ -1,5 +1,6 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.ConsumoDto;
 import com.smartrdp.backend.analitica.dto.*;
 import com.smartrdp.backend.movimiento.LoteRepository;
 import com.smartrdp.backend.movimiento.MovimientoRepository;
@@ -71,5 +72,29 @@ public class AnaliticaService {
             wb.write(out);
             return out.toByteArray();
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ConsumoDto> getConsumo(LocalDate desde, LocalDate hasta, AgruparPor agruparPor, Long categoriaId) {
+        LocalDateTime desdeTime = desde.atStartOfDay();
+        LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
+        List<Object[]> filas = agruparPor == AgruparPor.CATEGORIA
+                ? movimientoRepository.findConsumoPorCategoria(desdeTime, hastaTime, categoriaId)
+                : movimientoRepository.findConsumoPorProducto(desdeTime, hastaTime, categoriaId);
+        return filas.stream().map(this::mapearFilaConsumo).toList();
+    }
+
+    private ConsumoDto mapearFilaConsumo(Object[] fila) {
+        Long id = ((Number) fila[0]).longValue();
+        String nombre = (String) fila[1];
+        int entradaCantidad = ((Number) fila[2]).intValue();
+        int entradaValorSuma = ((Number) fila[3]).intValue();
+        int entradaConCosto = ((Number) fila[4]).intValue();
+        int salidaCantidad = ((Number) fila[5]).intValue();
+        int salidaValorSuma = ((Number) fila[6]).intValue();
+        int salidaConCosto = ((Number) fila[7]).intValue();
+        Integer entradaValor = entradaConCosto == 0 ? null : entradaValorSuma;
+        Integer salidaValor = salidaConCosto == 0 ? null : salidaValorSuma;
+        return new ConsumoDto(id, nombre, entradaCantidad, entradaValor, salidaCantidad, salidaValor);
     }
 }

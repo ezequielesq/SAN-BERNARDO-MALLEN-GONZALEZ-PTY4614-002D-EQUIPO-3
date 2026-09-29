@@ -42,4 +42,34 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
         GROUP BY m.producto.id
         """)
     List<Object[]> sumStockPorProducto();
+
+    @Query("""
+        SELECT m.producto.id, m.producto.nombre,
+               SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'ENTRADA' AND m.costoUnitario IS NOT NULL THEN m.costoUnitario * m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'ENTRADA' AND m.costoUnitario IS NOT NULL THEN 1 ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'SALIDA' THEN m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'SALIDA' AND m.costoUnitario IS NOT NULL THEN m.costoUnitario * m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'SALIDA' AND m.costoUnitario IS NOT NULL THEN 1 ELSE 0 END)
+        FROM Movimiento m
+        WHERE m.createdAt BETWEEN :desde AND :hasta
+        AND (:categoriaId IS NULL OR m.producto.categoria.id = :categoriaId)
+        GROUP BY m.producto.id, m.producto.nombre
+        """)
+    List<Object[]> findConsumoPorProducto(LocalDateTime desde, LocalDateTime hasta, Long categoriaId);
+
+    @Query("""
+        SELECT m.producto.categoria.id, m.producto.categoria.nombre,
+               SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'ENTRADA' AND m.costoUnitario IS NOT NULL THEN m.costoUnitario * m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'ENTRADA' AND m.costoUnitario IS NOT NULL THEN 1 ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'SALIDA' THEN m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'SALIDA' AND m.costoUnitario IS NOT NULL THEN m.costoUnitario * m.cantidad ELSE 0 END),
+               SUM(CASE WHEN m.tipo = 'SALIDA' AND m.costoUnitario IS NOT NULL THEN 1 ELSE 0 END)
+        FROM Movimiento m
+        WHERE m.createdAt BETWEEN :desde AND :hasta
+        AND (:categoriaId IS NULL OR m.producto.categoria.id = :categoriaId)
+        GROUP BY m.producto.categoria.id, m.producto.categoria.nombre
+        """)
+    List<Object[]> findConsumoPorCategoria(LocalDateTime desde, LocalDateTime hasta, Long categoriaId);
 }
