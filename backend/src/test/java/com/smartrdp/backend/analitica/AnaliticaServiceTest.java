@@ -25,9 +25,9 @@ class AnaliticaServiceTest {
 
     @Test
     void getProductosMasUsados_whenNoData_thenReturnsEmptyList() {
-        when(movimientoRepository.findConsumoEntreFechas(any(), any()))
+        when(movimientoRepository.findConsumoEntreFechas(any(), any(), any()))
                 .thenReturn(Collections.emptyList());
-        var result = analiticaService.getProductosMasUsados(LocalDate.now().minusMonths(1), LocalDate.now());
+        var result = analiticaService.getProductosMasUsados(LocalDate.now().minusMonths(1), LocalDate.now(), null);
         assertThat(result).isEmpty();
     }
 

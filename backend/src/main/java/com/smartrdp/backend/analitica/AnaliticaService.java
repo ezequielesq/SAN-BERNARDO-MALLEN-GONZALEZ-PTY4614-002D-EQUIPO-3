@@ -22,14 +22,15 @@ public class AnaliticaService {
     private final LoteRepository loteRepository;
 
     @Transactional(readOnly = true)
-    public List<ProductoMasUsadoDto> getProductosMasUsados(LocalDate desde, LocalDate hasta) {
+    public List<ProductoMasUsadoDto> getProductosMasUsados(LocalDate desde, LocalDate hasta, Long categoriaId) {
         LocalDateTime desdeTime = desde.atStartOfDay();
         LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
-        return movimientoRepository.findConsumoEntreFechas(desdeTime, hastaTime).stream()
+        return movimientoRepository.findConsumoEntreFechas(desdeTime, hastaTime, categoriaId).stream()
                 .map(row -> new ProductoMasUsadoDto(
                         ((Number) row[0]).longValue(),
                         (String) row[1],
-                        ((Number) row[2]).intValue()))
+                        (String) row[2],
+                        ((Number) row[3]).intValue()))
                 .toList();
     }
 

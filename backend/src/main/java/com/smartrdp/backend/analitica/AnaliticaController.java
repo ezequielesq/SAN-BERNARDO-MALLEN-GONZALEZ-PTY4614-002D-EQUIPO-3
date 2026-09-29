@@ -20,8 +20,9 @@ public class AnaliticaController {
     @GetMapping("/mas-usados")
     public List<ProductoMasUsadoDto> masUsados(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        return analiticaService.getProductosMasUsados(desde, hasta);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) Long categoriaId) {
+        return analiticaService.getProductosMasUsados(desde, hasta, categoriaId);
     }
 
     @GetMapping("/vencimientos")
