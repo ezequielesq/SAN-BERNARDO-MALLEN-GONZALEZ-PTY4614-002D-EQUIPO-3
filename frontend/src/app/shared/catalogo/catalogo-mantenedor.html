@@ -41,76 +41,92 @@
   "
   (reintentar)="items.reload()"
 >
-  <ul class="w3-ul w3-white w3-border">
-    @for (item of lista(); track item.id) {
-      <li class="w3-padding">
-        @if (editandoId() === item.id) {
-          <form [formGroup]="edicionForm" (ngSubmit)="guardarEdicion(item)" novalidate>
-            <label [for]="'editar-' + item.id"
-              ><b>Nuevo nombre de "{{ item.nombre }}"</b></label
-            >
-            <input
-              [id]="'editar-' + item.id"
-              class="w3-input"
-              type="text"
-              formControlName="nombre"
-              maxlength="50"
-              autocomplete="off"
-              (keydown.escape)="cancelarEdicion(item)"
-              [attr.aria-invalid]="errorEdicion() ? 'true' : null"
-              [attr.aria-describedby]="errorEdicion() ? 'error-edicion' : null"
-            />
-            @if (errorEdicion(); as m) {
-              <p id="error-edicion" class="texto-error">
-                <span aria-hidden="true">⚠ </span>{{ m }}
-              </p>
-            }
-            <div class="w3-margin-top">
-              <button type="submit" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="procesando()">
-                Guardar
-              </button>
-              <button
-                type="button"
-                class="w3-button w3-white w3-border w3-margin-left w3-round"
-                (click)="cancelarEdicion(item)"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        } @else {
-          <div class="w3-row">
-            <div class="w3-col m6 s12">
-              <b>{{ item.nombre }}</b>
-              @if (item.activo) {
-                · Activa
-              } @else {
-                <app-estado-badge estado="inactiva" />
-              }
-            </div>
-            <div class="w3-col m6 s12 w3-right-align">
-              <button
-                [id]="'renombrar-' + item.id"
-                type="button"
-                class="w3-button w3-warning w3-round"
-                (click)="iniciarEdicion(item)"
-              >
-                <i class="fa fa-pencil" aria-hidden="true"></i> Renombrar<span class="visualmente-oculto"> {{ item.nombre }}</span>
-              </button>
-              <button
-                type="button"
-                class="w3-button w3-round"
-                [attr.aria-disabled]="procesando()"
-                (click)="alternar(item)"
-              >
-                <i [class]="item.activo ? 'fa fa-ban' : 'fa fa-undo'" aria-hidden="true"></i>
-                {{ item.activo ? 'Desactivar' : 'Reactivar'
-                }}<span class="visualmente-oculto"> {{ item.nombre }}</span>
-              </button>
-            </div>
-          </div>
+  <div class="w3-container w3-border w3-margin w3-light-grey">
+  <div class="w3-responsive">
+    <table class="w3-table-all">
+      <caption class="visualmente-oculto">{{ config.titulo }}</caption>
+      <thead>
+        <tr class="w3-light-grey">
+          <th scope="col">Nombre</th>
+          <th scope="col">Estado</th>
+          <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of lista(); track item.id) {
+          @if (editandoId() === item.id) {
+            <tr>
+              <td colspan="3">
+                <form [formGroup]="edicionForm" (ngSubmit)="guardarEdicion(item)" novalidate>
+                  <label [for]="'editar-' + item.id"
+                    ><b>Nuevo nombre de "{{ item.nombre }}"</b></label
+                  >
+                  <input
+                    [id]="'editar-' + item.id"
+                    class="w3-input"
+                    type="text"
+                    formControlName="nombre"
+                    maxlength="50"
+                    autocomplete="off"
+                    (keydown.escape)="cancelarEdicion(item)"
+                    [attr.aria-invalid]="errorEdicion() ? 'true' : null"
+                    [attr.aria-describedby]="errorEdicion() ? 'error-edicion' : null"
+                  />
+                  @if (errorEdicion(); as m) {
+                    <p id="error-edicion" class="texto-error">
+                      <span aria-hidden="true">⚠ </span>{{ m }}
+                    </p>
+                  }
+                  <div class="w3-margin-top">
+                    <button type="submit" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="procesando()">
+                      Guardar
+                    </button>
+                    <button
+                      type="button"
+                      class="w3-button w3-white w3-border w3-margin-left w3-round"
+                      (click)="cancelarEdicion(item)"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          } @else {
+            <tr>
+              <td><b>{{ item.nombre }}</b></td>
+              <td>
+                @if (item.activo) {
+                  Activa
+                } @else {
+                  <app-estado-badge estado="inactiva" />
+                }
+              </td>
+              <td>
+                <button
+                  [id]="'renombrar-' + item.id"
+                  type="button"
+                  class="w3-button w3-warning w3-round"
+                  (click)="iniciarEdicion(item)"
+                >
+                  <i class="fa fa-pencil" aria-hidden="true"></i> Renombrar<span class="visualmente-oculto"> {{ item.nombre }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="w3-button w3-round"
+                  [attr.aria-disabled]="procesando()"
+                  (click)="alternar(item)"
+                >
+                  <i [class]="item.activo ? 'fa fa-ban' : 'fa fa-undo'" aria-hidden="true"></i>
+                  {{ item.activo ? 'Desactivar' : 'Reactivar'
+                  }}<span class="visualmente-oculto"> {{ item.nombre }}</span>
+                </button>
+              </td>
+            </tr>
+          }
         }
-      </li>
-    }
-  </ul>
+      </tbody>
+    </table>
+  </div>
+  </div>
 </app-estado-vista>
