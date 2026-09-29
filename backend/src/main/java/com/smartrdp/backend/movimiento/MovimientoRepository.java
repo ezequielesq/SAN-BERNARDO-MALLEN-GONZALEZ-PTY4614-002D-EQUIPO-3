@@ -73,4 +73,12 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
         GROUP BY m.producto.categoria.id, m.producto.categoria.nombre
         """)
     List<Object[]> findConsumoPorCategoria(LocalDateTime desde, LocalDateTime hasta, Long categoriaId);
+
+    @Query("""
+        SELECT m FROM Movimiento m
+        WHERE m.createdAt BETWEEN :desde AND :hasta
+        AND (:categoriaId IS NULL OR m.producto.categoria.id = :categoriaId)
+        ORDER BY m.createdAt
+        """)
+    List<Movimiento> findParaExportar(LocalDateTime desde, LocalDateTime hasta, Long categoriaId);
 }

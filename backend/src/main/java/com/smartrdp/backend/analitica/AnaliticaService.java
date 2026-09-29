@@ -60,15 +60,15 @@ public class AnaliticaService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] exportarMovimientosExcel(LocalDate desde, LocalDate hasta) throws IOException {
+    public byte[] exportarMovimientosExcel(LocalDate desde, LocalDate hasta, Long categoriaId) throws IOException {
         LocalDateTime desdeTime = desde.atStartOfDay();
         LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
-        var movimientos = movimientoRepository.findByCreatedAtBetween(desdeTime, hastaTime);
+        var movimientos = movimientoRepository.findParaExportar(desdeTime, hastaTime, categoriaId);
 
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet("Movimientos");
             Row header = sheet.createRow(0);
-            String[] cols = {"ID", "Producto", "Tipo", "Cantidad", "Motivo", "Fecha"};
+            String[] cols = {"ID", "Producto", "Tipo", "Cantidad", "Costo unitario", "Costo total", "Motivo", "Fecha"};
             for (int i = 0; i < cols.length; i++) header.createCell(i).setCellValue(cols[i]);
 
             int rowIdx = 1;
@@ -78,8 +78,12 @@ public class AnaliticaService {
                 row.createCell(1).setCellValue(m.getProducto().getNombre());
                 row.createCell(2).setCellValue(m.getTipo().name());
                 row.createCell(3).setCellValue(m.getCantidad());
-                row.createCell(4).setCellValue(m.getMotivo() != null ? m.getMotivo() : "");
-                row.createCell(5).setCellValue(m.getCreatedAt() != null ? m.getCreatedAt().toString() : "");
+                if (m.getCostoUnitario() != null) {
+                    row.createCell(4).setCellValue(m.getCostoUnitario());
+                    row.createCell(5).setCellValue(m.getCostoUnitario() * m.getCantidad());
+                }
+                row.createCell(6).setCellValue(m.getMotivo() != null ? m.getMotivo() : "");
+                row.createCell(7).setCellValue(m.getCreatedAt() != null ? m.getCreatedAt().toString() : "");
             }
             wb.write(out);
             return out.toByteArray();

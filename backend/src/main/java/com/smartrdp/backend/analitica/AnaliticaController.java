@@ -43,8 +43,9 @@ public class AnaliticaController {
     @GetMapping("/exportar-movimientos")
     public ResponseEntity<byte[]> exportar(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) throws IOException {
-        byte[] data = analiticaService.exportarMovimientosExcel(desde, hasta);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) Long categoriaId) throws IOException {
+        byte[] data = analiticaService.exportarMovimientosExcel(desde, hasta, categoriaId);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=movimientos.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
