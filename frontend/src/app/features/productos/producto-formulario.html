@@ -81,6 +81,26 @@
         }
       </div>
 
+      <div class="w3-section">
+        <label for="campo-costoUnitario"><b>Costo unitario ($)</b></label>
+        <input
+          id="campo-costoUnitario"
+          class="w3-input"
+          type="number"
+          min="0"
+          step="1"
+          inputmode="numeric"
+          formControlName="costoUnitario"
+          [attr.aria-invalid]="mensajeError('costoUnitario') ? 'true' : null"
+          [attr.aria-describedby]="describedBy('costoUnitario')"
+        />
+        @if (mensajeError('costoUnitario'); as m) {
+          <p id="error-costoUnitario" class="texto-error">
+            <span aria-hidden="true">⚠ </span>{{ m }}
+          </p>
+        }
+      </div>
+
       <div class="w3-row">
         <div class="w3-half w3-section w3-padding-small">
           <label for="campo-categoriaId"><b>Categoría</b></label>

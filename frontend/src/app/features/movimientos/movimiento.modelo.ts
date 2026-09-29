@@ -7,6 +7,7 @@ export interface Movimiento {
   tipo: TipoMovimiento;
   cantidad: number;
   motivo: string | null;
+  costoUnitario: number | null;
   fecha: string;
   usuarioEmail: string | null;
 }
@@ -33,4 +34,6 @@ export interface StockStatus {
   stockActual: number;
   estado: EstadoStock;
   fechaVencimientoProximo: string | null;
+  costoUnitario: number | null;
+  valorTotal: number | null;
 }

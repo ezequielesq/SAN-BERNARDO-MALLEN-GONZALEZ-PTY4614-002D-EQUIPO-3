@@ -35,7 +35,13 @@ import { Producto, ProductoRequest } from './producto.modelo';
 import { ProductoService } from './producto.service';
 
 type Campo =
-  'codigoPtv' | 'nombre' | 'categoriaId' | 'unidadMedidaId' | 'stockMinimo' | 'stockCritico';
+  | 'codigoPtv'
+  | 'nombre'
+  | 'categoriaId'
+  | 'unidadMedidaId'
+  | 'stockMinimo'
+  | 'stockCritico'
+  | 'costoUnitario';
 
 const CAMPOS: readonly Campo[] = [
   'codigoPtv',
@@ -44,6 +50,7 @@ const CAMPOS: readonly Campo[] = [
   'unidadMedidaId',
   'stockMinimo',
   'stockCritico',
+  'costoUnitario',
 ];
 
 const ETIQUETAS: Record<Campo, string> = {
@@ -53,6 +60,7 @@ const ETIQUETAS: Record<Campo, string> = {
   unidadMedidaId: 'Unidad de medida',
   stockMinimo: 'Stock mínimo',
   stockCritico: 'Stock crítico',
+  costoUnitario: 'Costo unitario',
 };
 
 const REQUERIDO: Record<Campo, string> = {
@@ -62,6 +70,7 @@ const REQUERIDO: Record<Campo, string> = {
   unidadMedidaId: 'Elige una unidad de medida.',
   stockMinimo: 'Ingresa el stock mínimo (0 o más).',
   stockCritico: 'Ingresa el stock crítico (0 o más).',
+  costoUnitario: 'Ingresa el costo unitario (0 o más).',
 };
 
 const MAXIMO: Partial<Record<Campo, number>> = { codigoPtv: 20, nombre: 150 };
@@ -176,6 +185,11 @@ export class ProductoFormulario implements ConCambiosPendientes {
         Validators.min(0),
         Validators.pattern(/^\d+$/),
       ]),
+      costoUnitario: this.fb.control<number | null>(null, [
+        Validators.required,
+        Validators.min(0),
+        Validators.pattern(/^\d+$/),
+      ]),
     },
     { validators: [criticoMenorOIgualAMinimo] },
   );
@@ -202,6 +216,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
           esPerecible: p.esPerecible,
           stockMinimo: p.stockMinimo,
           stockCritico: p.stockCritico,
+          costoUnitario: p.costoUnitario,
         });
       });
     });
@@ -277,7 +292,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
       v.categoriaId === null ||
       v.unidadMedidaId === null ||
       v.stockMinimo === null ||
-      v.stockCritico === null
+      v.stockCritico === null ||
+      v.costoUnitario === null
     )
       return;
     const request: ProductoRequest = {
@@ -288,6 +304,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
       esPerecible: v.esPerecible,
       stockMinimo: v.stockMinimo,
       stockCritico: v.stockCritico,
+      costoUnitario: v.costoUnitario,
     };
     const id = this.idNumerico();
     const operacion$ =

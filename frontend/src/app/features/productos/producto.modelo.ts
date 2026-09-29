@@ -9,6 +9,7 @@ export interface Producto {
   esPerecible: boolean;
   stockMinimo: number;
   stockCritico: number;
+  costoUnitario: number | null;
   activo: boolean;
 }
 
@@ -20,4 +21,5 @@ export interface ProductoRequest {
   esPerecible: boolean;
   stockMinimo: number;
   stockCritico: number;
+  costoUnitario: number;
 }
