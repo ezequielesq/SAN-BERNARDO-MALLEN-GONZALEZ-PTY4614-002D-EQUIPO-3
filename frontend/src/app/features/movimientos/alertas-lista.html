@@ -26,11 +26,15 @@
     mensajeVacio="No hay lotes por vencer en el rango seleccionado."
     (reintentar)="alertas.reload()"
   >
-    <ul class="w3-ul w3-white w3-border">
+    <ul class="grilla-tarjetas">
       @for (a of todos(); track a.id) {
-        <li class="w3-padding">
-          <app-estado-badge estado="pendiente" />
-          <b>{{ a.productoNombre }}</b> — {{ a.motivo }}
+        <li>
+          <article class="w3-card w3-white w3-padding">
+            <h2 class="w3-medium"><b>{{ a.productoNombre }}</b></h2>
+            <p><app-estado-badge estado="pendiente" /></p>
+            <p>{{ a.motivo || '—' }}</p>
+            <p>{{ a.fecha | date: 'dd-MM-yyyy' }}</p>
+          </article>
         </li>
       }
     </ul>

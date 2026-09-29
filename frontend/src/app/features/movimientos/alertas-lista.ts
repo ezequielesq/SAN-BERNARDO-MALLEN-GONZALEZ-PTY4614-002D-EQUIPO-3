@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
@@ -5,7 +6,7 @@ import { MovimientoService } from './movimiento.service';
 
 @Component({
   selector: 'app-alertas-lista',
-  imports: [EstadoVista, EstadoBadge],
+  imports: [DatePipe, EstadoVista, EstadoBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './alertas-lista.html',
 })
