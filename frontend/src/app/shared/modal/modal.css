@@ -1,9 +1,17 @@
+/* showModal() promueve el <dialog> a la capa superior del navegador: el
+   flexbox/padding del div .w3-modal que lo envuelve deja de afectarlo, así
+   que se posiciona a mano (mismo criterio que la referencia SDI). */
 .app-modal-dialog {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
   border: none;
   padding: 0;
   width: 90%;
   max-width: 700px;
-  max-height: 90vh;
+  max-height: calc(100dvh - 80px);
   overflow-y: auto;
 }
 .app-modal-dialog::backdrop {
