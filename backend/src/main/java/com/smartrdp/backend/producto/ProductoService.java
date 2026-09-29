@@ -146,6 +146,7 @@ public class ProductoService {
         producto.setEsPerecible(request.esPerecible());
         producto.setStockMinimo(request.stockMinimo());
         producto.setStockCritico(request.stockCritico());
+        producto.setCostoUnitario(request.costoUnitario());
     }
 
     private void validarUmbrales(ProductoRequest request) {
@@ -198,6 +199,7 @@ public class ProductoService {
                 p.isEsPerecible(),
                 p.getStockMinimo(),
                 p.getStockCritico(),
+                p.getCostoUnitario(),
                 p.isActivo());
     }
 }

@@ -48,6 +48,7 @@ public class MovimientoService {
         movimiento.setTipo(TipoMovimiento.ENTRADA);
         movimiento.setCantidad(request.cantidad());
         movimiento.setMotivo(request.motivo());
+        movimiento.setCostoUnitario(producto.getCostoUnitario());
         movimiento.setLote(lote);
         getCurrentUsuario().ifPresent(movimiento::setUsuario);
         return toResponse(movimientoRepository.save(movimiento));
@@ -83,6 +84,7 @@ public class MovimientoService {
         movimiento.setTipo(TipoMovimiento.SALIDA);
         movimiento.setCantidad(request.cantidad());
         movimiento.setMotivo(request.motivo());
+        movimiento.setCostoUnitario(producto.getCostoUnitario());
         movimiento.setLote(loteUsado);
         getCurrentUsuario().ifPresent(movimiento::setUsuario);
         return toResponse(movimientoRepository.save(movimiento));
@@ -137,8 +139,12 @@ public class MovimientoService {
                                     producto.getId(), 0)
                             .stream().findFirst().map(Lote::getFechaVencimiento).orElse(null);
 
+                    Integer costoUnitario = producto.getCostoUnitario();
+                    Integer valorTotal = costoUnitario != null ? stock * costoUnitario : null;
+
                     return new StockStatusResponse(
-                            producto.getId(), producto.getNombre(), stock, estado, proximoVencimiento);
+                            producto.getId(), producto.getNombre(), stock, estado, proximoVencimiento,
+                            costoUnitario, valorTotal);
                 })
                 .toList();
     }
@@ -181,6 +187,7 @@ public class MovimientoService {
                 m.getTipo(),
                 m.getCantidad(),
                 m.getMotivo(),
+                m.getCostoUnitario(),
                 m.getCreatedAt(),
                 m.getUsuario() != null ? m.getUsuario().getEmail() : null
         );

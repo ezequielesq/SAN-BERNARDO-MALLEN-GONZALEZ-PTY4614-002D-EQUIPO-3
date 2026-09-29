@@ -11,5 +11,6 @@ public record ProductoResponse(
     boolean esPerecible,
     Integer stockMinimo,
     Integer stockCritico,
+    Integer costoUnitario,
     boolean activo
 ) {}

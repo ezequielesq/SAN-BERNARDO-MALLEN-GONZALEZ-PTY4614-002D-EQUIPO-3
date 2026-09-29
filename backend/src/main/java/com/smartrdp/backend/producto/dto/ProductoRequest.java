@@ -9,5 +9,6 @@ public record ProductoRequest(
     @NotNull Long unidadMedidaId,
     boolean esPerecible,
     @NotNull @Min(0) Integer stockMinimo,
-    @NotNull @Min(0) Integer stockCritico
+    @NotNull @Min(0) Integer stockCritico,
+    @NotNull @Min(0) Integer costoUnitario
 ) {}

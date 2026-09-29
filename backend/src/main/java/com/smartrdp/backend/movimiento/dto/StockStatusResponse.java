@@ -9,5 +9,7 @@ public record StockStatusResponse(
         String productoNombre,
         Integer stockActual,
         EstadoStock estado,
-        LocalDate fechaVencimientoProximo
+        LocalDate fechaVencimientoProximo,
+        Integer costoUnitario,
+        Integer valorTotal
 ) {}

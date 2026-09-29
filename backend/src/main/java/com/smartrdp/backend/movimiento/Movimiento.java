@@ -33,6 +33,9 @@ public class Movimiento extends BaseEntity {
     @Column(name = "motivo", length = 200)
     private String motivo;
 
+    @Column(name = "costo_unitario")
+    private Integer costoUnitario;
+
     @NotAudited
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")

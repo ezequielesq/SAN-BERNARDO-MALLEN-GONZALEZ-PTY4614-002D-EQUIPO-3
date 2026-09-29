@@ -60,7 +60,7 @@ public class MovimientoController {
         EstadoStock estado = movimientoService.getEstadoStock(id);
         var loteFefo = movimientoService.getLoteFEFO(id);
         return new StockStatusResponse(id, null, stockActual, estado,
-                loteFefo.map(Lote::getFechaVencimiento).orElse(null));
+                loteFefo.map(Lote::getFechaVencimiento).orElse(null), null, null);
     }
 
     @GetMapping("/alertas/vencimiento")

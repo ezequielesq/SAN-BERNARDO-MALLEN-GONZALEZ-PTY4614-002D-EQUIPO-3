@@ -11,6 +11,7 @@ public record MovimientoResponse(
         TipoMovimiento tipo,
         Integer cantidad,
         String motivo,
+        Integer costoUnitario,
         LocalDateTime fecha,
         String usuarioEmail
 ) {}

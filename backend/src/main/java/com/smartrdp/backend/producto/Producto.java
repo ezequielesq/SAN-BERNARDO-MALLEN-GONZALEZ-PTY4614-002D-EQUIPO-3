@@ -38,6 +38,9 @@ public class Producto extends BaseEntity {
     @Column(name = "stock_critico")
     private Integer stockCritico = 0;
 
+    @Column(name = "costo_unitario")
+    private Integer costoUnitario;
+
     @Column(name = "activo", nullable = false)
     private boolean activo = true;
 }
