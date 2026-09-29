@@ -22,3 +22,7 @@ Thumbs.db
 *.iws
 *.iml
 *.ipr
+
+# Documentacion interna de planificacion de desarrollo (no forma parte del proyecto entregable)
+docs/superpowers/
+.superpowers/
