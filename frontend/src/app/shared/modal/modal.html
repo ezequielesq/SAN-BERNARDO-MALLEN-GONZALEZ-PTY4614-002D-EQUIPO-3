@@ -1,0 +1,30 @@
+<div class="w3-modal" style="display: block">
+  <dialog
+    #dialog
+    (cancel)="alCancelar()"
+    class="w3-modal-content w3-animate-opacity w3-card-4 w3-margin-bottom app-modal-dialog"
+    aria-labelledby="app-modal-titulo"
+  >
+    <header class="w3-container w3-asphalt w3-padding">
+      <button
+        type="button"
+        class="w3-button w3-display-topright w3-crimson"
+        (click)="alCancelar()"
+        aria-label="Cerrar"
+      >
+        <i class="fa fa-times" aria-hidden="true"></i>
+      </button>
+      <h2 id="app-modal-titulo" tabindex="-1" class="w3-margin-0">{{ titulo() }}</h2>
+    </header>
+
+    <div class="w3-container w3-padding">
+      <ng-content />
+    </div>
+
+    <footer class="w3-container w3-padding w3-light-grey">
+      <div class="w3-bar" style="display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap">
+        <ng-content select="[modalFooter]" />
+      </div>
+    </footer>
+  </dialog>
+</div>

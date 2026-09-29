@@ -1,0 +1,11 @@
+.app-modal-dialog {
+  border: none;
+  padding: 0;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.app-modal-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+}
