@@ -48,6 +48,7 @@
   }
 </div>
 
+<div class="w3-container w3-border w3-margin w3-light-grey">
 <app-estado-vista
   [cargando]="productos.status() === 'loading'"
   [error]="productos.error()"
@@ -65,7 +66,7 @@
     </button>
   } @else {
     <div class="w3-hide-small w3-responsive">
-      <table class="w3-table w3-bordered w3-white">
+      <table class="w3-table-all">
         <caption class="visualmente-oculto">
           Lista de productos
         </caption>
@@ -168,3 +169,4 @@
     />
   }
 </app-estado-vista>
+</div>
