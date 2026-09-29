@@ -1,27 +1,62 @@
 <h1 tabindex="-1">Estado de stock</h1>
 
-<div class="w3-container w3-border w3-margin w3-light-grey">
-  <app-estado-vista
-    [cargando]="stock.status() === 'loading'"
-    [error]="stock.error()"
-    [vacio]="todos().length === 0"
-    mensajeCarga="Cargando stock…"
-    mensajeVacio="Aún no hay productos activos con movimientos."
-    (reintentar)="stock.reload()"
-  >
+<app-estado-vista
+  [cargando]="stock.status() === 'loading'"
+  [error]="stock.error()"
+  [vacio]="todos().length === 0"
+  mensajeCarga="Cargando stock…"
+  mensajeVacio="Aún no hay productos activos con movimientos."
+  (reintentar)="stock.reload()"
+>
+  <div class="w3-container w3-border w3-margin w3-light-grey">
+    <h2 class="w3-large">Críticos y agotados</h2>
+    @if (criticosYAgotados().length === 0) {
+      <p>Sin productos en estado crítico o agotado.</p>
+    } @else {
+      <ul class="grilla-tarjetas">
+        @for (p of criticosYAgotados(); track p.productoId) {
+          <li>
+            <article class="w3-card w3-white w3-padding">
+              <h3 class="w3-medium"><b>{{ p.productoNombre }}</b></h3>
+              <p><app-estado-badge [estado]="estadoBadge(p.estado)" /></p>
+              <p>Stock actual: {{ p.stockActual }}</p>
+            </article>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="w3-container w3-border w3-margin w3-light-grey">
     <div class="w3-responsive">
       <table class="w3-table-all">
         <caption class="visualmente-oculto">Estado de stock por producto</caption>
         <thead>
           <tr class="w3-light-grey">
-            <th scope="col">Producto</th>
-            <th scope="col">Stock actual</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Próximo vencimiento</th>
+            <th scope="col" [attr.aria-sort]="ariaSort('productoNombre')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('productoNombre')">
+                Producto <i class="fa {{ iconoOrden('productoNombre') }}" aria-hidden="true"></i>
+              </button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ariaSort('stockActual')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('stockActual')">
+                Stock actual <i class="fa {{ iconoOrden('stockActual') }}" aria-hidden="true"></i>
+              </button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ariaSort('estado')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('estado')">
+                Estado <i class="fa {{ iconoOrden('estado') }}" aria-hidden="true"></i>
+              </button>
+            </th>
+            <th scope="col" [attr.aria-sort]="ariaSort('fechaVencimientoProximo')">
+              <button type="button" class="boton-orden" (click)="ordenarPor('fechaVencimientoProximo')">
+                Próximo vencimiento <i class="fa {{ iconoOrden('fechaVencimientoProximo') }}" aria-hidden="true"></i>
+              </button>
+            </th>
           </tr>
         </thead>
         <tbody>
-          @for (p of todos(); track p.productoId) {
+          @for (p of ordenados(); track p.productoId) {
             <tr>
               <td>{{ p.productoNombre }}</td>
               <td>{{ p.stockActual }}</td>
@@ -32,5 +67,5 @@
         </tbody>
       </table>
     </div>
-  </app-estado-vista>
-</div>
+  </div>
+</app-estado-vista>
