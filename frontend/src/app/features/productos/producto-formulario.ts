@@ -334,6 +334,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
             : `Cambios guardados en '${guardado.nombre}'.`;
         this.notificaciones.exito(texto);
         this.guardado.emit();
+        this.cerrarSolicitado.emit();
       },
       error: (err: unknown) => {
         this.guardando.set(false);
@@ -364,6 +365,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
           this.guardando.set(false);
           this.notificaciones.exito(`Producto '${p.nombre}' deshabilitado.`);
           this.guardado.emit();
+          this.cerrarSolicitado.emit();
         },
         error: (err: unknown) => {
           this.guardando.set(false);
