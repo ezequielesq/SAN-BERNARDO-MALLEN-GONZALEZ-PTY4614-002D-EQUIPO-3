@@ -2,17 +2,17 @@
   <button
     type="button"
     class="w3-button w3-border w3-white w3-margin w3-round"
-    (click)="cambiarSemana(-1)"
+    (click)="cambiarMes(-1)"
   >
-    <i class="fa fa-chevron-left" aria-hidden="true"></i> Semana anterior
+    <i class="fa fa-chevron-left" aria-hidden="true"></i> Mes anterior
   </button>
-  <span class="w3-center" style="flex: 1; font-weight: bold">Semana del {{ etiquetaSemana() }}</span>
+  <span class="w3-center" style="flex: 1; font-weight: bold">{{ etiquetaMes() }}</span>
   <button
     type="button"
     class="w3-button w3-border w3-white w3-margin w3-round"
-    (click)="cambiarSemana(1)"
+    (click)="cambiarMes(1)"
   >
-    Semana siguiente <i class="fa fa-chevron-right" aria-hidden="true"></i>
+    Mes siguiente <i class="fa fa-chevron-right" aria-hidden="true"></i>
   </button>
 </div>
 
@@ -21,30 +21,39 @@
     <p role="status" class="w3-center w3-small w3-text-grey">Cargando…</p>
   }
 
-  <div class="calendario-semana-grilla">
-    @for (dia of diasSemana(); track dia.fecha) {
-      <button
-        type="button"
-        class="calendario-semana-dia"
-        [class.seleccionado]="diaActivo() === dia.fecha"
-        [attr.aria-pressed]="diaActivo() === dia.fecha"
-        (click)="seleccionarDia(dia.fecha)"
-      >
-        <span class="w3-small w3-text-grey">{{ dia.etiqueta }}</span>
-        <span class="numero-dia">{{ dia.dia }}</span>
-        <span class="puntos-dia">
-          @if (resumenPorDia().get(dia.fecha)?.entrada) {
-            <span class="punto punto-entrada" aria-hidden="true"></span>
-          }
-          @if (resumenPorDia().get(dia.fecha)?.salida) {
-            <span class="punto punto-salida" aria-hidden="true"></span>
-          }
-        </span>
-        <span class="visualmente-oculto">
-          @if (resumenPorDia().get(dia.fecha)?.entrada) { con entradas }
-          @if (resumenPorDia().get(dia.fecha)?.salida) { con salidas }
-        </span>
-      </button>
+  <div class="calendario-mes-grilla w3-margin-bottom">
+    @for (etiqueta of DIAS_ES; track etiqueta) {
+      <div class="w3-center w3-small w3-text-grey" style="font-weight: bold">{{ etiqueta }}</div>
+    }
+  </div>
+
+  <div class="calendario-mes-grilla">
+    @for (dia of diasDelMes(); track $index) {
+      @if (dia.tipo === 'vacio') {
+        <div></div>
+      } @else {
+        <button
+          type="button"
+          class="calendario-mes-dia"
+          [class.seleccionado]="diaActivo() === dia.fecha"
+          [attr.aria-pressed]="diaActivo() === dia.fecha"
+          (click)="seleccionarDia(dia.fecha!)"
+        >
+          <span class="numero-dia">{{ dia.dia }}</span>
+          <span class="puntos-dia">
+            @if (resumenPorDia().get(dia.fecha!)?.entrada) {
+              <span class="punto punto-entrada" aria-hidden="true"></span>
+            }
+            @if (resumenPorDia().get(dia.fecha!)?.salida) {
+              <span class="punto punto-salida" aria-hidden="true"></span>
+            }
+          </span>
+          <span class="visualmente-oculto">
+            @if (resumenPorDia().get(dia.fecha!)?.entrada) { con entradas }
+            @if (resumenPorDia().get(dia.fecha!)?.salida) { con salidas }
+          </span>
+        </button>
+      }
     }
   </div>
 

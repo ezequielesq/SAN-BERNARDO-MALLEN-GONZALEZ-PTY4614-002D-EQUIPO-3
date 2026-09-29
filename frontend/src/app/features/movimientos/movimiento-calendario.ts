@@ -9,24 +9,41 @@ import {
 } from '@angular/core';
 import { MovimientoService } from './movimiento.service';
 
-interface DiaSemana {
-  fecha: string;
-  dia: number;
-  etiqueta: string;
+type TipoDiaCalendario = 'vacio' | 'dia';
+
+interface DiaCalendario {
+  tipo: TipoDiaCalendario;
+  fecha?: string;
+  dia?: number;
 }
 
-const DIAS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+const DIAS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'] as const;
+const MESES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+] as const;
 
-function formatearFecha(fecha: Date): string {
-  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
+function formatearFecha(anio: number, mesIndex: number, dia: number): string {
+  return `${anio}-${String(mesIndex + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
-function inicioDeSemana(fecha: Date): Date {
-  const copia = new Date(fecha);
-  const dow = copia.getDay();
-  const offset = dow === 0 ? -6 : 1 - dow;
-  copia.setDate(copia.getDate() + offset);
-  return copia;
+function construirDiasDelMes(anio: number, mesIndex: number): DiaCalendario[] {
+  const primerDia = new Date(anio, mesIndex, 1);
+  const ultimoDia = new Date(anio, mesIndex + 1, 0);
+  const dias: DiaCalendario[] = [];
+
+  let inicioSemana = primerDia.getDay();
+  inicioSemana = inicioSemana === 0 ? 6 : inicioSemana - 1;
+  for (let i = 0; i < inicioSemana; i++) dias.push({ tipo: 'vacio' });
+
+  for (let d = 1; d <= ultimoDia.getDate(); d++) {
+    dias.push({ tipo: 'dia', fecha: formatearFecha(anio, mesIndex, d), dia: d });
+  }
+
+  const resto = dias.length % 7;
+  if (resto > 0) for (let i = resto; i < 7; i++) dias.push({ tipo: 'vacio' });
+
+  return dias;
 }
 
 @Component({
@@ -41,29 +58,33 @@ export class MovimientoCalendario {
   readonly productoId = input<number | null>(null);
   readonly diaSeleccionado = output<string | null>();
 
-  protected readonly inicioSemana = signal(inicioDeSemana(new Date()));
+  protected readonly DIAS_ES = DIAS_ES;
+
+  private readonly hoy = new Date();
+  protected readonly anioActual = signal(this.hoy.getFullYear());
+  protected readonly mesActual = signal(this.hoy.getMonth());
   protected readonly diaActivo = signal<string | null>(null);
 
-  protected readonly diasSemana = computed<DiaSemana[]>(() => {
-    const inicio = this.inicioSemana();
-    return DIAS_ES.map((etiqueta, i) => {
-      const fecha = new Date(inicio);
-      fecha.setDate(fecha.getDate() + i);
-      return { fecha: formatearFecha(fecha), dia: fecha.getDate(), etiqueta };
-    });
+  protected readonly etiquetaMes = computed(
+    () => `${MESES_ES[this.mesActual()]} ${this.anioActual()}`,
+  );
+
+  protected readonly diasDelMes = computed<DiaCalendario[]>(() =>
+    construirDiasDelMes(this.anioActual(), this.mesActual()),
+  );
+
+  private readonly rangoMes = computed(() => {
+    const anio = this.anioActual();
+    const mes = this.mesActual();
+    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+    return {
+      productoId: this.productoId(),
+      desde: formatearFecha(anio, mes, 1),
+      hasta: formatearFecha(anio, mes, ultimoDia),
+    };
   });
 
-  protected readonly etiquetaSemana = computed(() => {
-    const dias = this.diasSemana();
-    return `${dias[0].dia} — ${dias[6].dia}`;
-  });
-
-  private readonly filtroSemana = computed(() => {
-    const dias = this.diasSemana();
-    return { productoId: this.productoId(), desde: dias[0].fecha, hasta: dias[6].fecha };
-  });
-
-  protected readonly movimientos = this.movimientoService.listar(this.filtroSemana);
+  protected readonly movimientos = this.movimientoService.listar(this.rangoMes);
 
   protected readonly resumenPorDia = computed(() => {
     const mapa = new Map<string, { entrada: boolean; salida: boolean }>();
@@ -78,10 +99,10 @@ export class MovimientoCalendario {
     return mapa;
   });
 
-  protected cambiarSemana(delta: number): void {
-    const nueva = new Date(this.inicioSemana());
-    nueva.setDate(nueva.getDate() + delta * 7);
-    this.inicioSemana.set(nueva);
+  protected cambiarMes(delta: number): void {
+    const fecha = new Date(this.anioActual(), this.mesActual() + delta, 1);
+    this.anioActual.set(fecha.getFullYear());
+    this.mesActual.set(fecha.getMonth());
   }
 
   protected seleccionarDia(fecha: string): void {

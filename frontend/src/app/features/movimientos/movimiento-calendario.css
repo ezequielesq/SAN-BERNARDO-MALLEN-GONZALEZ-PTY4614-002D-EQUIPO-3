@@ -1,35 +1,35 @@
-.calendario-semana-grilla {
+.calendario-mes-grilla {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
 }
-.calendario-semana-dia {
+.calendario-mes-dia {
   background: #fff;
   border: 2px solid transparent;
   border-radius: 4px;
-  padding: 8px 4px;
-  min-height: 64px;
+  padding: 6px 2px 4px;
+  min-height: 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 3px;
   cursor: pointer;
 }
-.calendario-semana-dia:hover {
+.calendario-mes-dia:hover {
   background: #f0f0f0;
 }
-.calendario-semana-dia.seleccionado {
+.calendario-mes-dia.seleccionado {
   background-color: var(--w3-cobalt);
   border-color: var(--w3-cobalt);
 }
-.calendario-semana-dia.seleccionado .w3-text-grey {
-  color: #fff !important;
+.calendario-mes-dia.seleccionado .numero-dia {
+  color: #fff;
 }
 .numero-dia {
+  font-size: 13px;
   font-weight: bold;
-}
-.calendario-semana-dia.seleccionado .numero-dia {
-  color: #fff;
+  line-height: 1;
 }
 .puntos-dia {
   display: flex;
