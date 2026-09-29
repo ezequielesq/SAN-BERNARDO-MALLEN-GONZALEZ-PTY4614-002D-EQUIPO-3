@@ -91,15 +91,10 @@ public class SolicitudService {
     }
 
     @Transactional(readOnly = true)
-    public List<SolicitudResponse> listarTodas() {
-        return solicitudRepository.findAll().stream().map(this::toResponse).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<SolicitudResponse> listarPorFecha(LocalDate desde, LocalDate hasta) {
-        LocalDateTime desdeTime = desde.atStartOfDay();
-        LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
-        return solicitudRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(desdeTime, hastaTime)
+    public List<SolicitudResponse> listar(LocalDate desde, LocalDate hasta) {
+        LocalDateTime desdeDt = (desde != null ? desde : LocalDate.now().minusDays(30)).atStartOfDay();
+        LocalDateTime hastaDt = (hasta != null ? hasta : LocalDate.now()).atTime(23, 59, 59);
+        return solicitudRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(desdeDt, hastaDt)
                 .stream().map(this::toResponse).toList();
     }
 
@@ -114,6 +109,7 @@ public class SolicitudService {
     private SolicitudResponse toResponse(Solicitud s) {
         var detalles = s.getDetalles().stream()
                 .map(d -> new SolicitudResponse.DetalleDto(
+                        d.getId(),
                         d.getProducto().getId(),
                         d.getProducto().getNombre(),
                         d.getCantidadSolicitada(),

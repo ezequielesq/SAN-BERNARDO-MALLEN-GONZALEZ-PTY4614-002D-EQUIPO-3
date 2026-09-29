@@ -12,6 +12,6 @@ public record SolicitudResponse(
         LocalDateTime fecha,
         List<DetalleDto> detalles
 ) {
-    public record DetalleDto(Long productoId, String productoNombre,
+    public record DetalleDto(Long detalleId, Long productoId, String productoNombre,
                               Integer cantidadSolicitada, Integer cantidadEntregada) {}
 }
