@@ -1,0 +1,66 @@
+<div class="w3-row w3-container w3-border w3-margin w3-padding w3-light-grey">
+  <div class="w3-col s12 m4 w3-padding">
+    <label for="mas-usados-desde"><b>Desde</b></label>
+    <input
+      #campoDesde
+      id="mas-usados-desde"
+      class="w3-input"
+      type="date"
+      [value]="desdeFiltro()"
+      (change)="cambiarDesde(campoDesde.value)"
+    />
+  </div>
+  <div class="w3-col s12 m4 w3-padding">
+    <label for="mas-usados-hasta"><b>Hasta</b></label>
+    <input
+      #campoHasta
+      id="mas-usados-hasta"
+      class="w3-input"
+      type="date"
+      [value]="hastaFiltro()"
+      (change)="cambiarHasta(campoHasta.value)"
+    />
+  </div>
+  <div class="w3-col s12 m4 w3-padding">
+    <label for="mas-usados-categoria"><b>Categoría</b></label>
+    <select
+      #selectCategoria
+      id="mas-usados-categoria"
+      class="w3-select"
+      (change)="cambiarCategoria(selectCategoria.value)"
+    >
+      <option value="">Todas</option>
+      @for (c of categorias(); track c.id) {
+        <option [value]="c.id">{{ c.nombre }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="w3-container w3-border w3-margin w3-light-grey">
+  <div class="w3-responsive">
+    <table class="w3-table-all">
+      <caption class="visualmente-oculto">Productos más usados en el período</caption>
+      <thead>
+        <tr class="w3-light-grey">
+          <th scope="col">Producto</th>
+          <th scope="col">Categoría</th>
+          <th scope="col">Total consumido</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.productoId) {
+          <tr>
+            <td>{{ fila.nombre }}</td>
+            <td>{{ fila.categoriaNombre }}</td>
+            <td>{{ fila.totalSalidas }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3">No hay consumo registrado en el rango seleccionado.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
