@@ -1,10 +1,19 @@
 <h1 tabindex="-1">Solicitudes</h1>
 
 <p>
-  <a routerLink="/solicitudes/nueva" class="w3-button w3-cobalt w3-round">
+  <button type="button" class="w3-button w3-cobalt w3-round" (click)="mostrarCrear.set(true)">
     <span aria-hidden="true">+ </span>Nueva solicitud
-  </a>
+  </button>
 </p>
+
+@if (mostrarCrear()) {
+  <app-modal [titulo]="'Nueva solicitud'" (cerrar)="mostrarCrear.set(false)">
+    <app-solicitud-crear
+      (guardado)="alGuardarSolicitud(); mostrarCrear.set(false)"
+      (cancelar)="mostrarCrear.set(false)"
+    />
+  </app-modal>
+}
 
 <div class="w3-bar w3-margin-bottom" aria-label="Vista de solicitudes">
   @if (puedeGestionar()) {

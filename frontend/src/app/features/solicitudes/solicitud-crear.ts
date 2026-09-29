@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, afterNextRender, computed, inject, output, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { ProductoService } from '../productos/producto.service';
@@ -15,16 +14,18 @@ interface ItemCarrito {
 
 @Component({
   selector: 'app-solicitud-crear',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './solicitud-crear.html',
 })
 export class SolicitudCrear {
+  readonly guardado = output<void>();
+  readonly cancelar = output<void>();
+
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly solicitudService = inject(SolicitudService);
   private readonly productoService = inject(ProductoService);
   private readonly notificaciones = inject(NotificacionService);
-  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
 
   protected readonly productos = this.productoService.listar(signal(true));
@@ -84,9 +85,8 @@ export class SolicitudCrear {
     this.solicitudService.crear(request).subscribe({
       next: () => {
         this.guardando.set(false);
-        void this.router
-          .navigate(['/solicitudes'])
-          .then(() => this.notificaciones.exito('Solicitud enviada.'));
+        this.notificaciones.exito('Solicitud enviada.');
+        this.guardado.emit();
       },
       error: (err: unknown) => {
         this.guardando.set(false);

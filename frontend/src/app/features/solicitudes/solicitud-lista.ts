@@ -9,15 +9,17 @@ import { NotificacionService } from '../../core/notificaciones/notificacion.serv
 import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
+import { Modal } from '../../shared/modal/modal';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { AprobarSolicitudRequest, DetalleSolicitud, EstadoSolicitud, Solicitud } from './solicitud.modelo';
+import { SolicitudCrear } from './solicitud-crear';
 import { SolicitudService } from './solicitud.service';
 
 type Vista = 'pendientes' | 'todas';
 
 @Component({
   selector: 'app-solicitud-lista',
-  imports: [RouterLink, DatePipe, EstadoVista, EstadoBadge, Paginacion],
+  imports: [RouterLink, DatePipe, EstadoVista, EstadoBadge, Paginacion, Modal, SolicitudCrear],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './solicitud-lista.html',
 })
@@ -41,6 +43,7 @@ export class SolicitudLista {
   protected readonly expandidoId = signal<number | null>(null);
   protected readonly cantidadesEditadas = signal(new Map<number, number>());
   protected readonly guardandoId = signal<number | null>(null);
+  protected readonly mostrarCrear = signal(false);
 
   private readonly filtro = computed(() => ({ desde: this.desdeFiltro(), hasta: this.hastaFiltro() }));
 
@@ -56,6 +59,11 @@ export class SolicitudLista {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
     return this.listaTodas().slice(inicio, inicio + this.tamanoPagina());
   });
+
+  protected alGuardarSolicitud(): void {
+    this.pendientes.reload();
+    this.todasLista.reload();
+  }
 
   protected cambiarDesde(valor: string): void {
     this.desdeFiltro.set(valor === '' ? null : valor);
