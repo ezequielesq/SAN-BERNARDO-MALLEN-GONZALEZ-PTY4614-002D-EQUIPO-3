@@ -1,0 +1,50 @@
+<div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
+  <div class="w3-row">
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="exportar-desde"><b>Desde</b></label>
+      <input
+        #campoDesde
+        id="exportar-desde"
+        class="w3-input"
+        type="date"
+        [value]="desdeFiltro()"
+        (change)="cambiarDesde(campoDesde.value)"
+      />
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="exportar-hasta"><b>Hasta</b></label>
+      <input
+        #campoHasta
+        id="exportar-hasta"
+        class="w3-input"
+        type="date"
+        [value]="hastaFiltro()"
+        (change)="cambiarHasta(campoHasta.value)"
+      />
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="exportar-categoria"><b>Categoría</b></label>
+      <select
+        #selectCategoria
+        id="exportar-categoria"
+        class="w3-select"
+        (change)="cambiarCategoria(selectCategoria.value)"
+      >
+        <option value="">Todas</option>
+        @for (c of categorias(); track c.id) {
+          <option [value]="c.id">{{ c.nombre }}</option>
+        }
+      </select>
+    </div>
+  </div>
+  <p>
+    <button
+      type="button"
+      class="w3-button w3-cobalt w3-round"
+      [attr.aria-disabled]="exportando()"
+      (click)="exportar()"
+    >
+      {{ exportando() ? 'Generando…' : 'Descargar Excel' }}
+    </button>
+  </p>
+</div>
