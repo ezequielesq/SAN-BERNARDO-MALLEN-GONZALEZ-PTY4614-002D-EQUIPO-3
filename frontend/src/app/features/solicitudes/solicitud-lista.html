@@ -1,0 +1,212 @@
+<h1 tabindex="-1">Solicitudes</h1>
+
+<p>
+  <a routerLink="/solicitudes/nueva" class="w3-button w3-cobalt w3-round">
+    <span aria-hidden="true">+ </span>Nueva solicitud
+  </a>
+</p>
+
+<div class="w3-bar w3-margin-bottom" aria-label="Vista de solicitudes">
+  @if (puedeGestionar()) {
+    <button
+      type="button"
+      class="w3-bar-item w3-button"
+      [class.w3-crimson]="vista() === 'pendientes'"
+      [attr.aria-pressed]="vista() === 'pendientes'"
+      (click)="vista.set('pendientes')"
+    >
+      Pendientes
+    </button>
+  }
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-crimson]="vista() === 'todas'"
+    [attr.aria-pressed]="vista() === 'todas'"
+    (click)="vista.set('todas')"
+  >
+    Todas
+  </button>
+</div>
+
+@if (vista() === 'pendientes' && puedeGestionar()) {
+  <div class="w3-container w3-border w3-margin w3-light-grey">
+  <app-estado-vista
+    [cargando]="pendientes.status() === 'loading'"
+    [error]="pendientes.error()"
+    [vacio]="listaPendientes().length === 0"
+    mensajeCarga="Cargando solicitudes pendientes…"
+    mensajeVacio="No hay solicitudes pendientes."
+    (reintentar)="pendientes.reload()"
+  >
+    @for (s of listaPendientes(); track s.id) {
+      <div class="w3-card w3-white w3-margin-bottom w3-padding">
+        <div class="w3-bar">
+          <span class="w3-bar-item"><b>Solicitud #{{ s.id }}</b></span>
+          <span class="w3-bar-item">{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</span>
+          <span class="w3-bar-item">{{ s.solicitanteNombre }}</span>
+        </div>
+        <div class="w3-responsive w3-margin-top">
+          <table class="w3-table-all">
+            <caption class="visualmente-oculto">Ítems de la solicitud #{{ s.id }}</caption>
+            <thead>
+              <tr class="w3-light-grey">
+                <th scope="col">Producto</th>
+                <th scope="col">Cantidad solicitada</th>
+                <th scope="col">Cantidad a entregar</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of s.detalles; track d.detalleId) {
+                <tr>
+                  <td>{{ d.productoNombre }}</td>
+                  <td>{{ d.cantidadSolicitada }}</td>
+                  <td>
+                    <label class="visualmente-oculto" [for]="'entregada-' + d.detalleId">
+                      Cantidad a entregar de {{ d.productoNombre }}
+                    </label>
+                    <input
+                      [id]="'entregada-' + d.detalleId"
+                      class="w3-input"
+                      style="width: 6em"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      [value]="cantidadEditada(d)"
+                      (change)="actualizarCantidad(d.detalleId, $any($event.target).value)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="w3-margin-top">
+          <button
+            type="button"
+            class="w3-button w3-emerald w3-round"
+            [attr.aria-disabled]="guardandoId() === s.id"
+            (click)="aprobar(s)"
+          >
+            {{ guardandoId() === s.id ? 'Procesando…' : 'Aprobar' }}
+          </button>
+          <button
+            type="button"
+            class="w3-button w3-crimson w3-round w3-margin-left"
+            [attr.aria-disabled]="guardandoId() === s.id"
+            (click)="rechazar(s)"
+          >
+            Rechazar
+          </button>
+        </div>
+      </div>
+    }
+  </app-estado-vista>
+  </div>
+} @else {
+  <div class="w3-row w3-container w3-border w3-margin w3-padding w3-light-grey">
+    <div class="w3-col m6 w3-padding-small">
+      <label for="filtro-desde-solicitud"><b>Desde</b></label>
+      <input
+        #campoDesde
+        id="filtro-desde-solicitud"
+        class="w3-input"
+        type="date"
+        [value]="desdeFiltro() ?? ''"
+        (change)="cambiarDesde(campoDesde.value)"
+      />
+    </div>
+    <div class="w3-col m6 w3-padding-small">
+      <label for="filtro-hasta-solicitud"><b>Hasta</b></label>
+      <input
+        #campoHasta
+        id="filtro-hasta-solicitud"
+        class="w3-input"
+        type="date"
+        [value]="hastaFiltro() ?? ''"
+        (change)="cambiarHasta(campoHasta.value)"
+      />
+    </div>
+  </div>
+
+  <div class="w3-container w3-border w3-margin w3-light-grey">
+  <app-estado-vista
+    [cargando]="todasLista.status() === 'loading'"
+    [error]="todasLista.error()"
+    [vacio]="listaTodas().length === 0"
+    mensajeCarga="Cargando solicitudes…"
+    mensajeVacio="No hay solicitudes en el rango seleccionado."
+    (reintentar)="todasLista.reload()"
+  >
+    <div class="w3-responsive">
+      <table class="w3-table-all">
+        <caption class="visualmente-oculto">Historial de solicitudes</caption>
+        <thead>
+          <tr class="w3-light-grey">
+            <th scope="col">Fecha</th>
+            <th scope="col">Solicitante</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Ítems</th>
+            <th scope="col"><span class="visualmente-oculto">Detalle</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of paginadas(); track s.id) {
+            <tr>
+              <td>{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</td>
+              <td>{{ s.solicitanteNombre }}</td>
+              <td><app-estado-badge [estado]="estadoBadge(s.estado)" /></td>
+              <td>{{ s.detalles.length }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="w3-button w3-small w3-border w3-round"
+                  [attr.aria-expanded]="expandidoId() === s.id"
+                  [attr.aria-controls]="'detalle-solicitud-' + s.id"
+                  (click)="alternarExpandido(s.id)"
+                >
+                  {{ expandidoId() === s.id ? 'Ocultar' : 'Ver detalle' }}
+                </button>
+              </td>
+            </tr>
+            @if (expandidoId() === s.id) {
+              <tr [id]="'detalle-solicitud-' + s.id">
+                <td colspan="5">
+                  <table class="w3-table-all">
+                    <caption class="visualmente-oculto">Ítems de la solicitud #{{ s.id }}</caption>
+                    <thead>
+                      <tr class="w3-light-grey">
+                        <th scope="col">Producto</th>
+                        <th scope="col">Cantidad solicitada</th>
+                        <th scope="col">Cantidad entregada</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (d of s.detalles; track d.detalleId) {
+                        <tr>
+                          <td>{{ d.productoNombre }}</td>
+                          <td>{{ d.cantidadSolicitada }}</td>
+                          <td>{{ d.cantidadEntregada ?? '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion
+      [pagina]="paginaActual()"
+      [totalItems]="listaTodas().length"
+      [tamanoPagina]="tamanoPagina()"
+      (paginaCambiada)="cambiarPagina($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+    />
+  </app-estado-vista>
+  </div>
+}
