@@ -56,6 +56,7 @@ export class MovimientoCalendario {
   private readonly movimientoService = inject(MovimientoService);
 
   readonly productoId = input<number | null>(null);
+  readonly diaActivo = input<string | null>(null);
   readonly diaSeleccionado = output<string | null>();
 
   protected readonly DIAS_ES = DIAS_ES;
@@ -63,7 +64,6 @@ export class MovimientoCalendario {
   private readonly hoy = new Date();
   protected readonly anioActual = signal(this.hoy.getFullYear());
   protected readonly mesActual = signal(this.hoy.getMonth());
-  protected readonly diaActivo = signal<string | null>(null);
 
   protected readonly etiquetaMes = computed(
     () => `${MESES_ES[this.mesActual()]} ${this.anioActual()}`,
@@ -107,7 +107,6 @@ export class MovimientoCalendario {
 
   protected seleccionarDia(fecha: string): void {
     const nueva = this.diaActivo() === fecha ? null : fecha;
-    this.diaActivo.set(nueva);
     this.diaSeleccionado.emit(nueva);
   }
 }

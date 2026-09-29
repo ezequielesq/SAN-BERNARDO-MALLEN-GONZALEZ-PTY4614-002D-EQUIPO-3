@@ -17,6 +17,7 @@
     <div class="w3-col s12 m5 l4 w3-padding">
       <app-movimiento-calendario
         [productoId]="productoIdFiltro()"
+        [diaActivo]="desdeFiltro() && desdeFiltro() === hastaFiltro() ? desdeFiltro() : null"
         (diaSeleccionado)="alSeleccionarDiaCalendario($event)"
       />
     </div>
@@ -27,7 +28,7 @@
           <select
             #selectProducto
             id="filtro-producto-movimiento"
-            class="w3-select w3-border"
+            class="w3-select"
             (change)="cambiarProductoFiltro(selectProducto.value)"
           >
             <option value="" [selected]="productoIdFiltro() === null">Todos</option>
@@ -41,7 +42,7 @@
           <input
             #campoDesde
             id="filtro-desde"
-            class="w3-input w3-border"
+            class="w3-input"
             type="date"
             [value]="desdeFiltro() ?? ''"
             (change)="cambiarDesde(campoDesde.value)"
@@ -52,7 +53,7 @@
           <input
             #campoHasta
             id="filtro-hasta"
-            class="w3-input w3-border"
+            class="w3-input"
             type="date"
             [value]="hastaFiltro() ?? ''"
             (change)="cambiarHasta(campoHasta.value)"
