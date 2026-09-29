@@ -21,9 +21,11 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
   min-height: 100dvh;
 }
 .shell-main > .w3-container { flex: 1 0 auto; }
-.menu-activo { border-left: 4px solid var(--w3-cobalt); font-weight: 600; }
 .login-tarjeta { max-width: 28rem; }
-@media (min-width: 993px) { .shell-main { margin-left: var(--ancho-menu); } }
+@media (min-width: 993px) {
+  .shell-main { margin-left: var(--ancho-menu); padding-top: 0; }
+  .shell-menu { top: 0; height: 100%; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

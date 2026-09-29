@@ -5,28 +5,20 @@
   >Saltar al contenido principal</a
 >
 
-<header class="w3-top">
-  <div class="w3-bar w3-asphalt shell-barra">
-    <button
-      #botonMenu
-      type="button"
-      class="w3-bar-item w3-button w3-hide-large"
-      aria-label="Abrir menú"
-      aria-controls="menu-principal"
-      [attr.aria-expanded]="menuAbierto()"
-      (click)="abrirMenu()"
-    >
-      <span aria-hidden="true">☰</span>
-    </button>
-    <span class="w3-bar-item w3-large"><b>Smart RDP</b></span>
-    <div class="w3-right w3-hide-small w3-hide-medium">
-      <span class="w3-bar-item">{{ auth.sesion()?.nombre }} · {{ etiquetaRol() }}</span>
-      <button type="button" class="w3-bar-item w3-button" (click)="cerrarSesion()">
-        Cerrar sesión
-      </button>
-    </div>
-  </div>
-</header>
+<div class="w3-bar w3-asphalt w3-hide-large shell-barra">
+  <button
+    #botonMenu
+    type="button"
+    class="w3-bar-item w3-button"
+    aria-label="Abrir menú"
+    aria-controls="menu-principal"
+    [attr.aria-expanded]="menuAbierto()"
+    (click)="abrirMenu()"
+  >
+    <span aria-hidden="true">☰</span>
+  </button>
+  <h4 class="w3-bar-item w3-large" style="margin: 0">Smart RDP</h4>
+</div>
 
 @if (menuAbierto()) {
   <button
@@ -46,6 +38,8 @@
   [style.display]="menuAbierto() ? 'block' : null"
   [cdkTrapFocus]="menuAbierto()"
 >
+  <h4 class="w3-bar-item w3-large" style="margin: 0">Smart RDP</h4>
+
   <button
     #botonCerrarMenu
     type="button"
@@ -69,7 +63,7 @@
         <a
           class="w3-bar-item w3-button"
           [routerLink]="item.ruta"
-          routerLinkActive="w3-paper menu-activo"
+          routerLinkActive="w3-crimson"
           [routerLinkActiveOptions]="{ exact: true }"
           ariaCurrentWhenActive="page"
           >{{ item.etiqueta }}</a
@@ -78,7 +72,7 @@
     </div>
   }
 
-  <div class="w3-hide-large w3-border-top w3-padding">
+  <div class="w3-border-top w3-margin-top w3-padding">
     <p class="w3-small">{{ auth.sesion()?.nombre }} · {{ etiquetaRol() }}</p>
     <button type="button" class="w3-button w3-block w3-left-align" (click)="cerrarSesion()">
       Cerrar sesión
@@ -87,7 +81,7 @@
 </nav>
 
 <main #main id="contenido" tabindex="-1" class="shell-main">
-  <div class="w3-container w3-padding-16">
+  <div class="w3-container w3-padding-16 w3-white">
     <router-outlet />
   </div>
   <app-footer />
