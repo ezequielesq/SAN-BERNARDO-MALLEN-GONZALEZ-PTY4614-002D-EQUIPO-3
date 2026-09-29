@@ -1,0 +1,53 @@
+<h1 tabindex="-1">Analítica</h1>
+
+<div class="w3-bar w3-margin-bottom" aria-label="Reportes de analítica">
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-crimson]="pestana() === 'consumo'"
+    [attr.aria-pressed]="pestana() === 'consumo'"
+    (click)="pestana.set('consumo')"
+  >
+    Consumo
+  </button>
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-crimson]="pestana() === 'mas-usados'"
+    [attr.aria-pressed]="pestana() === 'mas-usados'"
+    (click)="pestana.set('mas-usados')"
+  >
+    Más usados
+  </button>
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-crimson]="pestana() === 'vencimientos'"
+    [attr.aria-pressed]="pestana() === 'vencimientos'"
+    (click)="pestana.set('vencimientos')"
+  >
+    Vencimientos
+  </button>
+  <button
+    type="button"
+    class="w3-bar-item w3-button"
+    [class.w3-crimson]="pestana() === 'exportar'"
+    [attr.aria-pressed]="pestana() === 'exportar'"
+    (click)="pestana.set('exportar')"
+  >
+    Exportar
+  </button>
+</div>
+
+@if (pestana() === 'consumo') {
+  <!-- app-analitica-consumo va aquí (Task 7) -->
+}
+@if (pestana() === 'mas-usados') {
+  <!-- app-analitica-mas-usados va aquí (Task 8) -->
+}
+@if (pestana() === 'vencimientos') {
+  <!-- app-analitica-vencimientos va aquí (Task 9) -->
+}
+@if (pestana() === 'exportar') {
+  <!-- app-analitica-exportar va aquí (Task 10) -->
+}

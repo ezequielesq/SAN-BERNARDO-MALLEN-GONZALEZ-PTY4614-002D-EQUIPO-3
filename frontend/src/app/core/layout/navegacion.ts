@@ -19,6 +19,7 @@ export const NAVEGACION: readonly ItemNavegacion[] = [
   { etiqueta: 'Estado de stock', ruta: '/movimientos/stock', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
   { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
   { etiqueta: 'Solicitudes', ruta: '/solicitudes', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
+  { etiqueta: 'Analítica', ruta: '/analitica', roles: ['ADMIN', 'BODEGUERO'] },
   { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['ADMIN'], grupo: 'Administración' },
   { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['ADMIN'], grupo: 'Administración' },
 ];

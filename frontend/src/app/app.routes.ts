@@ -28,6 +28,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/solicitudes/solicitudes.routes').then(m => m.SOLICITUDES_ROUTES),
       },
       {
+        path: 'analitica',
+        canActivate: [rolGuard(['ADMIN', 'BODEGUERO'])],
+        loadChildren: () => import('./features/analitica/analitica.routes').then(m => m.ANALITICA_ROUTES),
+      },
+      {
         path: 'administracion',
         canActivate: [rolGuard(['ADMIN'])],
         loadChildren: () => import('./features/administracion/administracion.routes').then(m => m.ADMINISTRACION_ROUTES),
