@@ -6,13 +6,15 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { Modal } from '../../shared/modal/modal';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { ProductoService } from '../productos/producto.service';
 import { MovimientoCalendario } from './movimiento-calendario';
+import { MovimientoFormularioEntrada } from './movimiento-formulario-entrada';
+import { MovimientoFormularioSalida } from './movimiento-formulario-salida';
 import { Movimiento, TipoMovimiento } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
@@ -20,7 +22,7 @@ type ColumnaOrdenMovimiento = 'fecha' | 'productoNombre' | 'tipo' | 'cantidad' |
 
 @Component({
   selector: 'app-movimiento-lista',
-  imports: [RouterLink, DatePipe, EstadoVista, EstadoBadge, Paginacion, MovimientoCalendario],
+  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, MovimientoCalendario, Modal, MovimientoFormularioEntrada, MovimientoFormularioSalida],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimiento-lista.html',
 })
@@ -28,6 +30,13 @@ export class MovimientoLista {
   private readonly movimientoService = inject(MovimientoService);
   private readonly productoService = inject(ProductoService);
   protected readonly auth = inject(AuthService);
+
+  protected readonly mostrarEntrada = signal(false);
+  protected readonly mostrarSalida = signal(false);
+
+  protected alGuardarMovimiento(): void {
+    this.movimientos.reload();
+  }
 
   protected readonly puedeGestionar = computed(() => {
     const rol = this.auth.rol();

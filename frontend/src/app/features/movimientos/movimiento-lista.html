@@ -2,13 +2,31 @@
 
 @if (puedeGestionar()) {
   <p>
-    <a routerLink="/movimientos/entradas/nueva" class="w3-button w3-emerald w3-round">
+    <button type="button" class="w3-button w3-emerald w3-round" (click)="mostrarEntrada.set(true)">
       <span aria-hidden="true">+ </span>Registrar entrada
-    </a>
-    <a routerLink="/movimientos/salidas/nueva" class="w3-button w3-crimson w3-round w3-margin-left">
+    </button>
+    <button type="button" class="w3-button w3-crimson w3-round w3-margin-left" (click)="mostrarSalida.set(true)">
       <span aria-hidden="true">+ </span>Registrar salida
-    </a>
+    </button>
   </p>
+}
+
+@if (mostrarEntrada()) {
+  <app-modal [titulo]="'Registrar entrada'" (cerrar)="mostrarEntrada.set(false)">
+    <app-movimiento-formulario-entrada
+      (guardado)="alGuardarMovimiento(); mostrarEntrada.set(false)"
+      (cancelar)="mostrarEntrada.set(false)"
+    />
+  </app-modal>
+}
+
+@if (mostrarSalida()) {
+  <app-modal [titulo]="'Registrar salida'" (cerrar)="mostrarSalida.set(false)">
+    <app-movimiento-formulario-salida
+      (guardado)="alGuardarMovimiento(); mostrarSalida.set(false)"
+      (cancelar)="mostrarSalida.set(false)"
+    />
+  </app-modal>
 }
 
 <!-- Contenedor 1: calendario + filtros, mismo patrón que el Home de SDI -->

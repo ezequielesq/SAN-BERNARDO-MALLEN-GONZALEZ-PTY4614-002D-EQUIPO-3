@@ -6,11 +6,11 @@ import {
   computed,
   effect,
   inject,
+  output,
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { ProductoService } from '../productos/producto.service';
 import { EntradaRequest } from './movimiento.modelo';
@@ -18,16 +18,18 @@ import { MovimientoService } from './movimiento.service';
 
 @Component({
   selector: 'app-movimiento-formulario-entrada',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimiento-formulario-entrada.html',
 })
 export class MovimientoFormularioEntrada {
+  readonly guardado = output<void>();
+  readonly cancelar = output<void>();
+
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly movimientoService = inject(MovimientoService);
   private readonly productoService = inject(ProductoService);
   private readonly notificaciones = inject(NotificacionService);
-  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
 
   protected readonly productos = this.productoService.listar(signal(true));
@@ -103,9 +105,8 @@ export class MovimientoFormularioEntrada {
     this.movimientoService.registrarEntrada(request).subscribe({
       next: () => {
         this.guardando.set(false);
-        void this.router
-          .navigate(['/movimientos'])
-          .then(() => this.notificaciones.exito('Entrada registrada.'));
+        this.notificaciones.exito('Entrada registrada.');
+        this.guardado.emit();
       },
       error: () => {
         this.guardando.set(false);
