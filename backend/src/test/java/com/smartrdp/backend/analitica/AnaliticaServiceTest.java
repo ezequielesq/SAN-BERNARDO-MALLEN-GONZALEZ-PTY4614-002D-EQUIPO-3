@@ -33,10 +33,20 @@ class AnaliticaServiceTest {
 
     @Test
     void getVencimientos_whenNoLotes_thenReturnsEmptyList() {
-        when(loteRepository.findByFechaVencimientoBeforeAndCantidadDisponibleGreaterThan(any(), anyInt()))
+        when(loteRepository.findVencimientosPorUmbral(any(), any()))
                 .thenReturn(Collections.emptyList());
-        var result = analiticaService.getVencimientos(30);
+        var result = analiticaService.getVencimientos(30, null);
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getVencimientosPorRango_whenNoLotes_thenReturnsEmptyList() {
+        when(loteRepository.findVencimientosPorRango(any(), any(), any()))
+                .thenReturn(Collections.emptyList());
+        var result = analiticaService.getVencimientosPorRango(
+                LocalDate.now().minusDays(7), LocalDate.now(), 2L);
+        assertThat(result).isEmpty();
+        verify(loteRepository).findVencimientosPorRango(any(), any(), eq(2L));
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.smartrdp.backend.analitica;
 
 import com.smartrdp.backend.analitica.dto.ConsumoDto;
 import com.smartrdp.backend.analitica.dto.*;
+import com.smartrdp.backend.movimiento.Lote;
 import com.smartrdp.backend.movimiento.LoteRepository;
 import com.smartrdp.backend.movimiento.MovimientoRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,17 +36,27 @@ public class AnaliticaService {
     }
 
     @Transactional(readOnly = true)
-    public List<VencimientoDto> getVencimientos(int diasUmbral) {
+    public List<VencimientoDto> getVencimientos(int diasUmbral, Long categoriaId) {
         LocalDate umbral = LocalDate.now().plusDays(diasUmbral);
-        return loteRepository.findByFechaVencimientoBeforeAndCantidadDisponibleGreaterThan(umbral, 0)
-                .stream()
-                .map(l -> new VencimientoDto(
-                        l.getProducto().getId(),
-                        l.getProducto().getNombre(),
-                        l.getCantidadDisponible(),
-                        l.getFechaVencimiento(),
-                        l.getFechaVencimiento().isBefore(LocalDate.now())))
+        return loteRepository.findVencimientosPorUmbral(umbral, categoriaId).stream()
+                .map(this::mapearLoteAVencimiento)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<VencimientoDto> getVencimientosPorRango(LocalDate desde, LocalDate hasta, Long categoriaId) {
+        return loteRepository.findVencimientosPorRango(desde, hasta, categoriaId).stream()
+                .map(this::mapearLoteAVencimiento)
+                .toList();
+    }
+
+    private VencimientoDto mapearLoteAVencimiento(Lote l) {
+        return new VencimientoDto(
+                l.getProducto().getId(),
+                l.getProducto().getNombre(),
+                l.getCantidadDisponible(),
+                l.getFechaVencimiento(),
+                l.getFechaVencimiento().isBefore(LocalDate.now()));
     }
 
     @Transactional(readOnly = true)

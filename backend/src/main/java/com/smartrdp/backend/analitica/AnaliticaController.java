@@ -26,8 +26,18 @@ public class AnaliticaController {
     }
 
     @GetMapping("/vencimientos")
-    public List<VencimientoDto> vencimientos(@RequestParam(defaultValue = "30") int dias) {
-        return analiticaService.getVencimientos(dias);
+    public List<VencimientoDto> vencimientos(
+            @RequestParam(defaultValue = "30") int dias,
+            @RequestParam(required = false) Long categoriaId) {
+        return analiticaService.getVencimientos(dias, categoriaId);
+    }
+
+    @GetMapping("/vencimientos/rango")
+    public List<VencimientoDto> vencimientosPorRango(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) Long categoriaId) {
+        return analiticaService.getVencimientosPorRango(desde, hasta, categoriaId);
     }
 
     @GetMapping("/exportar-movimientos")
