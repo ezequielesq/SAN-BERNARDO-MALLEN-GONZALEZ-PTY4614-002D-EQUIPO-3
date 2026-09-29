@@ -24,13 +24,18 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
 }
 .shell-menu__header {
   flex: 0 0 auto;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  background-color: #20242a;
+  border-bottom: 2px solid var(--w3-cobalt);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.shell-menu__nav { flex: 1 1 auto; overflow-y: auto; }
-.shell-menu__pie { flex: 0 0 auto; }
+.shell-menu__nav { flex: 1 1 auto; overflow-y: auto; padding: 0.5rem 0; }
+.shell-menu__pie {
+  flex: 0 0 auto;
+  background-color: #20242a;
+  border-top: 2px solid var(--w3-cobalt) !important;
+}
 .shell-menu__grupo-titulo {
   margin: 0;
   padding: 1rem 1rem 0.35rem;
