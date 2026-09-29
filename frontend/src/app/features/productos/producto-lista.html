@@ -1,9 +1,9 @@
 <h1 tabindex="-1">Productos</h1>
 @if (puedeGestionar()) {
   <p>
-    <a routerLink="/productos/nuevo" class="w3-button w3-cobalt w3-round">
+    <button type="button" class="w3-button w3-cobalt w3-round" (click)="modalProducto.set('nuevo')">
       <span aria-hidden="true">+ </span>Nuevo producto
-    </a>
+    </button>
   </p>
 }
 
@@ -120,9 +120,9 @@
               </td>
               @if (puedeGestionar()) {
                 <td>
-                  <a [routerLink]="['/productos', p.id]" class="w3-button w3-warning w3-round">
+                  <button type="button" class="w3-button w3-warning w3-round" (click)="modalProducto.set(p.id)">
                     <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span>
-                  </a>
+                  </button>
                 </td>
               }
             </tr>
@@ -170,9 +170,9 @@
             }
             @if (puedeGestionar()) {
               ·
-              <a [routerLink]="['/productos', p.id]" class="w3-button w3-warning w3-round">
-                <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span></a
-              >
+              <button type="button" class="w3-button w3-warning w3-round" (click)="modalProducto.set(p.id)">
+                <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span>
+              </button>
             }
           </p>
         </article>
@@ -189,3 +189,14 @@
   }
 </app-estado-vista>
 </div>
+
+@if (modalProducto() !== null) {
+  <app-modal [titulo]="tituloModal()" (cerrar)="formularioProducto.solicitarCierre()">
+    <app-producto-formulario
+      #formularioProducto
+      [productoId]="modalProducto() === 'nuevo' ? null : modalProducto()"
+      (guardado)="alGuardarProducto()"
+      (cerrarSolicitado)="cerrarModalProducto()"
+    />
+  </app-modal>
+}

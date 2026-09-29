@@ -8,6 +8,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -19,7 +20,6 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
 import { filter, switchMap } from 'rxjs';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
@@ -104,32 +104,28 @@ function esCampo(valor: string): valor is Campo {
 
 @Component({
   selector: 'app-producto-formulario',
-  imports: [ReactiveFormsModule, RouterLink, EstadoVista],
+  imports: [ReactiveFormsModule, EstadoVista],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './producto-formulario.html',
 })
 export class ProductoFormulario implements ConCambiosPendientes {
-  /** Parámetro de ruta `:id` (withComponentInputBinding). Ausente en /productos/nuevo. */
-  readonly id = input<string>();
+  /** `null` = alta (Nuevo producto); número = edición de ese producto. */
+  readonly productoId = input.required<number | null>();
+  readonly guardado = output<void>();
+  readonly cerrarSolicitado = output<void>();
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly productoService = inject(ProductoService);
   private readonly catalogoService = inject(CatalogoService);
   private readonly confirmacion = inject(ConfirmacionService);
   private readonly notificaciones = inject(NotificacionService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
 
   protected readonly ETIQUETAS = ETIQUETAS;
 
-  protected readonly esEdicion = computed(() => this.id() !== undefined);
-  protected readonly idNumerico = computed(() => {
-    const valor = this.id();
-    if (valor === undefined) return null;
-    const numero = Number(valor);
-    return Number.isInteger(numero) && numero > 0 ? numero : null;
-  });
+  protected readonly esEdicion = computed(() => this.productoId() !== null);
+  protected readonly idNumerico = computed(() => this.productoId());
 
   protected readonly producto = this.productoService.obtener(this.idNumerico);
   protected readonly categorias = this.catalogoService.listar(ENDPOINT_CATEGORIAS, false);
@@ -235,6 +231,24 @@ export class ProductoFormulario implements ConCambiosPendientes {
     return this.form.dirty && !this.guardando();
   }
 
+  solicitarCierre(): void {
+    if (!this.tieneCambiosPendientes()) {
+      this.cerrarSolicitado.emit();
+      return;
+    }
+    this.confirmacion
+      .confirmar({
+        titulo: 'Tienes cambios sin guardar',
+        descripcion: 'Si sales ahora, se perderán los cambios de este formulario.',
+        textoConfirmar: 'Salir sin guardar',
+      })
+      .pipe(
+        filter((confirmado) => confirmado),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.cerrarSolicitado.emit());
+  }
+
   protected recargar(): void {
     this.categorias.reload();
     this.unidades.reload();
@@ -318,7 +332,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
           id === null
             ? `Producto '${guardado.nombre}' creado.`
             : `Cambios guardados en '${guardado.nombre}'.`;
-        void this.router.navigate(['/productos']).then(() => this.notificaciones.exito(texto));
+        this.notificaciones.exito(texto);
+        this.guardado.emit();
       },
       error: (err: unknown) => {
         this.guardando.set(false);
@@ -347,9 +362,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
         next: () => {
           this.form.markAsPristine();
           this.guardando.set(false);
-          void this.router
-            .navigate(['/productos'])
-            .then(() => this.notificaciones.exito(`Producto '${p.nombre}' deshabilitado.`));
+          this.notificaciones.exito(`Producto '${p.nombre}' deshabilitado.`);
+          this.guardado.emit();
         },
         error: (err: unknown) => {
           this.guardando.set(false);
@@ -370,6 +384,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
           this.notificaciones.exito(`Producto '${p.nombre}' reactivado.`);
           this.enfocarTrasReactivar.set(true);
           this.producto.reload();
+          this.guardado.emit();
         },
         error: (err: unknown) => {
           this.guardando.set(false);

@@ -11,13 +11,14 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
+import { Modal } from '../../shared/modal/modal';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { descargarArchivo } from '../../shared/utils/descargar-archivo';
+import { ProductoFormulario } from './producto-formulario';
 import { ProductoService } from './producto.service';
 
 type ColumnaOrdenProducto = 'codigoPtv' | 'nombre' | 'categoriaNombre' | 'estado';
@@ -37,7 +38,7 @@ function normalizar(texto: string): string {
 
 @Component({
   selector: 'app-producto-lista',
-  imports: [RouterLink, EstadoVista, EstadoBadge, Paginacion],
+  imports: [EstadoVista, EstadoBadge, Paginacion, Modal, ProductoFormulario],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './producto-lista.html',
 })
@@ -60,6 +61,13 @@ export class ProductoLista {
   protected readonly exportando = signal(false);
   protected readonly columnaOrden = signal<ColumnaOrdenProducto | null>(null);
   protected readonly direccionOrden = signal<'asc' | 'desc'>('asc');
+
+  protected readonly modalProducto = signal<'nuevo' | number | null>(null);
+
+  protected readonly tituloModal = computed(() => {
+    const m = this.modalProducto();
+    return m === 'nuevo' ? 'Nuevo producto' : 'Editar producto';
+  });
 
   protected readonly productos = this.productoService.listar(this.soloActivos);
   protected readonly todos = computed(() =>
@@ -134,6 +142,14 @@ export class ProductoLista {
     afterNextRender(() => document.getElementById('buscar-producto')?.focus(), {
       injector: this.injector,
     });
+  }
+
+  protected alGuardarProducto(): void {
+    this.productos.reload();
+  }
+
+  protected cerrarModalProducto(): void {
+    this.modalProducto.set(null);
   }
 
   protected ordenarPor(columna: ColumnaOrdenProducto): void {
