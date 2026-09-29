@@ -6,27 +6,18 @@
     <div class="w3-col s12 m7 l8">
       <div class="w3-row">
         <div class="w3-col s12 m4 w3-padding">
-          <p><b>Ver por</b></p>
-          <button
-            type="button"
-            class="w3-button w3-round"
-            [class.w3-crimson]="verPor() === 'SEMANA'"
-            [class.w3-cobalt]="verPor() !== 'SEMANA'"
-            [attr.aria-pressed]="verPor() === 'SEMANA'"
-            (click)="cambiarVerPor('SEMANA')"
+          <label for="consumo-categoria"><b>Categoría</b></label>
+          <select
+            #selectCategoria
+            id="consumo-categoria"
+            class="w3-select"
+            (change)="cambiarCategoria(selectCategoria.value)"
           >
-            Semana
-          </button>
-          <button
-            type="button"
-            class="w3-button w3-round w3-margin-left"
-            [class.w3-crimson]="verPor() === 'MES'"
-            [class.w3-cobalt]="verPor() !== 'MES'"
-            [attr.aria-pressed]="verPor() === 'MES'"
-            (click)="cambiarVerPor('MES')"
-          >
-            Mes
-          </button>
+            <option value="">Todas</option>
+            @for (c of categorias(); track c.id) {
+              <option [value]="c.id">{{ c.nombre }}</option>
+            }
+          </select>
         </div>
         <div class="w3-col s12 m4 w3-padding">
           <label for="consumo-desde"><b>Desde</b></label>
@@ -53,18 +44,27 @@
       </div>
       <div class="w3-row">
         <div class="w3-col s12 m6 w3-padding">
-          <label for="consumo-categoria"><b>Categoría</b></label>
-          <select
-            #selectCategoria
-            id="consumo-categoria"
-            class="w3-select"
-            (change)="cambiarCategoria(selectCategoria.value)"
+          <p><b>Ver por</b></p>
+          <button
+            type="button"
+            class="w3-button w3-round"
+            [class.w3-crimson]="verPor() === 'SEMANA'"
+            [class.w3-cobalt]="verPor() !== 'SEMANA'"
+            [attr.aria-pressed]="verPor() === 'SEMANA'"
+            (click)="cambiarVerPor('SEMANA')"
           >
-            <option value="">Todas</option>
-            @for (c of categorias(); track c.id) {
-              <option [value]="c.id">{{ c.nombre }}</option>
-            }
-          </select>
+            Semana
+          </button>
+          <button
+            type="button"
+            class="w3-button w3-round w3-margin-left"
+            [class.w3-crimson]="verPor() === 'MES'"
+            [class.w3-cobalt]="verPor() !== 'MES'"
+            [attr.aria-pressed]="verPor() === 'MES'"
+            (click)="cambiarVerPor('MES')"
+          >
+            Mes
+          </button>
         </div>
         <div class="w3-col s12 m6 w3-padding">
           <p><b>Agrupar por</b></p>
