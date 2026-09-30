@@ -13,14 +13,13 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { traducirError } from '../../core/errores/traducir-error';
-import { Footer } from '../../shared/footer/footer';
 import { paginaInicialPara } from '../../core/layout/navegacion';
 
 type CampoLogin = 'email' | 'password';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, Footer],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
 })

@@ -1,12 +1,10 @@
-<h1 tabindex="-1">Movimientos</h1>
-
 @if (puedeGestionar()) {
   <p>
-    <button type="button" class="w3-button w3-emerald w3-round" (click)="mostrarEntrada.set(true)">
-      <span aria-hidden="true">+ </span>Registrar entrada
+    <button type="button" class="w3-button w3-emerald w3-round w3-margin-left" (click)="mostrarEntrada.set(true)">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar entrada
     </button>
     <button type="button" class="w3-button w3-crimson w3-round w3-margin-left" (click)="mostrarSalida.set(true)">
-      <span aria-hidden="true">+ </span>Registrar salida
+      <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar salida
     </button>
   </p>
 }

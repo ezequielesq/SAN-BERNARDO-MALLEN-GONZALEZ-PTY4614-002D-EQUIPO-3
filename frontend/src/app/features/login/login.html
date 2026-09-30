@@ -1,8 +1,5 @@
-<header class="w3-bar w3-asphalt shell-barra">
-  <h4 class="w3-bar-item w3-large" style="margin: 0">Smart RDP</h4>
-</header>
-<main id="contenido" class="w3-container w3-padding-32 w3-white">
-  <div class="w3-content login-tarjeta w3-card w3-white w3-padding-large">
+<main id="contenido" class="w3-container w3-padding-32 w3-asphalt">
+  <div class="w3-display-middle w3-white" style="width: 100%; max-width: 420px; padding: 16px">
     <h1 class="w3-xxlarge">Iniciar sesión</h1>
 
     @if (sesionExpirada && !errorGeneral()) {
@@ -30,7 +27,7 @@
         />
         @if (mensajeError('email'); as m) {
           <p id="login-email-error" class="texto-error">
-            <span aria-hidden="true">⚠ </span>{{ m }}
+            <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
           </p>
         }
       </div>
@@ -48,7 +45,7 @@
         />
         @if (mensajeError('password'); as m) {
           <p id="login-password-error" class="texto-error">
-            <span aria-hidden="true">⚠ </span>{{ m }}
+            <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
           </p>
         }
         <button
@@ -62,7 +59,7 @@
         </button>
       </div>
 
-      <button type="submit" class="w3-button w3-cobalt w3-block w3-round" [attr.aria-disabled]="enviando()">
+      <button type="submit" class="w3-button w3-info w3-block w3-round" [attr.aria-disabled]="enviando()">
         {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
       </button>
     </form>
@@ -72,5 +69,3 @@
     </p>
   </div>
 </main>
-
-<app-footer />

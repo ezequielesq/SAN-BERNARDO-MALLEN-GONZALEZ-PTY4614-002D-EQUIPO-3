@@ -4,9 +4,9 @@
   </div>
 }
 
-<form [formGroup]="formItem" (ngSubmit)="agregarItem()" novalidate class="w3-section w3-white w3-padding w3-card">
+<form [formGroup]="formItem" (ngSubmit)="agregarItem()" novalidate class="w3-section w3-white w3-padding w3-card w3-border">
   <div class="w3-row">
-    <div class="w3-col m6 w3-padding-small">
+    <div class="w3-col w3-half w3-padding-small">
       <label for="item-producto"><b>Producto</b></label>
       <select
         id="item-producto"
@@ -21,10 +21,10 @@
         }
       </select>
       @if (intentoAgregar() && formItem.controls.productoId.invalid) {
-        <p class="texto-error" id="error-item-producto"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
+        <p class="texto-error" id="error-item-producto"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige un producto.</p>
       }
     </div>
-    <div class="w3-col m4 w3-padding-small">
+    <div class="w3-col w3-half w3-padding-small">
       <label for="item-cantidad"><b>Cantidad</b></label>
       <input
         id="item-cantidad"
@@ -38,21 +38,21 @@
         [attr.aria-describedby]="intentoAgregar() && formItem.controls.cantidad.invalid ? 'error-item-cantidad' : null"
       />
       @if (intentoAgregar() && formItem.controls.cantidad.invalid) {
-        <p class="texto-error" id="error-item-cantidad"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
+        <p class="texto-error" id="error-item-cantidad"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa una cantidad de al menos 1.</p>
       }
     </div>
-    <div class="w3-col m2 w3-padding-small" style="display: flex; align-items: flex-end">
-      <button type="submit" class="w3-button w3-cobalt w3-round">
-        <span aria-hidden="true">+ </span>Agregar ítem
+    <div class="w3-row w3-padding-small">
+      <button type="submit" class="w3-button w3-info w3-round w3-margin-top">
+        <i class="fa-solid fa-plus"></i> Agregar ítem
       </button>
     </div>
   </div>
   @if (errorDuplicado()) {
-    <p class="texto-error" role="alert"><span aria-hidden="true">⚠ </span>Ese producto ya está en la solicitud.</p>
+    <p class="texto-error" role="alert"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ese producto ya está en la solicitud.</p>
   }
 </form>
 
-<div class="w3-section w3-white w3-padding w3-card">
+<div class="w3-section w3-white w3-padding w3-card w3-border">
   <h2 class="w3-large">Ítems de la solicitud</h2>
   @if (items().length === 0) {
     <p class="w3-text-grey">Todavía no agregas ningún ítem.</p>
@@ -85,7 +85,7 @@
   }
 
   @if (intentoEnviar() && items().length === 0) {
-    <p class="texto-error" role="alert"><span aria-hidden="true">⚠ </span>Agrega al menos un ítem antes de enviar.</p>
+    <p class="texto-error" role="alert"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Agrega al menos un ítem antes de enviar.</p>
   }
 
   <div class="w3-margin-top">
@@ -97,6 +97,6 @@
     >
       {{ guardando() ? 'Enviando…' : 'Enviar solicitud' }}
     </button>
-    <button type="button" class="w3-button w3-white w3-border w3-round w3-margin-left" (click)="cancelar.emit()">Cancelar</button>
+    <button type="button" class="w3-button w3-white w3-border w3-border-red w3-round w3-margin-left" (click)="cancelar.emit()">Cancelar</button>
   </div>
 </div>

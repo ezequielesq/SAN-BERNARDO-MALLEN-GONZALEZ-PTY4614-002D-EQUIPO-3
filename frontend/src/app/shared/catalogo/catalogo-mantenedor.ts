@@ -1,5 +1,12 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, Injector, afterNextRender, computed, inject, signal,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -72,15 +79,19 @@ export class CatalogoMantenedor {
       this.enfocar('nuevo-nombre');
       return;
     }
-    this.ejecutar(this.catalogoService.crear(this.config.endpoint, nombre), creado => {
-      this.nuevoForm.reset();
-      this.errorNuevo.set(null);
-      this.notificaciones.exito(`${this.singularMayuscula} '${creado.nombre}' agregada.`);
-      this.enfocar('nuevo-nombre');
-    }, mensaje => {
-      this.errorNuevo.set(mensaje);
-      this.enfocar('nuevo-nombre');
-    });
+    this.ejecutar(
+      this.catalogoService.crear(this.config.endpoint, nombre),
+      (creado) => {
+        this.nuevoForm.reset();
+        this.errorNuevo.set(null);
+        this.notificaciones.exito(`${this.singularMayuscula} '${creado.nombre}' agregada.`);
+        this.enfocar('nuevo-nombre');
+      },
+      (mensaje) => {
+        this.errorNuevo.set(mensaje);
+        this.enfocar('nuevo-nombre');
+      },
+    );
   }
 
   protected iniciarEdicion(item: CatalogoItem): void {
@@ -100,18 +111,24 @@ export class CatalogoMantenedor {
     if (this.procesando()) return;
     const nombre = this.edicionForm.controls.nombre.value.trim();
     if (nombre === '' || nombre.length > 50) {
-      this.errorEdicion.set(nombre === '' ? 'Ingresa el nuevo nombre.' : 'El nombre admite como máximo 50 caracteres.');
+      this.errorEdicion.set(
+        nombre === '' ? 'Ingresa el nuevo nombre.' : 'El nombre admite como máximo 50 caracteres.',
+      );
       this.enfocar(`editar-${item.id}`);
       return;
     }
-    this.ejecutar(this.catalogoService.renombrar(this.config.endpoint, item.id, nombre), renombrado => {
-      this.editandoId.set(null);
-      this.notificaciones.exito(`${this.singularMayuscula} renombrada a '${renombrado.nombre}'.`);
-      this.enfocar(`renombrar-${item.id}`);
-    }, mensaje => {
-      this.errorEdicion.set(mensaje);
-      this.enfocar(`editar-${item.id}`);
-    });
+    this.ejecutar(
+      this.catalogoService.renombrar(this.config.endpoint, item.id, nombre),
+      (renombrado) => {
+        this.editandoId.set(null);
+        this.notificaciones.exito(`${this.singularMayuscula} renombrada a '${renombrado.nombre}'.`);
+        this.enfocar(`renombrar-${item.id}`);
+      },
+      (mensaje) => {
+        this.errorEdicion.set(mensaje);
+        this.enfocar(`editar-${item.id}`);
+      },
+    );
   }
 
   protected alternar(item: CatalogoItem): void {
@@ -120,15 +137,23 @@ export class CatalogoMantenedor {
       ? this.catalogoService.desactivar(this.config.endpoint, item.id)
       : this.catalogoService.reactivar(this.config.endpoint, item.id);
     const accion = item.activo ? 'desactivada' : 'reactivada';
-    this.ejecutar(operacion$, () => {
-      this.notificaciones.exito(`${this.singularMayuscula} '${item.nombre}' ${accion}.`);
-    }, mensaje => this.notificaciones.error(mensaje));
+    this.ejecutar(
+      operacion$,
+      () => {
+        this.notificaciones.exito(`${this.singularMayuscula} '${item.nombre}' ${accion}.`);
+      },
+      (mensaje) => this.notificaciones.error(mensaje),
+    );
   }
 
-  private ejecutar<T>(operacion$: Observable<T>, alTerminar: (resultado: T) => void, alFallar: (mensaje: string) => void): void {
+  private ejecutar<T>(
+    operacion$: Observable<T>,
+    alTerminar: (resultado: T) => void,
+    alFallar: (mensaje: string) => void,
+  ): void {
     this.procesando.set(true);
     operacion$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: resultado => {
+      next: (resultado) => {
         this.procesando.set(false);
         this.items.reload();
         alTerminar(resultado);

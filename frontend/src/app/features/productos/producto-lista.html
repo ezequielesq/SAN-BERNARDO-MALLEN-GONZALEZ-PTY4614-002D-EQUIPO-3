@@ -1,8 +1,7 @@
-<h1 tabindex="-1">Productos</h1>
 @if (puedeGestionar()) {
   <p>
-    <button type="button" class="w3-button w3-cobalt w3-round" (click)="modalProducto.set('nuevo')">
-      <span aria-hidden="true">+ </span>Nuevo producto
+    <button type="button" class="w3-button w3-info w3-round w3-margin-left" (click)="modalProducto.set('nuevo')">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo producto
     </button>
   </p>
 }
@@ -49,145 +48,166 @@
 </div>
 
 <div class="w3-container w3-border w3-margin w3-light-grey">
-<app-estado-vista
-  [cargando]="productos.status() === 'loading'"
-  [error]="productos.error()"
-  [vacio]="todos().length === 0"
-  mensajeCarga="Cargando productos…"
-  [mensajeVacio]="mensajeVacio()"
-  (reintentar)="productos.reload()"
->
-  <p aria-live="polite">Mostrando {{ filtrados().length }} de {{ todos().length }} productos</p>
+  <app-estado-vista
+    [cargando]="productos.status() === 'loading'"
+    [error]="productos.error()"
+    [vacio]="todos().length === 0"
+    mensajeCarga="Cargando productos…"
+    [mensajeVacio]="mensajeVacio()"
+    (reintentar)="productos.reload()"
+  >
+    <p aria-live="polite">Mostrando {{ filtrados().length }} de {{ todos().length }} productos</p>
 
-  @if (filtrados().length === 0) {
-    <p>Ningún producto coincide con los filtros.</p>
-    <button type="button" class="w3-button w3-white w3-border w3-round" (click)="limpiarFiltros()">
-      Limpiar filtros
-    </button>
-  } @else {
-    <div class="w3-hide-small w3-responsive">
-      <table class="w3-table-all">
-        <caption class="visualmente-oculto">
-          Lista de productos
-        </caption>
-        <thead>
-          <tr class="w3-light-grey">
-            <th scope="col" [attr.aria-sort]="ariaSort('codigoPtv')">
-              <button type="button" class="boton-orden" (click)="ordenarPor('codigoPtv')">
-                Código PTV <i class="fa {{ iconoOrden('codigoPtv') }}" aria-hidden="true"></i>
-              </button>
-            </th>
-            <th scope="col" [attr.aria-sort]="ariaSort('nombre')">
-              <button type="button" class="boton-orden" (click)="ordenarPor('nombre')">
-                Nombre <i class="fa {{ iconoOrden('nombre') }}" aria-hidden="true"></i>
-              </button>
-            </th>
-            <th scope="col" [attr.aria-sort]="ariaSort('categoriaNombre')">
-              <button type="button" class="boton-orden" (click)="ordenarPor('categoriaNombre')">
-                Categoría <i class="fa {{ iconoOrden('categoriaNombre') }}" aria-hidden="true"></i>
-              </button>
-            </th>
-            <th scope="col">Unidad</th>
-            <th scope="col">Perecible</th>
-            <th scope="col">Mín / Crítico</th>
-            <th scope="col">Costo unitario</th>
-            <th scope="col" [attr.aria-sort]="ariaSort('estado')">
-              <button type="button" class="boton-orden" (click)="ordenarPor('estado')">
-                Estado <i class="fa {{ iconoOrden('estado') }}" aria-hidden="true"></i>
-              </button>
-            </th>
-            @if (puedeGestionar()) {
-              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of paginados(); track p.id) {
-            <tr>
-              <td>{{ p.codigoPtv }}</td>
-              <td>{{ p.nombre }}</td>
-              <td>{{ p.categoriaNombre }}</td>
-              <td>{{ p.unidadMedidaNombre }}</td>
-              <td>{{ p.esPerecible ? 'Sí' : 'No' }}</td>
-              <td>{{ p.stockMinimo }} / {{ p.stockCritico }}</td>
-              <td>{{ p.costoUnitario !== null ? '$' + p.costoUnitario : '—' }}</td>
-              <td>
-                @if (p.activo) {
-                  Activo
-                } @else {
-                  <app-estado-badge estado="deshabilitado" />
-                }
-              </td>
+    @if (filtrados().length === 0) {
+      <p>Ningún producto coincide con los filtros.</p>
+      <button
+        type="button"
+        class="w3-button w3-white w3-border w3-round"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar filtros
+      </button>
+    } @else {
+      <div class="w3-hide-small w3-responsive">
+        <table class="w3-table-all">
+          <caption class="visualmente-oculto">
+            Lista de productos
+          </caption>
+          <thead>
+            <tr class="w3-light-grey">
+              <th scope="col" [attr.aria-sort]="ariaSort('codigoPtv')">
+                <button type="button" class="boton-orden" (click)="ordenarPor('codigoPtv')">
+                  Código PTV <i class="fa {{ iconoOrden('codigoPtv') }}" aria-hidden="true"></i>
+                </button>
+              </th>
+              <th scope="col" [attr.aria-sort]="ariaSort('nombre')">
+                <button type="button" class="boton-orden" (click)="ordenarPor('nombre')">
+                  Nombre <i class="fa {{ iconoOrden('nombre') }}" aria-hidden="true"></i>
+                </button>
+              </th>
+              <th scope="col" [attr.aria-sort]="ariaSort('categoriaNombre')">
+                <button type="button" class="boton-orden" (click)="ordenarPor('categoriaNombre')">
+                  Categoría
+                  <i class="fa {{ iconoOrden('categoriaNombre') }}" aria-hidden="true"></i>
+                </button>
+              </th>
+              <th scope="col">Unidad</th>
+              <th scope="col">Perecible</th>
+              <th scope="col">Mín / Crítico</th>
+              <th scope="col">Costo unitario</th>
+              <th scope="col" [attr.aria-sort]="ariaSort('estado')">
+                <button type="button" class="boton-orden" (click)="ordenarPor('estado')">
+                  Estado <i class="fa {{ iconoOrden('estado') }}" aria-hidden="true"></i>
+                </button>
+              </th>
               @if (puedeGestionar()) {
-                <td>
-                  <button type="button" class="w3-button w3-warning w3-round" (click)="modalProducto.set(p.id)">
-                    <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span>
-                  </button>
-                </td>
+                <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
               }
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="w3-bar w3-margin-top">
-      <button
-        type="button"
-        class="w3-button w3-info w3-round w3-margin-right"
-        [attr.aria-disabled]="exportando()"
-        (click)="exportar('xlsx')"
-      >
-        <i class="fa fa-download" aria-hidden="true"></i> Exportar XLSX
-      </button>
-      <button
-        type="button"
-        class="w3-button w3-info w3-round"
-        [attr.aria-disabled]="exportando()"
-        (click)="exportar('pdf')"
-      >
-        <i class="fa fa-download" aria-hidden="true"></i> Exportar PDF
-      </button>
-    </div>
-
-    <div class="w3-hide-medium w3-hide-large">
-      @for (p of paginados(); track p.id) {
-        <article class="w3-card w3-white w3-padding w3-margin-bottom">
-          <h2 class="w3-medium">
-            <b>{{ p.nombre }}</b>
-          </h2>
-          <p>{{ p.codigoPtv }} · {{ p.categoriaNombre }} · {{ p.unidadMedidaNombre }}</p>
-          <p>
-            Mín / Crítico: {{ p.stockMinimo }} / {{ p.stockCritico }} · Perecible:
-            {{ p.esPerecible ? 'Sí' : 'No' }} · Costo unitario:
-            {{ p.costoUnitario !== null ? '$' + p.costoUnitario : '—' }}
-          </p>
-          <p>
-            @if (p.activo) {
-              Activo
-            } @else {
-              <app-estado-badge estado="deshabilitado" />
+          </thead>
+          <tbody>
+            @for (p of paginados(); track p.id) {
+              <tr>
+                <td>{{ p.codigoPtv }}</td>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.categoriaNombre }}</td>
+                <td>{{ p.unidadMedidaNombre }}</td>
+                <td>{{ p.esPerecible ? 'Sí' : 'No' }}</td>
+                <td>{{ p.stockMinimo }} / {{ p.stockCritico }}</td>
+                <td>{{ p.costoUnitario !== null ? '$' + p.costoUnitario : '—' }}</td>
+                <td>
+                  @if (p.activo) {
+                    Activo
+                  } @else {
+                    <app-estado-badge estado="deshabilitado" />
+                  }
+                </td>
+                @if (puedeGestionar()) {
+                  <td>
+                    <button
+                      type="button"
+                      class="w3-button w3-warning w3-round"
+                      (click)="modalProducto.set(p.id)"
+                    >
+                      <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span
+                        class="visualmente-oculto"
+                      >
+                        {{ p.nombre }}</span
+                      >
+                    </button>
+                  </td>
+                }
+              </tr>
             }
-            @if (puedeGestionar()) {
-              ·
-              <button type="button" class="w3-button w3-warning w3-round" (click)="modalProducto.set(p.id)">
-                <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ p.nombre }}</span>
-              </button>
-            }
-          </p>
-        </article>
-      }
-    </div>
+          </tbody>
+        </table>
+      </div>
 
-    <app-paginacion
-      [pagina]="paginaActual()"
-      [totalItems]="filtrados().length"
-      [tamanoPagina]="tamanoPagina()"
-      (paginaCambiada)="cambiarPagina($event)"
-      (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
-    />
-  }
-</app-estado-vista>
+      <div class="w3-bar w3-margin-top">
+        <button
+          type="button"
+          class="w3-button w3-info w3-round w3-margin-right"
+          [attr.aria-disabled]="exportando()"
+          (click)="exportar('xlsx')"
+        >
+          <i class="fa fa-download" aria-hidden="true"></i> Exportar XLSX
+        </button>
+        <button
+          type="button"
+          class="w3-button w3-info w3-round"
+          [attr.aria-disabled]="exportando()"
+          (click)="exportar('pdf')"
+        >
+          <i class="fa fa-download" aria-hidden="true"></i> Exportar PDF
+        </button>
+      </div>
+
+      <div class="w3-hide-medium w3-hide-large">
+        @for (p of paginados(); track p.id) {
+          <article class="w3-card w3-white w3-padding w3-margin-bottom">
+            <h2 class="w3-medium">
+              <b>{{ p.nombre }}</b>
+            </h2>
+            <p>{{ p.codigoPtv }} · {{ p.categoriaNombre }} · {{ p.unidadMedidaNombre }}</p>
+            <p>
+              Mín / Crítico: {{ p.stockMinimo }} / {{ p.stockCritico }} · Perecible:
+              {{ p.esPerecible ? 'Sí' : 'No' }} · Costo unitario:
+              {{ p.costoUnitario !== null ? '$' + p.costoUnitario : '—' }}
+            </p>
+            <p>
+              @if (p.activo) {
+                Activo
+              } @else {
+                <app-estado-badge estado="deshabilitado" />
+              }
+              @if (puedeGestionar()) {
+                ·
+                <button
+                  type="button"
+                  class="w3-button w3-warning w3-round"
+                  (click)="modalProducto.set(p.id)"
+                >
+                  <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span
+                    class="visualmente-oculto"
+                  >
+                    {{ p.nombre }}</span
+                  >
+                </button>
+              }
+            </p>
+          </article>
+        }
+      </div>
+
+      <app-paginacion
+        [pagina]="paginaActual()"
+        [totalItems]="filtrados().length"
+        [tamanoPagina]="tamanoPagina()"
+        (paginaCambiada)="cambiarPagina($event)"
+        (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+      />
+    }
+  </app-estado-vista>
 </div>
 
 @if (modalProducto() !== null) {

@@ -1,7 +1,5 @@
-<h1 tabindex="-1">Alertas de vencimiento</h1>
-
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
-  <label for="alertas-umbral"><b>Avisar con</b></label>
+  <label for="alertas-umbral"><b>Avisar con </b></label>
   <select
     #selectUmbral
     id="alertas-umbral"
@@ -17,7 +15,7 @@
   </select>
 </div>
 
-<div class="w3-container w3-border w3-margin w3-light-grey">
+<div class="w3-container w3-border w3-margin w3-light-grey w3-padding">
   <app-estado-vista
     [cargando]="alertas.status() === 'loading'"
     [error]="alertas.error()"
@@ -29,7 +27,7 @@
     <ul class="grilla-tarjetas">
       @for (a of todos(); track a.id) {
         <li>
-          <article class="w3-card w3-white w3-padding">
+          <article class="w3-card w3-white w3-border w3-padding">
             <h2 class="w3-medium"><b>{{ a.productoNombre }}</b></h2>
             <p><app-estado-badge estado="pendiente" /></p>
             <p>{{ a.motivo || '—' }}</p>

@@ -49,7 +49,7 @@
             type="button"
             class="w3-button w3-round"
             [class.w3-crimson]="verPor() === 'SEMANA'"
-            [class.w3-cobalt]="verPor() !== 'SEMANA'"
+            [class.w3-info]="verPor() !== 'SEMANA'"
             [attr.aria-pressed]="verPor() === 'SEMANA'"
             (click)="cambiarVerPor('SEMANA')"
           >
@@ -59,7 +59,7 @@
             type="button"
             class="w3-button w3-round w3-margin-left"
             [class.w3-crimson]="verPor() === 'MES'"
-            [class.w3-cobalt]="verPor() !== 'MES'"
+            [class.w3-info]="verPor() !== 'MES'"
             [attr.aria-pressed]="verPor() === 'MES'"
             (click)="cambiarVerPor('MES')"
           >
@@ -72,7 +72,7 @@
             type="button"
             class="w3-button w3-round"
             [class.w3-crimson]="agruparPor() === 'PRODUCTO'"
-            [class.w3-cobalt]="agruparPor() !== 'PRODUCTO'"
+            [class.w3-info]="agruparPor() !== 'PRODUCTO'"
             [attr.aria-pressed]="agruparPor() === 'PRODUCTO'"
             (click)="cambiarAgruparPor('PRODUCTO')"
           >
@@ -82,7 +82,7 @@
             type="button"
             class="w3-button w3-round w3-margin-left"
             [class.w3-crimson]="agruparPor() === 'CATEGORIA'"
-            [class.w3-cobalt]="agruparPor() !== 'CATEGORIA'"
+            [class.w3-info]="agruparPor() !== 'CATEGORIA'"
             [attr.aria-pressed]="agruparPor() === 'CATEGORIA'"
             (click)="cambiarAgruparPor('CATEGORIA')"
           >
@@ -94,7 +94,7 @@
   </div>
 </div>
 
-<div class="w3-container w3-border w3-margin w3-light-grey">
+<div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
   <div class="w3-responsive">
     <table class="w3-table-all">
       <caption class="visualmente-oculto">Consumo por período</caption>

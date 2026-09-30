@@ -23,6 +23,8 @@ export function rolGuard(roles: readonly Rol[]): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
     const rol = auth.rol();
-    return rol !== null && roles.includes(rol) ? true : router.createUrlTree([paginaInicialPara(rol)]);
+    return rol !== null && roles.includes(rol)
+      ? true
+      : router.createUrlTree([paginaInicialPara(rol)]);
   };
 }

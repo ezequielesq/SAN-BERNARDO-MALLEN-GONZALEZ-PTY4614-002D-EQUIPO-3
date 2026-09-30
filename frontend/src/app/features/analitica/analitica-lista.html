@@ -1,9 +1,7 @@
-<h1 tabindex="-1">Analítica</h1>
-
-<div class="w3-bar w3-margin-bottom" aria-label="Reportes de analítica">
+<div class="w3-bar w3-margin" aria-label="Reportes de analítica">
   <button
     type="button"
-    class="w3-bar-item w3-button"
+    class="w3-bar-item w3-button w3-border"
     [class.w3-crimson]="pestana() === 'consumo'"
     [attr.aria-pressed]="pestana() === 'consumo'"
     (click)="pestana.set('consumo')"
@@ -12,7 +10,7 @@
   </button>
   <button
     type="button"
-    class="w3-bar-item w3-button"
+    class="w3-bar-item w3-button w3-border"
     [class.w3-crimson]="pestana() === 'mas-usados'"
     [attr.aria-pressed]="pestana() === 'mas-usados'"
     (click)="pestana.set('mas-usados')"
@@ -21,7 +19,7 @@
   </button>
   <button
     type="button"
-    class="w3-bar-item w3-button"
+    class="w3-bar-item w3-button w3-border"
     [class.w3-crimson]="pestana() === 'vencimientos'"
     [attr.aria-pressed]="pestana() === 'vencimientos'"
     (click)="pestana.set('vencimientos')"
@@ -30,7 +28,7 @@
   </button>
   <button
     type="button"
-    class="w3-bar-item w3-button"
+    class="w3-bar-item w3-button w3-border"
     [class.w3-crimson]="pestana() === 'exportar'"
     [attr.aria-pressed]="pestana() === 'exportar'"
     (click)="pestana.set('exportar')"

@@ -1,7 +1,5 @@
-<h1 tabindex="-1">Solicitudes</h1>
-
 <p>
-  <button type="button" class="w3-button w3-cobalt w3-round" (click)="mostrarCrear.set(true)">
+  <button type="button" class="w3-button w3-info w3-round w3-margin-left" (click)="mostrarCrear.set(true)">
     <span aria-hidden="true">+ </span>Nueva solicitud
   </button>
 </p>
@@ -15,11 +13,11 @@
   </app-modal>
 }
 
-<div class="w3-bar w3-margin-bottom" aria-label="Vista de solicitudes">
+<div class="w3-bar w3-margin-bottom w3-margin-left" aria-label="Vista de solicitudes">
   @if (puedeGestionar()) {
     <button
       type="button"
-      class="w3-bar-item w3-button"
+      class="w3-bar-item w3-border w3-button"
       [class.w3-crimson]="vista() === 'pendientes'"
       [attr.aria-pressed]="vista() === 'pendientes'"
       (click)="vista.set('pendientes')"
@@ -29,7 +27,7 @@
   }
   <button
     type="button"
-    class="w3-bar-item w3-button"
+    class="w3-bar-item w3-border w3-button"
     [class.w3-crimson]="vista() === 'todas'"
     [attr.aria-pressed]="vista() === 'todas'"
     (click)="vista.set('todas')"

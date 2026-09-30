@@ -1,5 +1,3 @@
-<h1 tabindex="-1">Estado de stock</h1>
-
 <app-estado-vista
   [cargando]="stock.status() === 'loading'"
   [error]="stock.error()"
@@ -8,7 +6,7 @@
   mensajeVacio="Aún no hay productos activos con movimientos."
   (reintentar)="stock.reload()"
 >
-  <div class="w3-container w3-border w3-margin w3-light-grey">
+  <div class="w3-container w3-border w3-margin w3-light-grey w3-padding">
     <h2 class="w3-large">Críticos y agotados</h2>
     @if (criticosYAgotados().length === 0) {
       <p>Sin productos en estado crítico o agotado.</p>
@@ -16,7 +14,7 @@
       <ul class="grilla-tarjetas">
         @for (p of criticosYAgotados(); track p.productoId) {
           <li>
-            <article class="w3-card w3-white w3-padding">
+            <article class="w3-card w3-white w3-border w3-border w3-padding">
               <h3 class="w3-medium"><b>{{ p.productoNombre }}</b></h3>
               <p><app-estado-badge [estado]="estadoBadge(p.estado)" /></p>
               <p>Stock actual: {{ p.stockActual }}</p>
@@ -28,7 +26,7 @@
     }
   </div>
 
-  <div class="w3-container w3-border w3-margin w3-light-grey">
+  <div class="w3-container w3-border w3-margin w3-light-grey w3-padding">
     <div class="w3-responsive">
       <table class="w3-table-all">
         <caption class="visualmente-oculto">Estado de stock por producto</caption>

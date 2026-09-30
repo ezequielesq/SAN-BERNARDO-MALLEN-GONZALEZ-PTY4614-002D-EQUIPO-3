@@ -1,5 +1,5 @@
 <a
-  class="saltar-contenido w3-button w3-cobalt"
+  class="saltar-contenido w3-button w3-info"
   href="#contenido"
   (click)="saltarAlContenido($event)"
   >Saltar al contenido principal</a
@@ -38,7 +38,7 @@
   [style.display]="menuAbierto() ? 'flex' : null"
   [cdkTrapFocus]="menuAbierto()"
 >
-  <div class="shell-menu__header w3-bar-item">
+  <div class="shell-menu__header w3-bar-item w3-border w3-border-black">
     <h4 class="w3-large" style="margin: 0">Smart RDP</h4>
 
     <button
@@ -66,7 +66,7 @@
           <a
             class="w3-bar-item w3-button"
             [routerLink]="item.ruta"
-            routerLinkActive="w3-crimson"
+            routerLinkActive="w3-crimson w3-border w3-border-black"
             [routerLinkActiveOptions]="{ exact: true }"
             ariaCurrentWhenActive="page"
             >{{ item.etiqueta }}</a
@@ -78,8 +78,8 @@
 
   <div class="shell-menu__pie w3-border-top w3-padding">
     <p class="w3-small">{{ auth.sesion()?.nombre }} · {{ etiquetaRol() }}</p>
-    <button type="button" class="w3-button w3-block w3-left-align" (click)="cerrarSesion()">
-      Cerrar sesión
+    <button type="button" class="w3-button w3-block w3-left-align w3-crimson w3-round" (click)="cerrarSesion()">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Cerrar sesión
     </button>
   </div>
 </nav>

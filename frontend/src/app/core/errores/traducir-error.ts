@@ -18,9 +18,16 @@ export function traducirError(err: unknown): ErrorTraducido {
   const base = { status: err.status, campo: null, camposValidacion: {} };
   switch (err.status) {
     case 0:
-      return { ...base, mensaje: 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.' };
+      return {
+        ...base,
+        mensaje: 'No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.',
+      };
     case 400:
-      return { ...base, mensaje: 'Revisa los campos marcados.', camposValidacion: leerCampos(cuerpo) };
+      return {
+        ...base,
+        mensaje: 'Revisa los campos marcados.',
+        camposValidacion: leerCampos(cuerpo),
+      };
     case 401:
       return { ...base, mensaje: 'Tu sesión expiró. Vuelve a iniciar sesión.' };
     case 403:
@@ -28,7 +35,11 @@ export function traducirError(err: unknown): ErrorTraducido {
     case 404:
       return { ...base, mensaje: 'El registro que buscas ya no existe.' };
     case 422:
-      return { ...base, mensaje: leerTexto(cuerpo, 'message') ?? MENSAJE_GENERICO, campo: leerTexto(cuerpo, 'field') };
+      return {
+        ...base,
+        mensaje: leerTexto(cuerpo, 'message') ?? MENSAJE_GENERICO,
+        campo: leerTexto(cuerpo, 'field'),
+      };
     default:
       return { ...base, mensaje: MENSAJE_GENERICO };
   }

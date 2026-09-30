@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
     <nav class="w3-bar w3-margin-top" aria-label="Paginación">
       <button
         type="button"
-        class="w3-button w3-border w3-round"
+        class="w3-button w3-border w3-border-black w3-round"
         [attr.aria-disabled]="pagina() <= 1"
         [disabled]="pagina() <= 1"
         (click)="paginaCambiada.emit(pagina() - 1)"
@@ -19,7 +19,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
       </span>
       <button
         type="button"
-        class="w3-button w3-border w3-round w3-right"
+        class="w3-button w3-border w3-border-black w3-round w3-right"
         [attr.aria-disabled]="pagina() >= totalPaginas()"
         [disabled]="pagina() >= totalPaginas()"
         (click)="paginaCambiada.emit(pagina() + 1)"

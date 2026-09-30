@@ -4,7 +4,7 @@
   </div>
 }
 
-<form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card">
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card w3-border">
   <div class="w3-section">
     <label for="entrada-producto"><b>Producto</b></label>
     <select
@@ -20,7 +20,7 @@
       }
     </select>
     @if (enviado() && form.controls.productoId.invalid) {
-      <p class="texto-error" id="error-entrada-producto"><span aria-hidden="true">⚠ </span>Elige un producto.</p>
+      <p class="texto-error" id="error-entrada-producto"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige un producto.</p>
     }
   </div>
 
@@ -38,7 +38,7 @@
       [attr.aria-describedby]="enviado() && form.controls.cantidad.invalid ? 'error-entrada-cantidad' : null"
     />
     @if (enviado() && form.controls.cantidad.invalid) {
-      <p class="texto-error" id="error-entrada-cantidad"><span aria-hidden="true">⚠ </span>Ingresa una cantidad de al menos 1.</p>
+      <p class="texto-error" id="error-entrada-cantidad"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa una cantidad de al menos 1.</p>
     }
   </div>
 
@@ -55,7 +55,7 @@
       />
       @if (enviado() && form.controls.fechaVencimiento.invalid) {
         <p class="texto-error" id="error-entrada-vencimiento">
-          <span aria-hidden="true">⚠ </span>Ingresa la fecha de vencimiento: este producto es perecible.
+          <i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa la fecha de vencimiento: este producto es perecible.
         </p>
       }
     </div>
@@ -75,6 +75,6 @@
     <button type="submit" class="w3-button w3-emerald w3-round" [attr.aria-disabled]="guardando()">
       {{ guardando() ? 'Guardando…' : 'Registrar entrada' }}
     </button>
-    <button type="button" class="w3-button w3-white w3-border w3-round w3-margin-left" (click)="cancelar.emit()">Cancelar</button>
+    <button type="button" class="w3-button w3-white w3-border w3-border-red w3-round w3-margin-left" (click)="cancelar.emit()">Cancelar</button>
   </div>
 </form>

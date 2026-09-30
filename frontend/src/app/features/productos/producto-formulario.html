@@ -7,7 +7,7 @@
     mensajeCarga="Cargando datos del producto…"
     (reintentar)="recargar()"
   >
-    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-white w3-padding w3-card">
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-white w3-padding w3-card w3-border">
       <p>Todos los campos son obligatorios.</p>
 
       @if (errorGeneral(); as mensaje) {
@@ -55,7 +55,7 @@
           [attr.aria-describedby]="describedBy('codigoPtv')"
         />
         @if (mensajeError('codigoPtv'); as m) {
-          <p id="error-codigoPtv" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+          <p id="error-codigoPtv" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
         }
       </div>
 
@@ -72,7 +72,7 @@
           [attr.aria-describedby]="describedBy('nombre')"
         />
         @if (mensajeError('nombre'); as m) {
-          <p id="error-nombre" class="texto-error"><span aria-hidden="true">⚠ </span>{{ m }}</p>
+          <p id="error-nombre" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
         }
       </div>
 
@@ -91,7 +91,7 @@
         />
         @if (mensajeError('costoUnitario'); as m) {
           <p id="error-costoUnitario" class="texto-error">
-            <span aria-hidden="true">⚠ </span>{{ m }}
+            <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
           </p>
         }
       </div>
@@ -113,7 +113,7 @@
           </select>
           @if (mensajeError('categoriaId'); as m) {
             <p id="error-categoriaId" class="texto-error">
-              <span aria-hidden="true">⚠ </span>{{ m }}
+              <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
             </p>
           }
         </div>
@@ -133,7 +133,7 @@
           </select>
           @if (mensajeError('unidadMedidaId'); as m) {
             <p id="error-unidadMedidaId" class="texto-error">
-              <span aria-hidden="true">⚠ </span>{{ m }}
+              <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
             </p>
           }
         </div>
@@ -147,7 +147,7 @@
           formControlName="esPerecible"
           aria-describedby="ayuda-esPerecible"
         />
-        <label for="campo-esPerecible"> <b>Es perecible</b></label>
+        <label for="campo-esPerecible"> <b> Es perecible</b></label>
         <p id="ayuda-esPerecible" class="w3-small">
           Tiene fecha de vencimiento; se controla por lotes FEFO.
         </p>
@@ -175,7 +175,7 @@
             />
             @if (mensajeError('stockMinimo'); as m) {
               <p id="error-stockMinimo" class="texto-error">
-                <span aria-hidden="true">⚠ </span>{{ m }}
+                <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
               </p>
             }
           </div>
@@ -194,7 +194,7 @@
             />
             @if (mensajeError('stockCritico'); as m) {
               <p id="error-stockCritico" class="texto-error">
-                <span aria-hidden="true">⚠ </span>{{ m }}
+                <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
               </p>
             }
           </div>
@@ -202,12 +202,12 @@
       </fieldset>
 
       <div class="w3-section">
-        <button type="submit" class="w3-button w3-cobalt w3-round" [attr.aria-disabled]="guardando()">
+        <button type="submit" class="w3-button w3-info w3-round" [attr.aria-disabled]="guardando()">
           {{ guardando() ? 'Guardando…' : esEdicion() ? 'Guardar cambios' : 'Guardar producto' }}
         </button>
         <button
           type="button"
-          class="w3-button w3-white w3-border w3-margin-left w3-round"
+          class="w3-button w3-white w3-border w3-border-red w3-margin-left w3-round"
           (click)="solicitarCierre()"
         >
           Cancelar
@@ -230,7 +230,7 @@
         } @else {
           <h2 id="titulo-estado-producto" tabindex="-1" class="w3-large">Producto deshabilitado</h2>
           <p>Este producto no aparece para registrar movimientos ni solicitudes.</p>
-          <button type="button" class="w3-button w3-cobalt w3-round" (click)="reactivar(p)">
+          <button type="button" class="w3-button w3-info w3-round" (click)="reactivar(p)">
             <i class="fa fa-undo" aria-hidden="true"></i> Reactivar producto
           </button>
         }

@@ -19,7 +19,7 @@ export class AuthService {
 
   login(credenciales: Credenciales): Observable<Sesion> {
     return this.http.post<Sesion>(`${environment.apiUrl}/auth/login`, credenciales).pipe(
-      tap(sesion => {
+      tap((sesion) => {
         this._sesion.set(sesion);
         guardarSesion(sesion);
       }),
