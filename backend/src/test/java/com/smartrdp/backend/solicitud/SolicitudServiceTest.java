@@ -33,7 +33,7 @@ class SolicitudServiceTest {
     void crear_whenProductoNotFound_thenThrowsResourceNotFoundException() {
         when(productoRepository.findById(99L)).thenReturn(Optional.empty());
         var req = new SolicitudRequest(List.of(new SolicitudRequest.Item(99L, 2)));
-        assertThatThrownBy(() -> solicitudService.crear(req, 1L))
+        assertThatThrownBy(() -> solicitudService.crear(req))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -43,7 +43,7 @@ class SolicitudServiceTest {
         solicitud.setEstado(EstadoSolicitud.APROBADA);
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitud));
         var req = new AprobarSolicitudRequest(List.of());
-        assertThatThrownBy(() -> solicitudService.aprobar(1L, req, 1L))
+        assertThatThrownBy(() -> solicitudService.aprobar(1L, req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ya fue procesada");
     }
@@ -53,7 +53,7 @@ class SolicitudServiceTest {
         var solicitud = new Solicitud();
         solicitud.setEstado(EstadoSolicitud.PENDIENTE);
         when(solicitudRepository.findById(1L)).thenReturn(Optional.of(solicitud));
-        solicitudService.rechazar(1L, 1L);
+        solicitudService.rechazar(1L);
         assertThat(solicitud.getEstado()).isEqualTo(EstadoSolicitud.RECHAZADA);
     }
 }

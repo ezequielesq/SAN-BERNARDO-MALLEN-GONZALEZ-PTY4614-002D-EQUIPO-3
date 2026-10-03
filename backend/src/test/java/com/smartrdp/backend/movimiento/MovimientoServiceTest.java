@@ -36,8 +36,8 @@ class MovimientoServiceTest {
         when(loteRepository.findByProductoIdAndCantidadDisponibleGreaterThanOrderByFechaVencimientoAsc(1L, 0))
                 .thenReturn(Collections.emptyList());
 
-        var req = new SalidaRequest(1L, 5, "Cocina", null);
-        assertThatThrownBy(() -> movimientoService.registrarSalida(req, 1L))
+        var req = new SalidaRequest(1L, 5, "Cocina");
+        assertThatThrownBy(() -> movimientoService.registrarSalida(req))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Stock insuficiente");
     }

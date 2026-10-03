@@ -14,7 +14,7 @@
 	<name>smart-rdp-backend</name>
 	<description>Sistema de Gestión de Bodega - Smart RDP</description>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 	</properties>
 	<dependencies>
 		<dependency>

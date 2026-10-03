@@ -1,6 +1,10 @@
 // src/test/java/com/smartrdp/backend/producto/ProductoServiceTest.java
 package com.smartrdp.backend.producto;
 
+import com.smartrdp.backend.catalogo.Categoria;
+import com.smartrdp.backend.catalogo.CategoriaRepository;
+import com.smartrdp.backend.catalogo.UnidadMedida;
+import com.smartrdp.backend.catalogo.UnidadMedidaRepository;
 import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.exception.ResourceNotFoundException;
 import com.smartrdp.backend.producto.dto.ProductoRequest;
@@ -18,24 +22,27 @@ import static org.mockito.Mockito.*;
 class ProductoServiceTest {
 
     @Mock ProductoRepository productoRepository;
+    @Mock CategoriaRepository categoriaRepository;
+    @Mock UnidadMedidaRepository unidadMedidaRepository;
     @InjectMocks ProductoService productoService;
 
     @Test
     void crear_whenCodigoPtbDuplicated_thenThrowsBusinessException() {
-        when(productoRepository.existsByCodigoPtb("71149")).thenReturn(true);
-        var req = new ProductoRequest("Ketchup", "ABARROTES", "KG", false, "71149");
+        when(productoRepository.existsByCodigoPtv("71149")).thenReturn(true);
+        var req = new ProductoRequest("71149", "Ketchup", 1L, 1L, false, 0, 0, 0);
         assertThatThrownBy(() -> productoService.crear(req))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("código PTB ya existe");
+                .hasMessageContaining("código 71149");
     }
 
     @Test
     void crear_whenValid_thenSavesAndReturnsResponse() {
-        when(productoRepository.existsByCodigoPtb("71149")).thenReturn(false);
+        when(productoRepository.existsByCodigoPtv("71149")).thenReturn(false);
+        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(new Categoria("ABARROTES")));
+        when(unidadMedidaRepository.findById(1L)).thenReturn(Optional.of(new UnidadMedida("KG")));
         var producto = new Producto();
-        producto.setNombre("Ketchup");
-        when(productoRepository.save(any())).thenReturn(producto);
-        var req = new ProductoRequest("Ketchup", "ABARROTES", "KG", false, "71149");
+        when(productoRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var req = new ProductoRequest("71149", "Ketchup", 1L, 1L, false, 0, 0, 0);
         var result = productoService.crear(req);
         assertThat(result.nombre()).isEqualTo("Ketchup");
     }
