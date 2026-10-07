@@ -104,9 +104,8 @@ public class MovimientoService {
     }
 
     public Integer getStockActual(Long productoId) {
-        Integer entradas = movimientoRepository.sumEntradasByProductoId(productoId);
-        Integer salidas = movimientoRepository.sumSalidasByProductoId(productoId);
-        return (entradas == null ? 0 : entradas) - (salidas == null ? 0 : salidas);
+        Long stock = movimientoRepository.sumStockByProductoId(productoId);
+        return stock == null ? 0 : stock.intValue();
     }
 
     public EstadoStock getEstadoStock(Long productoId) {

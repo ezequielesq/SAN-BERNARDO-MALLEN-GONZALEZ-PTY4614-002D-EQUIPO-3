@@ -15,11 +15,12 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
     List<Movimiento> findByProductoIdAndCreatedAtBetweenOrderByCreatedAtDesc(
             Long productoId, LocalDateTime desde, LocalDateTime hasta);
 
-    @Query("SELECT SUM(m.cantidad) FROM Movimiento m WHERE m.producto.id = :productoId AND m.tipo = 'ENTRADA'")
-    Integer sumEntradasByProductoId(Long productoId);
-
-    @Query("SELECT SUM(m.cantidad) FROM Movimiento m WHERE m.producto.id = :productoId AND m.tipo = 'SALIDA'")
-    Integer sumSalidasByProductoId(Long productoId);
+    @Query("""
+        SELECT SUM(CASE WHEN m.tipo IN ('ENTRADA', 'DEVOLUCION') THEN m.cantidad ELSE -m.cantidad END)
+        FROM Movimiento m
+        WHERE m.producto.id = :productoId
+        """)
+    Long sumStockByProductoId(Long productoId);
 
     List<Movimiento> findByCreatedAtBetweenAndTipo(LocalDateTime desde, LocalDateTime hasta, TipoMovimiento tipo);
 
@@ -38,7 +39,7 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
 
     @Query("""
         SELECT m.producto.id,
-               SUM(CASE WHEN m.tipo = 'ENTRADA' THEN m.cantidad ELSE -m.cantidad END)
+               SUM(CASE WHEN m.tipo IN ('ENTRADA', 'DEVOLUCION') THEN m.cantidad ELSE -m.cantidad END)
         FROM Movimiento m
         GROUP BY m.producto.id
         """)
