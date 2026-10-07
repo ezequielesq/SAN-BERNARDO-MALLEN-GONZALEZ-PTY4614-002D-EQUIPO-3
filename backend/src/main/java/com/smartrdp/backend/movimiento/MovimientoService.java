@@ -2,6 +2,7 @@ package com.smartrdp.backend.movimiento;
 
 import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.exception.ResourceNotFoundException;
+import com.smartrdp.backend.movimiento.dto.AlertaVencimientoResponse;
 import com.smartrdp.backend.movimiento.dto.EntradaRequest;
 import com.smartrdp.backend.movimiento.dto.MovimientoResponse;
 import com.smartrdp.backend.movimiento.dto.SalidaRequest;
@@ -156,19 +157,21 @@ public class MovimientoService {
     }
 
     @Transactional(readOnly = true)
-    public List<MovimientoResponse> getAlertasVencimiento(int diasUmbral) {
-        LocalDate umbral = LocalDate.now().plusDays(diasUmbral);
+    public List<AlertaVencimientoResponse> getAlertasVencimiento(int diasUmbral) {
+        LocalDate hoy = LocalDate.now();
+        LocalDate umbral = hoy.plusDays(diasUmbral);
         return loteRepository
                 .findByFechaVencimientoBeforeAndCantidadDisponibleGreaterThan(umbral, 0)
                 .stream()
-                .map(l -> {
-                    var m = new Movimiento();
-                    m.setProducto(l.getProducto());
-                    m.setTipo(TipoMovimiento.ENTRADA);
-                    m.setCantidad(l.getCantidadDisponible());
-                    m.setMotivo("Alerta vencimiento: " + l.getFechaVencimiento());
-                    return toResponse(m);
-                }).toList();
+                .map(l -> new AlertaVencimientoResponse(
+                        l.getId(),
+                        l.getProducto().getId(),
+                        l.getProducto().getNombre(),
+                        l.getNumeroLote(),
+                        l.getCantidadDisponible(),
+                        l.getFechaVencimiento(),
+                        l.getFechaVencimiento().isBefore(hoy)))
+                .toList();
     }
 
     private Optional<Usuario> getCurrentUsuario() {

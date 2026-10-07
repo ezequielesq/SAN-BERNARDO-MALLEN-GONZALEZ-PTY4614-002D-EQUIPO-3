@@ -25,13 +25,13 @@
     (reintentar)="alertas.reload()"
   >
     <ul class="grilla-tarjetas">
-      @for (a of todos(); track a.id) {
+      @for (a of todos(); track a.loteId) {
         <li>
           <article class="w3-card w3-white w3-border w3-padding">
             <h2 class="w3-medium"><b>{{ a.productoNombre }}</b></h2>
-            <p><app-estado-badge estado="pendiente" /></p>
-            <p>{{ a.motivo || '—' }}</p>
-            <p>{{ a.fecha | date: 'dd-MM-yyyy' }}</p>
+            <p><app-estado-badge [estado]="a.vencido ? 'vencido' : 'proximo'" /></p>
+            <p>Lote: {{ a.numeroLote || '—' }} · Cantidad: {{ a.cantidadDisponible }}</p>
+            <p>Vence: {{ a.fechaVencimiento | date: 'dd-MM-yyyy' }}</p>
           </article>
         </li>
       }

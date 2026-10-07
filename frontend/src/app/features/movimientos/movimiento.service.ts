@@ -3,6 +3,7 @@ import { Injectable, Signal, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  AlertaVencimiento,
   EntradaRequest,
   Movimiento,
   SalidaRequest,
@@ -49,8 +50,8 @@ export class MovimientoService {
   }
 
   /** Llamar desde un inicializador de campo del componente (requiere contexto de inyección). */
-  alertasVencimiento(dias: Signal<number>): HttpResourceRef<Movimiento[]> {
-    return httpResource<Movimiento[]>(
+  alertasVencimiento(dias: Signal<number>): HttpResourceRef<AlertaVencimiento[]> {
+    return httpResource<AlertaVencimiento[]>(
       () => ({ url: `${this.url}/alertas/vencimiento`, params: { dias: dias() } }),
       { defaultValue: [] },
     );

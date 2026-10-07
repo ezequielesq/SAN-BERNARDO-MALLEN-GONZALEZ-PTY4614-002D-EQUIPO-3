@@ -1,5 +1,6 @@
 package com.smartrdp.backend.movimiento;
 
+import com.smartrdp.backend.movimiento.dto.AlertaVencimientoResponse;
 import com.smartrdp.backend.movimiento.dto.EntradaRequest;
 import com.smartrdp.backend.movimiento.dto.MovimientoResponse;
 import com.smartrdp.backend.movimiento.dto.SalidaRequest;
@@ -64,7 +65,7 @@ public class MovimientoController {
     }
 
     @GetMapping("/alertas/vencimiento")
-    public List<MovimientoResponse> alertasVencimiento(
+    public List<AlertaVencimientoResponse> alertasVencimiento(
             @RequestParam(defaultValue = "7") int dias) {
         return movimientoService.getAlertasVencimiento(dias);
     }

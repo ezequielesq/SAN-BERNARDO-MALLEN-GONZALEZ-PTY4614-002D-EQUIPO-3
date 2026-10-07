@@ -12,6 +12,16 @@ export interface Movimiento {
   usuarioEmail: string | null;
 }
 
+export interface AlertaVencimiento {
+  loteId: number;
+  productoId: number;
+  productoNombre: string;
+  numeroLote: string | null;
+  cantidadDisponible: number;
+  fechaVencimiento: string;
+  vencido: boolean;
+}
+
 export interface EntradaRequest {
   productoId: number;
   cantidad: number;
