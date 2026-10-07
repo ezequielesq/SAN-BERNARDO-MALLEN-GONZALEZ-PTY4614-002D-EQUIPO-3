@@ -1,5 +1,6 @@
 package com.smartrdp.backend.solicitud;
 
+import com.smartrdp.backend.movimiento.Movimiento;
 import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.shared.BaseEntity;
 import jakarta.persistence.*;
@@ -27,4 +28,14 @@ public class DetalleSolicitud extends BaseEntity {
     // Bodeguero puede modificar antes de aprobar (HU-16)
     @Column(name = "cantidad_entregada")
     private Integer cantidadEntregada;
+
+    /** Solo en devoluciones: el detalle del pedido original que se está devolviendo. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "detalle_origen_id")
+    private DetalleSolicitud detalleOrigen;
+
+    /** Movimiento SOLICITADO (pedido) o DEVOLUCION que generó la aprobación de este detalle. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "movimiento_id")
+    private Movimiento movimiento;
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
+    List<Solicitud> findBySolicitanteIdOrderByCreatedAtDesc(Long solicitanteId);
     List<Solicitud> findByEstadoOrderByCreatedAtDesc(EstadoSolicitud estado);
     List<Solicitud> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime desde, LocalDateTime hasta);
 }

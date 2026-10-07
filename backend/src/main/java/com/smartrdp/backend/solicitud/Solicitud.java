@@ -37,6 +37,15 @@ public class Solicitud extends BaseEntity {
     @Column(name = "observacion", length = 300)
     private String observacion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo", nullable = false, length = 10, columnDefinition = "varchar(10) default 'PEDIDO'")
+    private TipoSolicitud tipo = TipoSolicitud.PEDIDO;
+
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "solicitud_origen_id")
+    private Solicitud solicitudOrigen;
+
     @NotAudited
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleSolicitud> detalles = new ArrayList<>();

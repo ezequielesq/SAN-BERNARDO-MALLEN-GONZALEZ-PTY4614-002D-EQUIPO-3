@@ -1,7 +1,6 @@
 package com.smartrdp.backend.solicitud;
 
 import com.smartrdp.backend.solicitud.dto.*;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
@@ -16,11 +15,6 @@ import java.util.List;
 public class SolicitudController {
 
     private final SolicitudService solicitudService;
-
-    @PostMapping
-    public ResponseEntity<SolicitudResponse> crear(@Valid @RequestBody SolicitudRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(solicitudService.crear(request));
-    }
 
     @GetMapping
     public List<SolicitudResponse> listar(
