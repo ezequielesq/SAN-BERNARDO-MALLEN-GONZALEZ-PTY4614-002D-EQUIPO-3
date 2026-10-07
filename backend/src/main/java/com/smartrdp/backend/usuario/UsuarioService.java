@@ -39,9 +39,13 @@ public class UsuarioService {
     public LoginResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+        var usuario = usuarioRepository.findByEmailAndActivoTrue(request.email()).orElseThrow();
+        if (usuario.getRol() == Rol.EMPLEADO) {
+            throw new BusinessException(
+                    "Los empleados no inician sesión. Usa la vista pública de solicitudes.");
+        }
         var userDetails = userDetailsService.loadUserByUsername(request.email());
         var token = jwtTokenProvider.generateToken(userDetails);
-        var usuario = usuarioRepository.findByEmailAndActivoTrue(request.email()).orElseThrow();
         return new LoginResponse(token, usuario.getEmail(), usuario.getNombre(), usuario.getRol());
     }
 }

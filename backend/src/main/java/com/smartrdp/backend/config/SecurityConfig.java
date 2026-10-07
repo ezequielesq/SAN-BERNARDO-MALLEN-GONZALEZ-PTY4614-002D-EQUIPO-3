@@ -44,18 +44,16 @@ public class SecurityConfig {
             .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers("/api/publico/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/categorias/**", "/api/unidades-medida/**").hasAnyRole("ADMIN","BODEGUERO")
-                .requestMatchers("/api/categorias/**", "/api/unidades-medida/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/productos/**").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
-                .requestMatchers("/api/productos/**").hasAnyRole("ADMIN","BODEGUERO")
-                .requestMatchers(HttpMethod.GET, "/api/movimientos/**").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
-                .requestMatchers("/api/movimientos/**").hasAnyRole("ADMIN","BODEGUERO")
-                .requestMatchers(HttpMethod.POST, "/api/solicitudes").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
-                .requestMatchers(HttpMethod.GET, "/api/solicitudes/**").hasAnyRole("ADMIN","BODEGUERO","TRABAJADOR")
-                .requestMatchers("/api/solicitudes/**").hasAnyRole("ADMIN","BODEGUERO")
-                .requestMatchers("/api/analitica/**").hasAnyRole("ADMIN","BODEGUERO")
-                .requestMatchers("/api/auditoria/**").hasAnyRole("ADMIN","BODEGUERO")
+                .requestMatchers(HttpMethod.GET,
+                        "/api/categorias/**", "/api/unidades-medida/**",
+                        "/api/productos/**", "/api/movimientos/**").hasAnyRole("ADMIN", "BODEGUERO")
+                .requestMatchers(
+                        "/api/categorias/**", "/api/unidades-medida/**",
+                        "/api/productos/**", "/api/movimientos/**",
+                        "/api/solicitudes/**").hasRole("BODEGUERO")
+                .requestMatchers("/api/analitica/**", "/api/auditoria/**").hasAnyRole("ADMIN", "BODEGUERO")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
