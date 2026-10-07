@@ -13,6 +13,8 @@ public class SmartRdpRevisionListener implements RevisionListener {
         if (auth != null && auth.isAuthenticated()
                 && !"anonymousUser".equals(auth.getPrincipal())) {
             rev.setUsuarioEmail(auth.getName());
+        } else {
+            rev.setUsuarioEmail(ActorAuditoria.actual());
         }
     }
 }

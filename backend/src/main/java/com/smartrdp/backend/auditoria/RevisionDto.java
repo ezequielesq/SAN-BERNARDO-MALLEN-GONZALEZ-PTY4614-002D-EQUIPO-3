@@ -7,5 +7,6 @@ public record RevisionDto(
         LocalDateTime fecha,
         String usuarioEmail,
         String tipoRevision,
-        String estadoSolicitud
+        String estadoSolicitud,
+        String tipoSolicitud
 ) {}

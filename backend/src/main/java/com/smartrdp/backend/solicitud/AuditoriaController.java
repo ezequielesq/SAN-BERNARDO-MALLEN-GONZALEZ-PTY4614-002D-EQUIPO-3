@@ -36,7 +36,7 @@ public class AuditoriaController {
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Sheet sheet = wb.createSheet("Historial Auditoría");
             Row header = sheet.createRow(0);
-            String[] cols = {"Solicitud ID", "Fecha", "Usuario", "Tipo Revisión", "Estado"};
+            String[] cols = {"Solicitud ID", "Fecha", "Usuario", "Tipo Revisión", "Estado", "Tipo"};
             for (int i = 0; i < cols.length; i++) header.createCell(i).setCellValue(cols[i]);
 
             int rowIdx = 1;
@@ -47,6 +47,7 @@ public class AuditoriaController {
                 row.createCell(2).setCellValue(rev.usuarioEmail() != null ? rev.usuarioEmail() : "");
                 row.createCell(3).setCellValue(rev.tipoRevision() != null ? rev.tipoRevision() : "");
                 row.createCell(4).setCellValue(rev.estadoSolicitud() != null ? rev.estadoSolicitud() : "");
+                row.createCell(5).setCellValue(rev.tipoSolicitud() != null ? rev.tipoSolicitud() : "");
             }
             wb.write(out);
             return ResponseEntity.ok()
