@@ -7,6 +7,7 @@ import com.smartrdp.backend.movimiento.dto.EntradaRequest;
 import com.smartrdp.backend.movimiento.dto.MovimientoResponse;
 import com.smartrdp.backend.movimiento.dto.SalidaRequest;
 import com.smartrdp.backend.movimiento.dto.StockStatusResponse;
+import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.producto.ProductoRepository;
 import com.smartrdp.backend.usuario.Usuario;
 import com.smartrdp.backend.usuario.UsuarioRepository;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +32,7 @@ public class MovimientoService {
     private final MovimientoRepository movimientoRepository;
     private final ProductoRepository productoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ConsumoLoteRepository consumoLoteRepository;
 
     @Transactional
     public MovimientoResponse registrarEntrada(EntradaRequest request) {
@@ -59,36 +62,99 @@ public class MovimientoService {
     public MovimientoResponse registrarSalida(SalidaRequest request) {
         var producto = productoRepository.findById(request.productoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto", request.productoId()));
+        return toResponse(descontarFefo(producto, request.cantidad(), request.motivo(), TipoMovimiento.SALIDA));
+    }
 
-        List<Lote> lotesFefo = loteRepository
-                .findByProductoIdAndCantidadDisponibleGreaterThanOrderByFechaVencimientoAsc(
-                        request.productoId(), 0);
+    /** Igual que una salida, pero con tipo SOLICITADO (pedido aprobado de un empleado). */
+    @Transactional
+    public Movimiento registrarSolicitado(Long productoId, int cantidad, String motivo) {
+        var producto = productoRepository.findById(productoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto", productoId));
+        return descontarFefo(producto, cantidad, motivo, TipoMovimiento.SOLICITADO);
+    }
 
-        int stockTotal = lotesFefo.stream().mapToInt(Lote::getCantidadDisponible).sum();
-        if (stockTotal < request.cantidad()) {
-            throw new BusinessException("Stock insuficiente. Disponible: " + stockTotal
-                    + ", solicitado: " + request.cantidad());
+    /**
+     * Repone la cantidad devuelta en los mismos lotes de los que salió el movimiento origen,
+     * empezando por el último lote consumido, y registra un movimiento DEVOLUCION.
+     */
+    @Transactional
+    public Movimiento registrarDevolucion(Movimiento movimientoOrigen, int cantidad, String motivo) {
+        List<ConsumoLote> consumos =
+                consumoLoteRepository.findByMovimientoIdOrderByIdDesc(movimientoOrigen.getId());
+        if (consumos.isEmpty()) {
+            throw new BusinessException("Este producto no puede devolverse: no tiene registro de lotes.");
         }
 
-        int restante = request.cantidad();
+        int restante = cantidad;
+        Lote ultimoLote = null;
+        for (ConsumoLote consumo : consumos) {
+            if (restante <= 0) break;
+            int pendiente = consumo.getCantidad() - consumo.getCantidadDevuelta();
+            if (pendiente <= 0) continue;
+            int reponer = Math.min(pendiente, restante);
+            Lote lote = consumo.getLote();
+            lote.setCantidadDisponible(lote.getCantidadDisponible() + reponer);
+            consumo.setCantidadDevuelta(consumo.getCantidadDevuelta() + reponer);
+            restante -= reponer;
+            ultimoLote = lote;
+        }
+        if (restante > 0) {
+            throw new BusinessException("La cantidad a devolver supera lo entregado de este producto.");
+        }
+
+        var movimiento = new Movimiento();
+        movimiento.setProducto(movimientoOrigen.getProducto());
+        movimiento.setTipo(TipoMovimiento.DEVOLUCION);
+        movimiento.setCantidad(cantidad);
+        movimiento.setMotivo(motivo);
+        movimiento.setCostoUnitario(movimientoOrigen.getCostoUnitario());
+        movimiento.setLote(ultimoLote);
+        getCurrentUsuario().ifPresent(movimiento::setUsuario);
+        return movimientoRepository.save(movimiento);
+    }
+
+    private Movimiento descontarFefo(Producto producto, int cantidad, String motivo, TipoMovimiento tipo) {
+        List<Lote> lotesFefo = loteRepository
+                .findByProductoIdAndCantidadDisponibleGreaterThanOrderByFechaVencimientoAsc(
+                        producto.getId(), 0);
+
+        int stockTotal = lotesFefo.stream().mapToInt(Lote::getCantidadDisponible).sum();
+        if (stockTotal < cantidad) {
+            throw new BusinessException("Stock insuficiente. Disponible: " + stockTotal
+                    + ", solicitado: " + cantidad);
+        }
+
+        int restante = cantidad;
         Lote loteUsado = null;
+        List<ConsumoLote> consumos = new ArrayList<>();
         for (Lote lote : lotesFefo) {
             if (restante <= 0) break;
             int descontar = Math.min(lote.getCantidadDisponible(), restante);
             lote.setCantidadDisponible(lote.getCantidadDisponible() - descontar);
             restante -= descontar;
             loteUsado = lote;
+
+            var consumo = new ConsumoLote();
+            consumo.setLote(lote);
+            consumo.setCantidad(descontar);
+            consumos.add(consumo);
         }
 
         var movimiento = new Movimiento();
         movimiento.setProducto(producto);
-        movimiento.setTipo(TipoMovimiento.SALIDA);
-        movimiento.setCantidad(request.cantidad());
-        movimiento.setMotivo(request.motivo());
+        movimiento.setTipo(tipo);
+        movimiento.setCantidad(cantidad);
+        movimiento.setMotivo(motivo);
         movimiento.setCostoUnitario(producto.getCostoUnitario());
         movimiento.setLote(loteUsado);
         getCurrentUsuario().ifPresent(movimiento::setUsuario);
-        return toResponse(movimientoRepository.save(movimiento));
+        Movimiento guardado = movimientoRepository.save(movimiento);
+
+        for (ConsumoLote consumo : consumos) {
+            consumo.setMovimiento(guardado);
+            consumoLoteRepository.save(consumo);
+        }
+        return guardado;
     }
 
     @Transactional(readOnly = true)
