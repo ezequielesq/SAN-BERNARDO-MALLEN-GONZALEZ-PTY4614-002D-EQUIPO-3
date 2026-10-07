@@ -38,7 +38,7 @@
   [style.display]="menuAbierto() ? 'flex' : null"
   [cdkTrapFocus]="menuAbierto()"
 >
-  <div class="shell-menu__header w3-bar-item w3-border w3-border-black">
+  <div class="shell-menu__header w3-bar-item">
     <h4 class="w3-large" style="margin: 0">Smart RDP</h4>
 
     <button
@@ -66,7 +66,7 @@
           <a
             class="w3-bar-item w3-button"
             [routerLink]="item.ruta"
-            routerLinkActive="w3-crimson w3-border w3-border-black"
+            routerLinkActive="w3-crimson"
             [routerLinkActiveOptions]="{ exact: true }"
             ariaCurrentWhenActive="page"
             >{{ item.etiqueta }}</a
