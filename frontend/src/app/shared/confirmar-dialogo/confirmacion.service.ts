@@ -38,6 +38,17 @@ export class ConfirmacionService {
         .set('defaultFocus', 'cancel')
         .set('closable', false);
 
+      // alertify cuelga su raíz de <body>. Un <dialog> abierto con showModal()
+      // (app-modal) vive en la capa superior del navegador y deja inerte todo
+      // lo que no esté dentro de él: la confirmación quedaría tapada por el
+      // backdrop y sin recibir clics. Se monta dentro del modal abierto y se
+      // devuelve a <body> al terminar (el diálogo de alertify es un singleton
+      // y se destruiría junto con el modal de Angular).
+      // `elements` es API pública de alertify pero no figura en sus tipos.
+      const raiz = (dialogo as unknown as { elements: { root: HTMLElement } }).elements.root;
+      const modalAbierto = document.querySelector('dialog:modal');
+      if (modalAbierto) modalAbierto.appendChild(raiz);
+
       // alertify no agrega ningún atributo ARIA — se suple a mano para no
       // perder lo que ya daba el Dialog de CDK (rol de diálogo + foco inicial).
       queueMicrotask(() => {
@@ -71,6 +82,7 @@ export class ConfirmacionService {
       // no-op tras una respuesta normal y nunca vuelve a disparar onok/oncancel.
       return () => {
         dialogo.close();
+        if (raiz.parentNode !== document.body) document.body.appendChild(raiz);
       };
     });
   }
