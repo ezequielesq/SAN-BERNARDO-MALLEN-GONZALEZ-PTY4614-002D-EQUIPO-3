@@ -22,14 +22,16 @@ export interface ConfigCatalogo {
   titulo: string;
   singular: string;
   endpoint: string;
+  /** Solo Categorías: muestra la casilla "Requiere código PTV". */
+  conRequierePtv?: boolean;
 }
 
 function leerConfig(data: Record<string, unknown>): ConfigCatalogo {
-  const { titulo, singular, endpoint } = data;
+  const { titulo, singular, endpoint, conRequierePtv } = data;
   if (typeof titulo !== 'string' || typeof singular !== 'string' || typeof endpoint !== 'string') {
     throw new Error('Ruta de catálogo sin data { titulo, singular, endpoint }');
   }
-  return { titulo, singular, endpoint };
+  return { titulo, singular, endpoint, conRequierePtv: conRequierePtv === true };
 }
 
 function capitalizar(texto: string): string {
@@ -143,6 +145,27 @@ export class CatalogoMantenedor {
         this.notificaciones.exito(`${this.singularMayuscula} '${item.nombre}' ${accion}.`);
       },
       (mensaje) => this.notificaciones.error(mensaje),
+    );
+  }
+
+  protected alternarRequierePtv(item: CatalogoItem, requierePtv: boolean, casilla: HTMLInputElement): void {
+    if (this.procesando()) {
+      casilla.checked = item.requierePtv === true;
+      return;
+    }
+    this.ejecutar(
+      this.catalogoService.cambiarRequierePtv(this.config.endpoint, item.id, requierePtv),
+      () => {
+        this.notificaciones.exito(
+          requierePtv
+            ? `${this.singularMayuscula} '${item.nombre}' ahora requiere código PTV.`
+            : `${this.singularMayuscula} '${item.nombre}' ya no requiere código PTV.`,
+        );
+      },
+      (mensaje) => {
+        casilla.checked = item.requierePtv === true;
+        this.notificaciones.error(mensaje);
+      },
     );
   }
 

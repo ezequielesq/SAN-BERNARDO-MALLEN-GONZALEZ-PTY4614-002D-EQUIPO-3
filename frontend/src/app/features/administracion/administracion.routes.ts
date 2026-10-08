@@ -2,7 +2,12 @@ import { Routes } from '@angular/router';
 import { ENDPOINT_CATEGORIAS, ENDPOINT_UNIDADES } from '../../shared/catalogo/catalogo.service';
 import { ConfigCatalogo } from '../../shared/catalogo/catalogo-mantenedor';
 
-const categorias: ConfigCatalogo = { titulo: 'Categorías', singular: 'categoría', endpoint: ENDPOINT_CATEGORIAS };
+const categorias: ConfigCatalogo = {
+  titulo: 'Categorías',
+  singular: 'categoría',
+  endpoint: ENDPOINT_CATEGORIAS,
+  conRequierePtv: true,
+};
 const unidades: ConfigCatalogo = { titulo: 'Unidades de medida', singular: 'unidad de medida', endpoint: ENDPOINT_UNIDADES };
 
 export const ADMINISTRACION_ROUTES: Routes = [

@@ -34,6 +34,12 @@ export class CatalogoService {
     return this.http.put<CatalogoItem>(`${environment.apiUrl}${endpoint}/${id}`, { nombre });
   }
 
+  cambiarRequierePtv(endpoint: string, id: number, requierePtv: boolean): Observable<CatalogoItem> {
+    return this.http.put<CatalogoItem>(`${environment.apiUrl}${endpoint}/${id}/requiere-ptv`, {
+      requierePtv,
+    });
+  }
+
   desactivar(endpoint: string, id: number): Observable<void> {
     return this.http.delete<void>(`${environment.apiUrl}${endpoint}/${id}`);
   }

@@ -50,6 +50,9 @@
         <thead>
           <tr class="w3-light-grey">
             <th scope="col">Nombre</th>
+            @if (config.conRequierePtv) {
+              <th scope="col">Requiere código PTV</th>
+            }
             <th scope="col">Estado</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
@@ -58,7 +61,7 @@
           @for (item of lista(); track item.id) {
             @if (editandoId() === item.id) {
               <tr>
-                <td colspan="3">
+                <td [attr.colspan]="config.conRequierePtv ? 4 : 3">
                   <form [formGroup]="edicionForm" (ngSubmit)="guardarEdicion(item)" novalidate>
                     <label [for]="'editar-' + item.id"
                       ><b>Nuevo nombre de "{{ item.nombre }}"</b></label
@@ -103,6 +106,22 @@
                 <td>
                   <b>{{ item.nombre }}</b>
                 </td>
+                @if (config.conRequierePtv) {
+                  <td>
+                    <input
+                      #casillaPtv
+                      type="checkbox"
+                      class="w3-check"
+                      [id]="'requiere-ptv-' + item.id"
+                      [checked]="item.requierePtv === true"
+                      [attr.aria-disabled]="procesando()"
+                      (change)="alternarRequierePtv(item, casillaPtv.checked, casillaPtv)"
+                    />
+                    <label class="visualmente-oculto" [for]="'requiere-ptv-' + item.id">
+                      Requiere código PTV: {{ item.nombre }}
+                    </label>
+                  </td>
+                }
                 <td>
                   @if (item.activo) {
                     Activa
