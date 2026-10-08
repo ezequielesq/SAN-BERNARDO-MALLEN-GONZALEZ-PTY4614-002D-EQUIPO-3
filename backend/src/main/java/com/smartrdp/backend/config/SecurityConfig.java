@@ -45,7 +45,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers("/api/publico/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/register").hasRole("ADMIN")
+                .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,
                         "/api/categorias/**", "/api/unidades-medida/**",
                         "/api/productos/**", "/api/movimientos/**").hasAnyRole("ADMIN", "BODEGUERO")

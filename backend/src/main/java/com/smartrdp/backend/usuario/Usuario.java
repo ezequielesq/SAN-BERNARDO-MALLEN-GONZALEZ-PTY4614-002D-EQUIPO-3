@@ -3,12 +3,15 @@ package com.smartrdp.backend.usuario;
 import com.smartrdp.backend.shared.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Entity
+@Audited
 @Table(name = "usuarios")
 public class Usuario extends BaseEntity {
 
@@ -19,6 +22,7 @@ public class Usuario extends BaseEntity {
     @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
+    @NotAudited
     @Column(name = "password", nullable = false)
     private String password;
 
