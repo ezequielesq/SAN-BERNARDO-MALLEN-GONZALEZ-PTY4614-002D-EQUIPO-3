@@ -92,7 +92,7 @@ export class MovimientoCalendario {
     for (const m of this.movimientos.value()) {
       const fecha = m.fecha.slice(0, 10);
       const actual = mapa.get(fecha) ?? { entrada: false, salida: false };
-      if (m.tipo === 'ENTRADA') actual.entrada = true;
+      if (m.tipo === 'ENTRADA' || m.tipo === 'DEVOLUCION') actual.entrada = true;
       else actual.salida = true;
       mapa.set(fecha, actual);
     }

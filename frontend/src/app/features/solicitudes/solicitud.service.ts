@@ -2,11 +2,7 @@ import { HttpClient, HttpResourceRef, httpResource } from '@angular/common/http'
 import { Injectable, Signal, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import {
-  AprobarSolicitudRequest,
-  Solicitud,
-  SolicitudRequest,
-} from './solicitud.modelo';
+import { AprobarSolicitudRequest, Solicitud } from './solicitud.modelo';
 
 export interface FiltroSolicitudes {
   desde: string | null;
@@ -35,10 +31,6 @@ export class SolicitudService {
   /** Llamar desde un inicializador de campo del componente (requiere contexto de inyección). */
   listarPendientes(): HttpResourceRef<Solicitud[]> {
     return httpResource<Solicitud[]>(() => `${this.url}/pendientes`, { defaultValue: [] });
-  }
-
-  crear(request: SolicitudRequest): Observable<Solicitud> {
-    return this.http.post<Solicitud>(this.url, request);
   }
 
   aprobar(id: number, request: AprobarSolicitudRequest): Observable<Solicitud> {

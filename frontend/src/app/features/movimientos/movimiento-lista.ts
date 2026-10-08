@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { Modal } from '../../shared/modal/modal';
-import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
+import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { ProductoService } from '../productos/producto.service';
@@ -105,6 +105,10 @@ export class MovimientoLista {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
     return this.ordenados().slice(inicio, inicio + this.tamanoPagina());
   });
+
+  protected estadoTipo(tipo: TipoMovimiento): TipoEstado {
+    return tipo.toLowerCase() as TipoEstado;
+  }
 
   protected cambiarProductoFiltro(valor: string): void {
     this.productoIdFiltro.set(valor === '' ? null : Number(valor));

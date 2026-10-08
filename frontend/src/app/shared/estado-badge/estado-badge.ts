@@ -13,7 +13,10 @@ export type TipoEstado =
   | 'entrada'
   | 'salida'
   | 'vencido'
-  | 'proximo';
+  | 'proximo'
+  | 'solicitado'
+  | 'devolucion'
+  | 'pedido';
 
 interface ConfigBadge {
   clase: string;
@@ -35,6 +38,9 @@ const BADGES: Record<TipoEstado, ConfigBadge> = {
   salida: { clase: 'w3-crimson', icono: 'fa-arrow-up', texto: 'Salida' },
   vencido: { clase: 'w3-crimson', icono: 'fa-times-circle', texto: 'Vencido' },
   proximo: { clase: 'w3-amber', icono: 'fa-exclamation-triangle', texto: 'Próximo a vencer' },
+  solicitado: { clase: 'w3-info', icono: 'fa-arrow-up', texto: 'Solicitado' },
+  devolucion: { clase: 'w3-emerald', icono: 'fa-rotate-left', texto: 'Devolución' },
+  pedido: { clase: 'w3-light-grey', icono: 'fa-cart-shopping', texto: 'Pedido' },
 };
 
 @Component({

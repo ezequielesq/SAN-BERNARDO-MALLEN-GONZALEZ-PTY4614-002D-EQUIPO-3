@@ -8,17 +8,15 @@ import { NotificacionService } from '../../core/notificaciones/notificacion.serv
 import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
-import { Modal } from '../../shared/modal/modal';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { AprobarSolicitudRequest, DetalleSolicitud, EstadoSolicitud, Solicitud } from './solicitud.modelo';
-import { SolicitudCrear } from './solicitud-crear';
 import { SolicitudService } from './solicitud.service';
 
 type Vista = 'pendientes' | 'todas';
 
 @Component({
   selector: 'app-solicitud-lista',
-  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, Modal, SolicitudCrear],
+  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './solicitud-lista.html',
 })
@@ -39,7 +37,6 @@ export class SolicitudLista {
   protected readonly expandidoId = signal<number | null>(null);
   protected readonly cantidadesEditadas = signal(new Map<number, number>());
   protected readonly guardandoId = signal<number | null>(null);
-  protected readonly mostrarCrear = signal(false);
 
   private readonly filtro = computed(() => ({ desde: this.desdeFiltro(), hasta: this.hastaFiltro() }));
 
@@ -56,9 +53,8 @@ export class SolicitudLista {
     return this.listaTodas().slice(inicio, inicio + this.tamanoPagina());
   });
 
-  protected alGuardarSolicitud(): void {
-    this.pendientes.reload();
-    this.todasLista.reload();
+  protected badgeTipo(s: Solicitud): TipoEstado {
+    return s.tipo === 'DEVOLUCION' ? 'devolucion' : 'pedido';
   }
 
   protected cambiarDesde(valor: string): void {
@@ -106,7 +102,9 @@ export class SolicitudLista {
       .confirmar({
         titulo: `¿Aprobar solicitud #${s.id}?`,
         descripcion:
-          'Se descontará el stock entregado de cada producto. Esta acción no se puede deshacer.',
+          s.tipo === 'DEVOLUCION'
+            ? 'Se repondrá en el stock lo devuelto de cada producto. Esta acción no se puede deshacer.'
+            : 'Se descontará el stock entregado de cada producto. Esta acción no se puede deshacer.',
         textoConfirmar: 'Aprobar solicitud',
       })
       .pipe(

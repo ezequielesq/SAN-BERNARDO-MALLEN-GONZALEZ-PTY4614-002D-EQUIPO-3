@@ -88,6 +88,8 @@
             <option value="" [selected]="tipoFiltro() === null">Todos</option>
             <option value="ENTRADA" [selected]="tipoFiltro() === 'ENTRADA'">Entrada</option>
             <option value="SALIDA" [selected]="tipoFiltro() === 'SALIDA'">Salida</option>
+            <option value="SOLICITADO" [selected]="tipoFiltro() === 'SOLICITADO'">Solicitado</option>
+            <option value="DEVOLUCION" [selected]="tipoFiltro() === 'DEVOLUCION'">Devolución</option>
           </select>
         </div>
         <div class="w3-col s12 m6 w3-padding">
@@ -163,11 +165,7 @@
               <td>{{ m.fecha | date: 'dd-MM-yyyy HH:mm' }}</td>
               <td>{{ m.productoNombre }}</td>
               <td>
-                @if (m.tipo === 'ENTRADA') {
-                  <app-estado-badge estado="entrada" />
-                } @else {
-                  <app-estado-badge estado="salida" />
-                }
+                <app-estado-badge [estado]="estadoTipo(m.tipo)" />
               </td>
               <td>{{ m.cantidad }}</td>
               <td>{{ m.costoUnitario !== null ? '$' + m.costoUnitario : '—' }}</td>
