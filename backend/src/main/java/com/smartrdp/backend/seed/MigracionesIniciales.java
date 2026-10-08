@@ -36,5 +36,9 @@ public class MigracionesIniciales implements CommandLineRunner {
             jdbc.execute("ALTER TABLE " + tabla + " ADD CONSTRAINT " + tabla + "_tipo_check "
                     + "CHECK (tipo IN ('ENTRADA', 'SALIDA', 'SOLICITADO', 'DEVOLUCION'))");
         }
+
+        // El código PTV pasa a ser opcional (los productos normales usan `codigo`); ddl-auto=update
+        // no quita un NOT NULL ya existente.
+        jdbc.execute("ALTER TABLE productos ALTER COLUMN codigo_ptv DROP NOT NULL");
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -22,15 +23,16 @@ public class ProductoService {
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
 
+    /** Código ya validado y normalizado: uno de los dos es null según la categoría. */
+    private record Codigos(String ptv, String codigo) {}
+
     @Transactional
     public ProductoResponse crear(ProductoRequest request) {
         validarUmbrales(request);
-        String codigoPtv = request.codigoPtv().trim();
-        if (productoRepository.existsByCodigoPtv(codigoPtv)) {
-            throw ptvDuplicado(codigoPtv);
-        }
+        Categoria categoria = resolverCategoria(request.categoriaId(), null);
+        Codigos codigos = validarCodigos(request, categoria, null);
         Producto producto = new Producto();
-        aplicar(producto, request, codigoPtv);
+        aplicar(producto, request, categoria, codigos);
         return toResponse(productoRepository.save(producto));
     }
 
@@ -38,11 +40,9 @@ public class ProductoService {
     public ProductoResponse editar(Long id, ProductoRequest request) {
         Producto producto = findOrThrow(id);
         validarUmbrales(request);
-        String codigoPtv = request.codigoPtv().trim();
-        if (productoRepository.existsByCodigoPtvAndIdNot(codigoPtv, id)) {
-            throw ptvDuplicado(codigoPtv);
-        }
-        aplicar(producto, request, codigoPtv);
+        Categoria categoria = resolverCategoria(request.categoriaId(), producto.getCategoria());
+        Codigos codigos = validarCodigos(request, categoria, id);
+        aplicar(producto, request, categoria, codigos);
         return toResponse(producto);
     }
 
@@ -66,21 +66,22 @@ public class ProductoService {
              var out = new java.io.ByteArrayOutputStream()) {
             var sheet = wb.createSheet("Productos");
             var header = sheet.createRow(0);
-            String[] columnas = {"Código PTV", "Nombre", "Categoría", "Unidad", "Perecible",
+            String[] columnas = {"Código PTV", "Código", "Nombre", "Categoría", "Unidad", "Perecible",
                     "Stock mínimo", "Stock crítico", "Activo"};
             for (int i = 0; i < columnas.length; i++) header.createCell(i).setCellValue(columnas[i]);
 
             int fila = 1;
             for (ProductoResponse p : productos) {
                 var row = sheet.createRow(fila++);
-                row.createCell(0).setCellValue(p.codigoPtv());
-                row.createCell(1).setCellValue(p.nombre());
-                row.createCell(2).setCellValue(p.categoriaNombre());
-                row.createCell(3).setCellValue(p.unidadMedidaNombre());
-                row.createCell(4).setCellValue(p.esPerecible() ? "Sí" : "No");
-                row.createCell(5).setCellValue(p.stockMinimo());
-                row.createCell(6).setCellValue(p.stockCritico());
-                row.createCell(7).setCellValue(p.activo() ? "Sí" : "No");
+                row.createCell(0).setCellValue(texto(p.codigoPtv()));
+                row.createCell(1).setCellValue(texto(p.codigo()));
+                row.createCell(2).setCellValue(p.nombre());
+                row.createCell(3).setCellValue(p.categoriaNombre());
+                row.createCell(4).setCellValue(p.unidadMedidaNombre());
+                row.createCell(5).setCellValue(p.esPerecible() ? "Sí" : "No");
+                row.createCell(6).setCellValue(p.stockMinimo());
+                row.createCell(7).setCellValue(p.stockCritico());
+                row.createCell(8).setCellValue(p.activo() ? "Sí" : "No");
             }
             wb.write(out);
             return out.toByteArray();
@@ -104,14 +105,15 @@ public class ProductoService {
             documento.add(new com.lowagie.text.Paragraph("Productos — Smart RDP"));
             documento.add(new com.lowagie.text.Paragraph(" "));
 
-            var tabla = new com.lowagie.text.pdf.PdfPTable(8);
+            var tabla = new com.lowagie.text.pdf.PdfPTable(9);
             tabla.setWidthPercentage(100);
-            for (String columna : new String[]{"Código PTV", "Nombre", "Categoría", "Unidad",
+            for (String columna : new String[]{"Código PTV", "Código", "Nombre", "Categoría", "Unidad",
                     "Perecible", "Stock mínimo", "Stock crítico", "Activo"}) {
                 tabla.addCell(columna);
             }
             for (ProductoResponse p : productos) {
-                tabla.addCell(p.codigoPtv());
+                tabla.addCell(texto(p.codigoPtv()));
+                tabla.addCell(texto(p.codigo()));
                 tabla.addCell(p.nombre());
                 tabla.addCell(p.categoriaNombre());
                 tabla.addCell(p.unidadMedidaNombre());
@@ -138,15 +140,69 @@ public class ProductoService {
         findOrThrow(id).setActivo(true);
     }
 
-    private void aplicar(Producto producto, ProductoRequest request, String codigoPtv) {
-        producto.setCodigoPtv(codigoPtv);
+    private void aplicar(Producto producto, ProductoRequest request, Categoria categoria, Codigos codigos) {
+        producto.setCodigoPtv(codigos.ptv());
+        producto.setCodigo(codigos.codigo());
         producto.setNombre(request.nombre().trim());
-        producto.setCategoria(resolverCategoria(request.categoriaId(), producto.getCategoria()));
+        producto.setCategoria(categoria);
         producto.setUnidadMedida(resolverUnidad(request.unidadMedidaId(), producto.getUnidadMedida()));
         producto.setEsPerecible(request.esPerecible());
         producto.setStockMinimo(request.stockMinimo());
         producto.setStockCritico(request.stockCritico());
         producto.setCostoUnitario(request.costoUnitario());
+    }
+
+    /**
+     * Regla de la categoría: si requiere PTV, el producto lleva código PTV (letras y números) y no
+     * código numérico; si no, lleva código numérico y no PTV. Cada código es único por separado.
+     */
+    private Codigos validarCodigos(ProductoRequest request, Categoria categoria, Long idActual) {
+        String ptv = limpiar(request.codigoPtv());
+        String codigo = limpiar(request.codigo());
+
+        if (categoria.isRequierePtv()) {
+            if (ptv == null) {
+                throw new BusinessException("Ingresa el código PTV del producto.", "codigoPtv");
+            }
+            if (!ptv.matches("[A-Za-z0-9]+")) {
+                throw new BusinessException("El código PTV solo admite letras y números.", "codigoPtv");
+            }
+            if (codigo != null) {
+                throw new BusinessException(
+                        "Los productos de esta categoría usan código PTV, no código numérico.", "codigo");
+            }
+            ptv = ptv.toUpperCase(Locale.ROOT);
+            boolean repetido = idActual == null
+                    ? productoRepository.existsByCodigoPtv(ptv)
+                    : productoRepository.existsByCodigoPtvAndIdNot(ptv, idActual);
+            if (repetido) throw codigoDuplicado(ptv, "codigoPtv");
+        } else {
+            if (codigo == null) {
+                throw new BusinessException("Ingresa el código del producto.", "codigo");
+            }
+            if (!codigo.matches("\\d+")) {
+                throw new BusinessException("El código solo admite números.", "codigo");
+            }
+            if (ptv != null) {
+                throw new BusinessException(
+                        "Los productos de esta categoría usan código numérico, no código PTV.", "codigoPtv");
+            }
+            boolean repetido = idActual == null
+                    ? productoRepository.existsByCodigo(codigo)
+                    : productoRepository.existsByCodigoAndIdNot(codigo, idActual);
+            if (repetido) throw codigoDuplicado(codigo, "codigo");
+        }
+        return new Codigos(ptv, codigo);
+    }
+
+    private static String limpiar(String valor) {
+        if (valor == null) return null;
+        String recortado = valor.trim();
+        return recortado.isEmpty() ? null : recortado;
+    }
+
+    private static String texto(String valor) {
+        return valor == null ? "" : valor;
     }
 
     private void validarUmbrales(ProductoRequest request) {
@@ -178,8 +234,8 @@ public class ProductoService {
         return unidad;
     }
 
-    private BusinessException ptvDuplicado(String codigoPtv) {
-        return new BusinessException("Ya existe un producto con el código " + codigoPtv + ".", "codigoPtv");
+    private BusinessException codigoDuplicado(String valor, String campo) {
+        return new BusinessException("Ya existe un producto con el código " + valor + ".", campo);
     }
 
     private Producto findOrThrow(Long id) {
@@ -191,6 +247,7 @@ public class ProductoService {
         return new ProductoResponse(
                 p.getId(),
                 p.getCodigoPtv(),
+                p.getCodigo(),
                 p.getNombre(),
                 p.getCategoria().getId(),
                 p.getCategoria().getNombre(),

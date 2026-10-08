@@ -9,14 +9,16 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @Entity
 @Table(name = "productos")
 public class Producto extends BaseEntity {
 
-    @EqualsAndHashCode.Include
-    @Column(name = "codigo_ptv", nullable = false, unique = true, length = 20)
+    @Column(name = "codigo_ptv", unique = true, length = 20)
     private String codigoPtv;
+
+    @Column(name = "codigo", unique = true, length = 20)
+    private String codigo;
 
     @Column(name = "nombre", nullable = false, length = 150)
     private String nombre;
