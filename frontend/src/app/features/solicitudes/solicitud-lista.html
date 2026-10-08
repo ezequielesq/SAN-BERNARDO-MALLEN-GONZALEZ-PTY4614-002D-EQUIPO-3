@@ -59,7 +59,7 @@
                   <td>{{ d.cantidadSolicitada }}</td>
                   <td>
                     <label class="visualmente-oculto" [for]="'entregada-' + d.detalleId">
-                      Cantidad a entregar de {{ d.productoNombre }}
+                      {{ s.tipo === 'DEVOLUCION' ? 'Cantidad a aceptar de' : 'Cantidad a entregar de' }} {{ d.productoNombre }}
                     </label>
                     <input
                       [id]="'entregada-' + d.detalleId"
@@ -67,6 +67,7 @@
                       style="width: 6em"
                       type="number"
                       min="0"
+                      [attr.max]="d.cantidadSolicitada"
                       step="1"
                       inputmode="numeric"
                       [value]="cantidadEditada(d)"
@@ -153,7 +154,10 @@
             <tr>
               <td>{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</td>
               <td>{{ s.solicitanteNombre }}</td>
-              <td><app-estado-badge [estado]="badgeTipo(s)" /></td>
+              <td>
+                <app-estado-badge [estado]="badgeTipo(s)" />
+                @if (s.solicitudOrigenId !== null) { · del pedido #{{ s.solicitudOrigenId }} }
+              </td>
               <td><app-estado-badge [estado]="estadoBadge(s.estado)" /></td>
               <td>{{ s.detalles.length }}</td>
               <td>
@@ -176,8 +180,8 @@
                     <thead>
                       <tr class="w3-light-grey">
                         <th scope="col">Producto</th>
-                        <th scope="col">Cantidad solicitada</th>
-                        <th scope="col">Cantidad entregada</th>
+                        <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'A devolver' : 'Cantidad solicitada' }}</th>
+                        <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'Aceptado' : 'Cantidad entregada' }}</th>
                       </tr>
                     </thead>
                     <tbody>
