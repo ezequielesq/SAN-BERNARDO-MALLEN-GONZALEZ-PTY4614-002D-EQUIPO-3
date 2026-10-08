@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Valida usuario + contraseña de un empleado y limita los intentos fallidos (en memoria). */
 @Component
@@ -23,10 +23,7 @@ public class VerificadorIdentidad {
     static final Duration BLOQUEO = Duration.ofMinutes(5);
     static final String MENSAJE_INVALIDO = "Usuario o contraseña incorrectos.";
 
-    private static final class Intentos {
-        int fallos;
-        Instant bloqueadoHasta;
-    }
+    private record Intentos(int fallos, Instant bloqueadoHasta) {}
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -34,38 +31,38 @@ public class VerificadorIdentidad {
 
     public Usuario verificar(Long empleadoId, String password) {
         Instant ahora = Instant.now();
-        Intentos actual = intentos.get(empleadoId);
-        if (actual != null && actual.bloqueadoHasta != null && ahora.isBefore(actual.bloqueadoHasta)) {
-            long segundos = Duration.between(ahora, actual.bloqueadoHasta).toSeconds();
+
+        Usuario usuario = usuarioRepository.findById(empleadoId)
+                .filter(u -> u.isActivo() && u.getRol() == Rol.EMPLEADO)
+                .orElseThrow(() -> new BusinessException(MENSAJE_INVALIDO));
+
+        // Se reserva el intento de forma atómica ANTES de comparar la contraseña, así las
+        // peticiones concurrentes no pueden adivinar más de MAX_FALLOS veces por ráfaga.
+        AtomicReference<Intentos> rechazado = new AtomicReference<>();
+        intentos.compute(empleadoId, (id, previo) -> {
+            if (previo != null && previo.bloqueadoHasta() != null) {
+                if (ahora.isBefore(previo.bloqueadoHasta())) {
+                    rechazado.set(previo);
+                    return previo;
+                }
+                previo = null; // el bloqueo expiró: se reinicia el contador
+            }
+            int fallos = (previo == null ? 0 : previo.fallos()) + 1;
+            return new Intentos(fallos, fallos >= MAX_FALLOS ? ahora.plus(BLOQUEO) : null);
+        });
+
+        Intentos bloqueo = rechazado.get();
+        if (bloqueo != null) {
+            long segundos = Duration.between(ahora, bloqueo.bloqueadoHasta()).toSeconds();
             long minutos = Math.max(1, (long) Math.ceil(segundos / 60.0));
             throw new BusinessException("Demasiados intentos. Intenta de nuevo en " + minutos
                     + (minutos == 1 ? " minuto." : " minutos."));
         }
 
-        Optional<Usuario> usuario = usuarioRepository.findById(empleadoId)
-                .filter(u -> u.isActivo() && u.getRol() == Rol.EMPLEADO);
-        if (usuario.isEmpty()) {
-            throw new BusinessException(MENSAJE_INVALIDO);
-        }
-        if (!passwordEncoder.matches(password, usuario.get().getPassword())) {
-            registrarFallo(empleadoId, ahora);
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
             throw new BusinessException(MENSAJE_INVALIDO);
         }
         intentos.remove(empleadoId);
-        return usuario.get();
-    }
-
-    private void registrarFallo(Long empleadoId, Instant ahora) {
-        intentos.compute(empleadoId, (id, previo) -> {
-            Intentos n = previo;
-            if (n == null || (n.bloqueadoHasta != null && !ahora.isBefore(n.bloqueadoHasta))) {
-                n = new Intentos();
-            }
-            n.fallos++;
-            if (n.fallos >= MAX_FALLOS) {
-                n.bloqueadoHasta = ahora.plus(BLOQUEO);
-            }
-            return n;
-        });
+        return usuario;
     }
 }
