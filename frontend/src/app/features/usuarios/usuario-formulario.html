@@ -1,0 +1,123 @@
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-white w3-padding w3-card w3-border">
+  @if (errorGeneral(); as mensaje) {
+    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+      <p>{{ mensaje }}</p>
+    </div>
+  }
+
+  @if (camposConError().length > 0) {
+    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+      <p>
+        <b
+          >Revisa
+          {{ camposConError().length === 1 ? '1 campo' : camposConError().length + ' campos' }}
+          antes de guardar:</b
+        >
+      </p>
+      <ul>
+        @for (campo of camposConError(); track campo) {
+          <li>
+            <a [href]="'#campo-' + campo" (click)="irACampo($event, campo)">{{ ETIQUETAS[campo] }}</a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="w3-section">
+    <label for="campo-nombre"><b>Nombre</b></label>
+    <input
+      id="campo-nombre"
+      class="w3-input"
+      type="text"
+      formControlName="nombre"
+      maxlength="100"
+      autocomplete="off"
+      [attr.aria-invalid]="mensajeError('nombre') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('nombre')"
+    />
+    @if (mensajeError('nombre'); as m) {
+      <p id="error-nombre" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="campo-email"><b>Correo</b></label>
+    <input
+      id="campo-email"
+      class="w3-input"
+      type="email"
+      formControlName="email"
+      maxlength="150"
+      autocomplete="off"
+      [attr.aria-invalid]="mensajeError('email') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('email')"
+    />
+    @if (mensajeError('email'); as m) {
+      <p id="error-email" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="campo-rol"><b>Rol</b></label>
+    <select
+      id="campo-rol"
+      class="w3-select"
+      formControlName="rol"
+      [attr.aria-invalid]="mensajeError('rol') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('rol')"
+    >
+      <option [ngValue]="null" disabled>Elige un rol</option>
+      <option ngValue="BODEGUERO">Bodeguero</option>
+      <option ngValue="EMPLEADO">Empleado</option>
+    </select>
+    @if (mensajeError('rol'); as m) {
+      <p id="error-rol" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="campo-password"><b>Contraseña</b></label>
+    <p id="ayuda-password" class="w3-small">
+      @if (esEdicion()) {
+        Déjala vacía para no cambiarla. Si escribes una nueva, mínimo 6 caracteres.
+      } @else {
+        Mínimo 6 caracteres. Defínela tú: el usuario la usará para identificarse.
+      }
+    </p>
+    <input
+      id="campo-password"
+      class="w3-input"
+      formControlName="password"
+      autocomplete="new-password"
+      [attr.type]="mostrarPassword() ? 'text' : 'password'"
+      [attr.aria-invalid]="mensajeError('password') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('password')"
+    />
+    @if (mensajeError('password'); as m) {
+      <p id="error-password" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+    <button
+      type="button"
+      class="w3-button w3-white w3-border w3-margin-top w3-round"
+      aria-controls="campo-password"
+      [attr.aria-pressed]="mostrarPassword()"
+      (click)="alternarPassword()"
+    >
+      Mostrar contraseña
+    </button>
+  </div>
+
+  <div class="w3-section">
+    <button type="submit" class="w3-button w3-info w3-round" [attr.aria-disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : esEdicion() ? 'Guardar cambios' : 'Guardar usuario' }}
+    </button>
+    <button
+      type="button"
+      class="w3-button w3-white w3-border w3-border-red w3-margin-left w3-round"
+      (click)="solicitarCierre()"
+    >
+      Cancelar
+    </button>
+  </div>
+</form>

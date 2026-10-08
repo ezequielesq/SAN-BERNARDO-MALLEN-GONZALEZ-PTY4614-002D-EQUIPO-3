@@ -41,6 +41,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/analitica/analitica.routes').then(m => m.ANALITICA_ROUTES),
       },
       {
+        path: 'usuarios',
+        canActivate: [rolGuard(['ADMIN'])],
+        loadChildren: () => import('./features/usuarios/usuarios.routes').then(m => m.USUARIOS_ROUTES),
+      },
+      {
         path: 'administracion',
         canActivate: [rolGuard(['BODEGUERO'])],
         loadChildren: () => import('./features/administracion/administracion.routes').then(m => m.ADMINISTRACION_ROUTES),

@@ -1,0 +1,105 @@
+<p>
+  <button type="button" class="w3-button w3-info w3-round w3-margin-left" (click)="modalUsuario.set('nuevo')">
+    <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo usuario
+  </button>
+</p>
+
+<div class="w3-row w3-container w3-border w3-margin w3-padding w3-light-grey">
+  <div class="w3-col m8 w3-padding-small">
+    <label for="buscar-usuario"><b>Buscar por nombre o correo</b></label>
+    <input
+      #campoBusqueda
+      id="buscar-usuario"
+      class="w3-input"
+      type="search"
+      [value]="busqueda()"
+      (input)="busqueda.set(campoBusqueda.value)"
+    />
+  </div>
+  <div class="w3-col m4 w3-padding-small w3-padding-24">
+    <input
+      #checkDesactivados
+      id="mostrar-desactivados"
+      class="w3-check"
+      type="checkbox"
+      [checked]="mostrarDesactivados()"
+      (change)="mostrarDesactivados.set(checkDesactivados.checked)"
+    />
+    <label for="mostrar-desactivados"> Mostrar desactivados</label>
+  </div>
+</div>
+
+<div class="w3-container w3-border w3-margin w3-light-grey">
+  <app-estado-vista
+    [cargando]="usuarios.status() === 'loading'"
+    [error]="usuarios.error()"
+    [vacio]="todos().length === 0"
+    mensajeCarga="Cargando usuarios…"
+    mensajeVacio="Aún no hay usuarios. Crea el primero con 'Nuevo usuario'."
+    (reintentar)="usuarios.reload()"
+  >
+    <p aria-live="polite">Mostrando {{ filtrados().length }} de {{ todos().length }} usuarios</p>
+
+    @if (filtrados().length === 0) {
+      <p>Ningún usuario coincide con la búsqueda.</p>
+    } @else {
+      <div class="w3-responsive">
+        <table class="w3-table-all">
+          <caption class="visualmente-oculto">
+            Lista de usuarios
+          </caption>
+          <thead>
+            <tr class="w3-light-grey">
+              <th scope="col">Nombre</th>
+              <th scope="col">Correo</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of filtrados(); track u.id) {
+              <tr>
+                <td>{{ u.nombre }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ etiquetaRol(u) }}</td>
+                <td>
+                  @if (u.activo) {
+                    Activo
+                  } @else {
+                    <span class="w3-tag w3-round w3-light-grey"><i class="fa fa-ban" aria-hidden="true"></i> Desactivado</span>
+                  }
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="w3-button w3-border w3-border-red w3-margin-left w3-round w3-right"
+                    [attr.aria-disabled]="procesandoId() === u.id"
+                    (click)="alternar(u)"
+                  >
+                    <i [class]="u.activo ? 'fa fa-ban' : 'fa fa-undo'" aria-hidden="true"></i>
+                    {{ u.activo ? 'Desactivar' : 'Reactivar' }}<span class="visualmente-oculto"> {{ u.nombre }}</span>
+                  </button>
+                  <button type="button" class="w3-button w3-warning w3-round w3-right" (click)="modalUsuario.set(u)">
+                    <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto"> {{ u.nombre }}</span>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-estado-vista>
+</div>
+
+@if (modalUsuario() !== null) {
+  <app-modal [titulo]="tituloModal()" (cerrar)="formulario.solicitarCierre()">
+    <app-usuario-formulario
+      #formulario
+      [usuario]="usuarioModal()"
+      (guardado)="alGuardarUsuario()"
+      (cerrarSolicitado)="cerrarModal()"
+    />
+  </app-modal>
+}

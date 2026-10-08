@@ -20,6 +20,7 @@ export const NAVEGACION: readonly ItemNavegacion[] = [
   { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['BODEGUERO'] },
   { etiqueta: 'Solicitudes', ruta: '/solicitudes', roles: ['BODEGUERO'] },
   { etiqueta: 'Analítica', ruta: '/analitica', roles: ['ADMIN', 'BODEGUERO'] },
+  { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN'] },
   { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['BODEGUERO'], grupo: 'Administración' },
   { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['BODEGUERO'], grupo: 'Administración' },
 ];
