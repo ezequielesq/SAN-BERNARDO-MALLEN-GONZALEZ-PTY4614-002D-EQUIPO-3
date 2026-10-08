@@ -1,4 +1,4 @@
-export type Rol = 'ADMIN' | 'BODEGUERO' | 'TRABAJADOR';
+export type Rol = 'ADMIN' | 'BODEGUERO' | 'EMPLEADO';
 
 export interface Sesion {
   token: string;
@@ -12,7 +12,7 @@ export interface Credenciales {
   password: string;
 }
 
-const ROLES: readonly Rol[] = ['ADMIN', 'BODEGUERO', 'TRABAJADOR'];
+const ROLES: readonly Rol[] = ['ADMIN', 'BODEGUERO', 'EMPLEADO'];
 
 export function esSesion(valor: unknown): valor is Sesion {
   if (typeof valor !== 'object' || valor === null) return false;

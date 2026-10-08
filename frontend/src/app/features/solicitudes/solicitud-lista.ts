@@ -29,10 +29,7 @@ export class SolicitudLista {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(AuthService);
 
-  protected readonly puedeGestionar = computed(() => {
-    const rol = this.auth.rol();
-    return rol === 'ADMIN' || rol === 'BODEGUERO';
-  });
+  protected readonly puedeGestionar = computed(() => this.auth.rol() === 'BODEGUERO');
 
   protected readonly vista = signal<Vista>(this.puedeGestionar() ? 'pendientes' : 'todas');
   protected readonly desdeFiltro = signal<string | null>(null);

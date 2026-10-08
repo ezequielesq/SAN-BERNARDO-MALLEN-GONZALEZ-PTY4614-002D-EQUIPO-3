@@ -13,15 +13,16 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const esApi = req.url.startsWith(environment.apiUrl);
   const esLogin = req.url === `${environment.apiUrl}/auth/login`;
+  const esPublico = req.url.startsWith(`${environment.apiUrl}/publico/`);
   const token = auth.sesion()?.token;
   const peticion =
-    esApi && !esLogin && token
+    esApi && !esLogin && !esPublico && token
       ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
       : req;
 
   return next(peticion).pipe(
     catchError((err: unknown) => {
-      if (esApi && !esLogin && err instanceof HttpErrorResponse) {
+      if (esApi && !esLogin && !esPublico && err instanceof HttpErrorResponse) {
         if (err.status === 401) {
           auth.logout({ expirada: true, returnUrl: router.url });
         } else if (err.status === 403) {

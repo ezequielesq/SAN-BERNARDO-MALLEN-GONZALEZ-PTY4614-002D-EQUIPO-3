@@ -17,14 +17,17 @@ export const routes: Routes = [
     children: [
       {
         path: 'productos',
+        canActivate: [rolGuard(['BODEGUERO'])],
         loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES),
       },
       {
         path: 'movimientos',
+        canActivate: [rolGuard(['BODEGUERO'])],
         loadChildren: () => import('./features/movimientos/movimientos.routes').then(m => m.MOVIMIENTOS_ROUTES),
       },
       {
         path: 'solicitudes',
+        canActivate: [rolGuard(['BODEGUERO'])],
         loadChildren: () => import('./features/solicitudes/solicitudes.routes').then(m => m.SOLICITUDES_ROUTES),
       },
       {
@@ -34,7 +37,7 @@ export const routes: Routes = [
       },
       {
         path: 'administracion',
-        canActivate: [rolGuard(['ADMIN'])],
+        canActivate: [rolGuard(['BODEGUERO'])],
         loadChildren: () => import('./features/administracion/administracion.routes').then(m => m.ADMINISTRACION_ROUTES),
       },
       { path: '', pathMatch: 'full', redirectTo: 'productos' },

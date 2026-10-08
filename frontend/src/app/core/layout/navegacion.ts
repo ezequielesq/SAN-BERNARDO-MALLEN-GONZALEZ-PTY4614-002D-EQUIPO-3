@@ -14,24 +14,27 @@ export interface GrupoNavegacion {
 }
 
 export const NAVEGACION: readonly ItemNavegacion[] = [
-  { etiqueta: 'Productos', ruta: '/productos', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
-  { etiqueta: 'Movimientos', ruta: '/movimientos', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
-  { etiqueta: 'Estado de stock', ruta: '/movimientos/stock', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
-  { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
-  { etiqueta: 'Solicitudes', ruta: '/solicitudes', roles: ['ADMIN', 'BODEGUERO', 'TRABAJADOR'] },
+  { etiqueta: 'Productos', ruta: '/productos', roles: ['BODEGUERO'] },
+  { etiqueta: 'Movimientos', ruta: '/movimientos', roles: ['BODEGUERO'] },
+  { etiqueta: 'Estado de stock', ruta: '/movimientos/stock', roles: ['BODEGUERO'] },
+  { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['BODEGUERO'] },
+  { etiqueta: 'Solicitudes', ruta: '/solicitudes', roles: ['BODEGUERO'] },
   { etiqueta: 'Analítica', ruta: '/analitica', roles: ['ADMIN', 'BODEGUERO'] },
-  { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['ADMIN'], grupo: 'Administración' },
-  { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['ADMIN'], grupo: 'Administración' },
+  { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['BODEGUERO'], grupo: 'Administración' },
+  { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['BODEGUERO'], grupo: 'Administración' },
 ];
 
 export const ETIQUETA_ROL: Record<Rol, string> = {
   ADMIN: 'Administrador',
   BODEGUERO: 'Bodeguero',
-  TRABAJADOR: 'Trabajador',
+  EMPLEADO: 'Empleado',
 };
 
 export function paginaInicialPara(rol: Rol | null): string {
-  return rol === null ? '/login' : '/productos';
+  if (rol === null) return '/login';
+  if (rol === 'ADMIN') return '/analitica';
+  if (rol === 'EMPLEADO') return '/empleado';
+  return '/productos';
 }
 
 export function agruparNavegacion(rol: Rol | null): GrupoNavegacion[] {
