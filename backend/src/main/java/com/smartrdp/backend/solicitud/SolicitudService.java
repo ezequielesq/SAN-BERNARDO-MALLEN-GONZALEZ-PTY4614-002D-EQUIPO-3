@@ -97,10 +97,14 @@ public class SolicitudService {
 
     @Transactional
     public SolicitudResponse aprobar(Long id, AprobarSolicitudRequest request) {
-        var solicitud = solicitudRepository.findById(id)
+        // Orden de bloqueo fijo: primero la solicitud, luego (si es devolución) su pedido de origen.
+        var solicitud = solicitudRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud", id));
         if (solicitud.getEstado() != EstadoSolicitud.PENDIENTE) {
             throw new BusinessException("La solicitud ya fue procesada");
+        }
+        if (solicitud.getTipo() == TipoSolicitud.DEVOLUCION && solicitud.getSolicitudOrigen() != null) {
+            solicitudRepository.findByIdForUpdate(solicitud.getSolicitudOrigen().getId());
         }
 
         Map<Long, Integer> cantidadesEntregadas = new HashMap<>();
@@ -120,9 +124,12 @@ public class SolicitudService {
             if (entregada < 0) {
                 throw new BusinessException("La cantidad no puede ser negativa.");
             }
-            if (!esPedido && entregada > detalle.getCantidadSolicitada()) {
-                throw new BusinessException("No puedes aceptar más de lo que se quiere devolver de '"
-                        + detalle.getProducto().getNombre() + "'.");
+            if (entregada > detalle.getCantidadSolicitada()) {
+                throw new BusinessException(esPedido
+                        ? "No puedes entregar más de lo solicitado de '"
+                                + detalle.getProducto().getNombre() + "'."
+                        : "No puedes aceptar más de lo que se quiere devolver de '"
+                                + detalle.getProducto().getNombre() + "'.");
             }
             detalle.setCantidadEntregada(entregada);
             if (entregada > 0) {
@@ -143,7 +150,7 @@ public class SolicitudService {
 
     @Transactional
     public void rechazar(Long id) {
-        var solicitud = solicitudRepository.findById(id)
+        var solicitud = solicitudRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud", id));
         if (solicitud.getEstado() != EstadoSolicitud.PENDIENTE) {
             throw new BusinessException("La solicitud ya fue procesada");
