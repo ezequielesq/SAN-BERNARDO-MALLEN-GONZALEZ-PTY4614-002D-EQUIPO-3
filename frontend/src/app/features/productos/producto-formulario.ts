@@ -346,9 +346,12 @@ export class ProductoFormulario implements ConCambiosPendientes {
       v.costoUnitario === null
     )
       return;
+    const regla = this.reglaCodigo();
+    const codigoPtv = v.codigoPtv.trim();
+    const codigo = v.codigo.trim();
     const request: ProductoRequest = {
-      codigoPtv: v.codigoPtv.trim() === '' ? null : v.codigoPtv.trim(),
-      codigo: v.codigo.trim() === '' ? null : v.codigo.trim(),
+      codigoPtv: regla === 'ptv' && codigoPtv !== '' ? codigoPtv : null,
+      codigo: regla === 'numerico' && codigo !== '' ? codigo : null,
       nombre: v.nombre.trim(),
       categoriaId: v.categoriaId,
       unidadMedidaId: v.unidadMedidaId,

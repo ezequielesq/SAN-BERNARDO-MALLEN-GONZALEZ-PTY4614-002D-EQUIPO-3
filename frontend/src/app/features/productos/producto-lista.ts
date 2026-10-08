@@ -96,7 +96,8 @@ export class ProductoLista {
         (categoria === null || p.categoriaId === categoria) &&
         (texto === '' ||
           normalizar(p.nombre).includes(texto) ||
-          normalizar(this.codigoDe(p)).includes(texto)),
+          normalizar(p.codigoPtv ?? '').includes(texto) ||
+          normalizar(p.codigo ?? '').includes(texto)),
     );
   });
 
