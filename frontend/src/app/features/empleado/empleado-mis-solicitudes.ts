@@ -1,5 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { traducirError } from '../../core/errores/traducir-error';
@@ -19,6 +28,7 @@ export class EmpleadoMisSolicitudes {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(EmpleadoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly empleados = this.service.empleados();
   protected readonly opcionesEmpleado = computed(() =>
@@ -47,6 +57,7 @@ export class EmpleadoMisSolicitudes {
     this.errorGeneral.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.enfocar(this.form.controls.empleadoId.invalid ? 'mis-empleado' : 'mis-password');
       return;
     }
     const v = this.form.getRawValue();
@@ -76,6 +87,10 @@ export class EmpleadoMisSolicitudes {
     return s.estado.toLowerCase() as TipoEstado;
   }
 
+  private enfocar(id: string): void {
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
+  }
+
   private cargar(empleadoId: number, password: string): void {
     if (this.cargando()) return;
     this.cargando.set(true);
@@ -93,6 +108,7 @@ export class EmpleadoMisSolicitudes {
           this.solicitudes.set(null);
           this.empleadoConsultado.set(null);
           this.errorGeneral.set(traducirError(err).mensaje);
+          this.enfocar('mis-error');
         },
       });
   }

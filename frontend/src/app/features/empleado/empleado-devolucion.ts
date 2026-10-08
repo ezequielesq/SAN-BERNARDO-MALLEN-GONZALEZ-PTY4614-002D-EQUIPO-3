@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { traducirError } from '../../core/errores/traducir-error';
@@ -23,6 +34,7 @@ export class EmpleadoDevolucion {
   private readonly service = inject(EmpleadoService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly detalles = computed(() =>
     this.solicitud().detalles.filter((d) => (d.devolvible ?? 0) > 0),
@@ -59,6 +71,7 @@ export class EmpleadoDevolucion {
     this.errorGeneral.set(null);
     if (this.password.invalid) {
       this.password.markAsTouched();
+      this.enfocar('devolver-password');
       return;
     }
     if (this.detalles().some((d) => this.errorCantidad(d) !== null) || this.total() === 0) return;
@@ -87,7 +100,13 @@ export class EmpleadoDevolucion {
           this.guardando.set(false);
           this.errorGeneral.set(traducirError(err).mensaje);
           this.password.reset('');
+          this.intento.set(false);
+          this.enfocar('devolucion-error');
         },
       });
+  }
+
+  private enfocar(id: string): void {
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
   }
 }

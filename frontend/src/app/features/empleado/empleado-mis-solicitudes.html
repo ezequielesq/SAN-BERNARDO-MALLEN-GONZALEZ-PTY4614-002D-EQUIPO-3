@@ -2,7 +2,7 @@
   <h2 id="titulo-mis" class="w3-large">Mis solicitudes</h2>
 
   @if (errorGeneral(); as mensaje) {
-    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+    <div id="mis-error" class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert" tabindex="-1">
       <p>{{ mensaje }}</p>
     </div>
   }
@@ -16,6 +16,7 @@
           class="w3-select"
           formControlName="empleadoId"
           [attr.aria-invalid]="errorCampo('empleadoId') ? 'true' : null"
+          [attr.aria-describedby]="errorCampo('empleadoId') ? 'mis-empleado-error' : null"
         >
           <option [ngValue]="null" disabled>Elige tu usuario</option>
           @for (e of opcionesEmpleado(); track e.id) {
@@ -23,7 +24,7 @@
           }
         </select>
         @if (errorCampo('empleadoId')) {
-          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige tu usuario.</p>
+          <p id="mis-empleado-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige tu usuario.</p>
         }
       </div>
       <div class="w3-col m5 w3-padding-small">
@@ -35,9 +36,10 @@
           autocomplete="off"
           formControlName="password"
           [attr.aria-invalid]="errorCampo('password') ? 'true' : null"
+          [attr.aria-describedby]="errorCampo('password') ? 'mis-password-error' : null"
         />
         @if (errorCampo('password')) {
-          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
+          <p id="mis-password-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
         }
       </div>
       <div class="w3-col m2 w3-padding-small">

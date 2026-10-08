@@ -49,7 +49,7 @@ export class EmpleadoSolicitudNueva {
 
   protected readonly formItem = this.fb.group({
     productoId: this.fb.control<number | null>(null, Validators.required),
-    cantidad: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
+    cantidad: this.fb.control<number | null>(null, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)]),
   });
 
   protected readonly items = signal<ItemCarrito[]>([]);
@@ -98,6 +98,7 @@ export class EmpleadoSolicitudNueva {
     this.errorGeneral.set(null);
     if (this.formIdentidad.invalid) {
       this.formIdentidad.markAllAsTouched();
+      this.enfocar(this.formIdentidad.controls.empleadoId.invalid ? 'nueva-empleado' : 'nueva-password');
       return;
     }
     if (this.items().length === 0) return;
@@ -124,8 +125,14 @@ export class EmpleadoSolicitudNueva {
           this.guardando.set(false);
           this.errorGeneral.set(traducirError(err).mensaje);
           this.formIdentidad.controls.password.reset('');
+          this.intentoEnviar.set(false);
+          this.enfocar('nueva-error');
         },
       });
+  }
+
+  private enfocar(id: string): void {
+    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
   }
 
   private enfocarPrimerErrorItem(): void {

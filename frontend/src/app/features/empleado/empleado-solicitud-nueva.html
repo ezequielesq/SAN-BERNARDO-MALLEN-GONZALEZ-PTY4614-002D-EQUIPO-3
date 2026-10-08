@@ -2,7 +2,7 @@
   <h2 id="titulo-nueva" class="w3-large">Nueva solicitud</h2>
 
   @if (errorGeneral(); as mensaje) {
-    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+    <div id="nueva-error" class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert" tabindex="-1">
       <p>{{ mensaje }}</p>
     </div>
   }
@@ -16,6 +16,7 @@
           class="w3-select"
           formControlName="empleadoId"
           [attr.aria-invalid]="errorIdentidad('empleadoId') ? 'true' : null"
+          [attr.aria-describedby]="errorIdentidad('empleadoId') ? 'nueva-empleado-error' : null"
         >
           <option [ngValue]="null" disabled>Elige tu usuario</option>
           @for (e of opcionesEmpleado(); track e.id) {
@@ -23,7 +24,7 @@
           }
         </select>
         @if (errorIdentidad('empleadoId')) {
-          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige tu usuario.</p>
+          <p id="nueva-empleado-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige tu usuario.</p>
         }
       </div>
       <div class="w3-col m6 w3-padding-small">
@@ -35,9 +36,10 @@
           autocomplete="off"
           formControlName="password"
           [attr.aria-invalid]="errorIdentidad('password') ? 'true' : null"
+          [attr.aria-describedby]="errorIdentidad('password') ? 'nueva-password-error' : null"
         />
         @if (errorIdentidad('password')) {
-          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
+          <p id="nueva-password-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
         }
       </div>
     </div>
@@ -52,6 +54,7 @@
           class="w3-select"
           formControlName="productoId"
           [attr.aria-invalid]="intentoAgregar() && formItem.controls.productoId.invalid ? 'true' : null"
+          [attr.aria-describedby]="intentoAgregar() && formItem.controls.productoId.invalid ? 'item-producto-error' : null"
         >
           <option [ngValue]="null" disabled>Elige un producto</option>
           @for (p of opcionesProducto(); track p.id) {
@@ -59,7 +62,7 @@
           }
         </select>
         @if (intentoAgregar() && formItem.controls.productoId.invalid) {
-          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige un producto.</p>
+          <p id="item-producto-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige un producto.</p>
         }
       </div>
       <div class="w3-col m6 w3-padding-small">
@@ -73,9 +76,10 @@
           inputmode="numeric"
           formControlName="cantidad"
           [attr.aria-invalid]="intentoAgregar() && formItem.controls.cantidad.invalid ? 'true' : null"
+          [attr.aria-describedby]="intentoAgregar() && formItem.controls.cantidad.invalid ? 'item-cantidad-error' : null"
         />
         @if (intentoAgregar() && formItem.controls.cantidad.invalid) {
-          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa una cantidad de al menos 1.</p>
+          <p id="item-cantidad-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa una cantidad entera de al menos 1.</p>
         }
       </div>
     </div>

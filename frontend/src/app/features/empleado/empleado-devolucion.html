@@ -1,5 +1,5 @@
 @if (errorGeneral(); as mensaje) {
-  <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+  <div id="devolucion-error" class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert" tabindex="-1">
     <p>{{ mensaje }}</p>
   </div>
 }
@@ -38,12 +38,13 @@
                 min="0"
                 step="1"
                 inputmode="numeric"
-                [value]="cantidadDe(d.detalleId)"
+                value="0"
                 [attr.aria-invalid]="errorCantidad(d) ? 'true' : null"
+                [attr.aria-describedby]="errorCantidad(d) ? 'devolver-cantidad-error-' + d.detalleId : null"
                 (input)="actualizar(d.detalleId, $any($event.target).value)"
               />
               @if (errorCantidad(d); as mensaje) {
-                <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
+                <p [id]="'devolver-cantidad-error-' + d.detalleId" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
               }
             </td>
           </tr>
@@ -65,9 +66,10 @@
       autocomplete="off"
       [formControl]="password"
       [attr.aria-invalid]="password.invalid && (password.touched || intento()) ? 'true' : null"
+      [attr.aria-describedby]="password.invalid && (password.touched || intento()) ? 'devolver-password-error' : null"
     />
     @if (password.invalid && (password.touched || intento())) {
-      <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
+      <p id="devolver-password-error" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
     }
   </div>
 
