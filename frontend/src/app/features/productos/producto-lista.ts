@@ -19,9 +19,10 @@ import { Modal } from '../../shared/modal/modal';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { descargarArchivo } from '../../shared/utils/descargar-archivo';
 import { ProductoFormulario } from './producto-formulario';
+import { Producto } from './producto.modelo';
 import { ProductoService } from './producto.service';
 
-type ColumnaOrdenProducto = 'codigoPtv' | 'nombre' | 'categoriaNombre' | 'estado';
+type ColumnaOrdenProducto = 'codigo' | 'nombre' | 'categoriaNombre' | 'estado';
 
 interface OpcionCategoria {
   id: number;
@@ -95,7 +96,7 @@ export class ProductoLista {
         (categoria === null || p.categoriaId === categoria) &&
         (texto === '' ||
           normalizar(p.nombre).includes(texto) ||
-          normalizar(p.codigoPtv).includes(texto)),
+          normalizar(this.codigoDe(p)).includes(texto)),
     );
   });
 
@@ -106,8 +107,10 @@ export class ProductoLista {
     const dir = this.direccionOrden() === 'asc' ? 1 : -1;
     lista.sort((a, b) => {
       switch (columna) {
-        case 'codigoPtv':
-          return a.codigoPtv.localeCompare(b.codigoPtv, 'es') * dir;
+        case 'codigo':
+          return (
+            this.codigoDe(a).localeCompare(this.codigoDe(b), 'es', { numeric: true }) * dir
+          );
         case 'nombre':
           return a.nombre.localeCompare(b.nombre, 'es') * dir;
         case 'categoriaNombre':
@@ -139,6 +142,11 @@ export class ProductoLista {
 
   protected cambiarCategoria(valor: string): void {
     this.categoriaId.set(valor === '' ? null : Number(valor));
+  }
+
+  /** El código con el que se identifica el producto: PTV (vinos y licores) o el numérico. */
+  protected codigoDe(p: Producto): string {
+    return p.codigoPtv ?? p.codigo ?? '';
   }
 
   protected limpiarFiltros(): void {

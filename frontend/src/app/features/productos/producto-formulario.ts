@@ -12,7 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   NonNullableFormBuilder,
@@ -20,7 +20,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { filter, switchMap } from 'rxjs';
+import { filter, startWith, switchMap } from 'rxjs';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import {
@@ -36,6 +36,7 @@ import { ProductoService } from './producto.service';
 
 type Campo =
   | 'codigoPtv'
+  | 'codigo'
   | 'nombre'
   | 'categoriaId'
   | 'unidadMedidaId'
@@ -43,10 +44,13 @@ type Campo =
   | 'stockCritico'
   | 'costoUnitario';
 
+type ReglaCodigo = 'ninguna' | 'ptv' | 'numerico';
+
 const CAMPOS: readonly Campo[] = [
-  'codigoPtv',
-  'nombre',
   'categoriaId',
+  'codigoPtv',
+  'codigo',
+  'nombre',
   'unidadMedidaId',
   'stockMinimo',
   'stockCritico',
@@ -55,6 +59,7 @@ const CAMPOS: readonly Campo[] = [
 
 const ETIQUETAS: Record<Campo, string> = {
   codigoPtv: 'Código PTV',
+  codigo: 'Código',
   nombre: 'Nombre',
   categoriaId: 'Categoría',
   unidadMedidaId: 'Unidad de medida',
@@ -65,6 +70,7 @@ const ETIQUETAS: Record<Campo, string> = {
 
 const REQUERIDO: Record<Campo, string> = {
   codigoPtv: 'Ingresa el código PTV del producto, por ejemplo PTV0012.',
+  codigo: 'Ingresa el código del producto, por ejemplo 71149.',
   nombre: 'Ingresa el nombre del producto.',
   categoriaId: 'Elige una categoría.',
   unidadMedidaId: 'Elige una unidad de medida.',
@@ -73,10 +79,11 @@ const REQUERIDO: Record<Campo, string> = {
   costoUnitario: 'Ingresa el costo unitario (0 o más).',
 };
 
-const MAXIMO: Partial<Record<Campo, number>> = { codigoPtv: 20, nombre: 150 };
+const MAXIMO: Partial<Record<Campo, number>> = { codigoPtv: 20, codigo: 20, nombre: 150 };
 
 const AYUDA: Partial<Record<Campo, string>> = {
   codigoPtv: 'ayuda-codigoPtv',
+  codigo: 'ayuda-codigo',
   stockCritico: 'ayuda-umbrales',
 };
 
@@ -166,7 +173,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
 
   protected readonly form = this.fb.group(
     {
-      codigoPtv: ['', [Validators.required, Validators.maxLength(20), noSoloEspacios]],
+      codigoPtv: this.fb.control({ value: '', disabled: true }),
+      codigo: this.fb.control({ value: '', disabled: true }),
       nombre: ['', [Validators.required, Validators.maxLength(150), noSoloEspacios]],
       categoriaId: this.fb.control<number | null>(null, Validators.required),
       unidadMedidaId: this.fb.control<number | null>(null, Validators.required),
@@ -190,12 +198,35 @@ export class ProductoFormulario implements ConCambiosPendientes {
     { validators: [criticoMenorOIgualAMinimo] },
   );
 
+  private readonly categoriaElegida = toSignal(
+    this.form.controls.categoriaId.valueChanges.pipe(
+      startWith(this.form.controls.categoriaId.value),
+    ),
+    { requireSync: true },
+  );
+
+  /** Qué código se pide según la categoría elegida (la marca viene de la lista de categorías). */
+  protected readonly reglaCodigo = computed<ReglaCodigo>(() => {
+    const id = this.categoriaElegida();
+    if (id === null) return 'ninguna';
+    const categoria = this.categorias.hasValue()
+      ? this.categorias.value().find((c) => c.id === id)
+      : undefined;
+    if (!categoria) return 'ninguna';
+    return categoria.requierePtv === true ? 'ptv' : 'numerico';
+  });
+
   protected readonly enviado = signal(false);
   protected readonly guardando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
   private readonly enfocarTrasReactivar = signal(false);
 
   constructor() {
+    effect(() => {
+      const regla = this.reglaCodigo();
+      untracked(() => this.aplicarReglaCodigo(regla));
+    });
+
     effect(() => {
       const p = this.productoActual();
       if (!p) return;
@@ -205,7 +236,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
       if (!this.form.pristine) return;
       untracked(() => {
         this.form.reset({
-          codigoPtv: p.codigoPtv,
+          codigoPtv: p.codigoPtv ?? '',
+          codigo: p.codigo ?? '',
           nombre: p.nombre,
           categoriaId: p.categoriaId,
           unidadMedidaId: p.unidadMedidaId,
@@ -267,7 +299,11 @@ export class ProductoFormulario implements ConCambiosPendientes {
       if (errores['maxlength'])
         return `${ETIQUETAS[campo]} admite como máximo ${MAXIMO[campo] ?? 0} caracteres.`;
       if (errores['min']) return `${ETIQUETAS[campo]} no puede ser negativo.`;
-      if (errores['pattern']) return `${ETIQUETAS[campo]} debe ser un número entero.`;
+      if (errores['pattern']) {
+        if (campo === 'codigoPtv') return 'El código PTV solo admite letras y números.';
+        if (campo === 'codigo') return 'El código solo admite números.';
+        return `${ETIQUETAS[campo]} debe ser un número entero.`;
+      }
       return `Revisa el campo ${ETIQUETAS[campo]}.`;
     }
     if (campo === 'stockCritico' && this.form.hasError('criticoMayorQueMinimo')) {
@@ -311,7 +347,8 @@ export class ProductoFormulario implements ConCambiosPendientes {
     )
       return;
     const request: ProductoRequest = {
-      codigoPtv: v.codigoPtv.trim(),
+      codigoPtv: v.codigoPtv.trim() === '' ? null : v.codigoPtv.trim(),
+      codigo: v.codigo.trim() === '' ? null : v.codigo.trim(),
       nombre: v.nombre.trim(),
       categoriaId: v.categoriaId,
       unidadMedidaId: v.unidadMedidaId,
@@ -393,6 +430,47 @@ export class ProductoFormulario implements ConCambiosPendientes {
           this.errorGeneral.set(traducirError(err).mensaje);
         },
       });
+  }
+
+  /**
+   * Activa el campo de código que aplica a la categoría (con su validación) y desactiva y vacía el
+   * otro. Con la categoría aún sin resolver (p. ej. al cargar una edición) solo desactiva ambos,
+   * sin tocar los valores.
+   */
+  private aplicarReglaCodigo(regla: ReglaCodigo): void {
+    const ptv = this.form.controls.codigoPtv;
+    const numerico = this.form.controls.codigo;
+
+    if (regla === 'ptv') {
+      ptv.setValidators([
+        Validators.required,
+        Validators.maxLength(20),
+        Validators.pattern(/^[A-Za-z0-9]+$/),
+        noSoloEspacios,
+      ]);
+      ptv.enable({ emitEvent: false });
+      numerico.clearValidators();
+      if (numerico.value !== '') numerico.setValue('', { emitEvent: false });
+      numerico.disable({ emitEvent: false });
+    } else if (regla === 'numerico') {
+      numerico.setValidators([
+        Validators.required,
+        Validators.maxLength(20),
+        Validators.pattern(/^\d+$/),
+        noSoloEspacios,
+      ]);
+      numerico.enable({ emitEvent: false });
+      ptv.clearValidators();
+      if (ptv.value !== '') ptv.setValue('', { emitEvent: false });
+      ptv.disable({ emitEvent: false });
+    } else {
+      ptv.clearValidators();
+      numerico.clearValidators();
+      ptv.disable({ emitEvent: false });
+      numerico.disable({ emitEvent: false });
+    }
+    ptv.updateValueAndValidity({ emitEvent: false });
+    numerico.updateValueAndValidity({ emitEvent: false });
   }
 
   private aplicarErrorServidor(err: unknown): void {

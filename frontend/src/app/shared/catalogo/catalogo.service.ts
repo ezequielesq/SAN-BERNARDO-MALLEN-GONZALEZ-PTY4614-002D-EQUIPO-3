@@ -7,6 +7,8 @@ export interface CatalogoItem {
   id: number;
   nombre: string;
   activo: boolean;
+  /** Solo en Categorías: sus productos se identifican con código PTV. */
+  requierePtv?: boolean;
 }
 
 export const ENDPOINT_CATEGORIAS = '/categorias';

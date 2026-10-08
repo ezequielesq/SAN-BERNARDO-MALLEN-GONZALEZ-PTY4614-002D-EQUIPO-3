@@ -16,7 +16,7 @@
     >
       <option [ngValue]="null" disabled>Elige un producto</option>
       @for (p of opcionesProducto(); track p.id) {
-        <option [ngValue]="p.id">{{ p.nombre }} ({{ p.codigoPtv }})</option>
+        <option [ngValue]="p.id">{{ p.nombre }} ({{ p.codigoPtv ?? p.codigo }})</option>
       }
     </select>
     @if (enviado() && form.controls.productoId.invalid) {

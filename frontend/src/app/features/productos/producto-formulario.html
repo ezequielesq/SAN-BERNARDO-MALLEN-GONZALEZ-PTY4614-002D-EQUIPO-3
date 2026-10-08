@@ -39,63 +39,6 @@
         </div>
       }
 
-      <div class="w3-section">
-        <label for="campo-codigoPtv"><b>Código PTV</b></label>
-        <p id="ayuda-codigoPtv" class="w3-small">
-          Código del maestro SAP, por ejemplo PTV0012. Máximo 20 caracteres.
-        </p>
-        <input
-          id="campo-codigoPtv"
-          class="w3-input"
-          type="text"
-          formControlName="codigoPtv"
-          maxlength="20"
-          autocomplete="off"
-          [attr.aria-invalid]="mensajeError('codigoPtv') ? 'true' : null"
-          [attr.aria-describedby]="describedBy('codigoPtv')"
-        />
-        @if (mensajeError('codigoPtv'); as m) {
-          <p id="error-codigoPtv" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
-        }
-      </div>
-
-      <div class="w3-section">
-        <label for="campo-nombre"><b>Nombre</b></label>
-        <input
-          id="campo-nombre"
-          class="w3-input"
-          type="text"
-          formControlName="nombre"
-          maxlength="150"
-          autocomplete="off"
-          [attr.aria-invalid]="mensajeError('nombre') ? 'true' : null"
-          [attr.aria-describedby]="describedBy('nombre')"
-        />
-        @if (mensajeError('nombre'); as m) {
-          <p id="error-nombre" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
-        }
-      </div>
-
-      <div class="w3-section">
-        <label for="campo-costoUnitario"><b>Costo unitario ($)</b></label>
-        <input
-          id="campo-costoUnitario"
-          class="w3-input"
-          type="number"
-          min="0"
-          step="1"
-          inputmode="numeric"
-          formControlName="costoUnitario"
-          [attr.aria-invalid]="mensajeError('costoUnitario') ? 'true' : null"
-          [attr.aria-describedby]="describedBy('costoUnitario')"
-        />
-        @if (mensajeError('costoUnitario'); as m) {
-          <p id="error-costoUnitario" class="texto-error">
-            <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
-          </p>
-        }
-      </div>
-
       <div class="w3-row">
         <div class="w3-half w3-section w3-padding-small">
           <label for="campo-categoriaId"><b>Categoría</b></label>
@@ -137,6 +80,98 @@
             </p>
           }
         </div>
+      </div>
+
+      <div class="w3-section">
+        @switch (reglaCodigo()) {
+          @case ('ptv') {
+            <label for="campo-codigoPtv"><b>Código PTV</b></label>
+            <p id="ayuda-codigoPtv" class="w3-small">
+              Letras y números, por ejemplo PTV0012. Máximo 20 caracteres.
+            </p>
+            <input
+              id="campo-codigoPtv"
+              class="w3-input"
+              type="text"
+              formControlName="codigoPtv"
+              maxlength="20"
+              autocomplete="off"
+              [attr.aria-invalid]="mensajeError('codigoPtv') ? 'true' : null"
+              [attr.aria-describedby]="describedBy('codigoPtv')"
+            />
+            @if (mensajeError('codigoPtv'); as m) {
+              <p id="error-codigoPtv" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+            }
+          }
+          @case ('numerico') {
+            <label for="campo-codigo"><b>Código</b></label>
+            <p id="ayuda-codigo" class="w3-small">
+              Solo números, por ejemplo 71149. Máximo 20 caracteres.
+            </p>
+            <input
+              id="campo-codigo"
+              class="w3-input"
+              type="text"
+              inputmode="numeric"
+              formControlName="codigo"
+              maxlength="20"
+              autocomplete="off"
+              [attr.aria-invalid]="mensajeError('codigo') ? 'true' : null"
+              [attr.aria-describedby]="describedBy('codigo')"
+            />
+            @if (mensajeError('codigo'); as m) {
+              <p id="error-codigo" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+            }
+          }
+          @default {
+            <label for="campo-codigo-vacio"><b>Código</b></label>
+            <p id="ayuda-codigo-vacio" class="w3-small">Elige una categoría para ingresar el código.</p>
+            <input
+              id="campo-codigo-vacio"
+              class="w3-input"
+              type="text"
+              disabled
+              aria-describedby="ayuda-codigo-vacio"
+            />
+          }
+        }
+      </div>
+
+      <div class="w3-section">
+        <label for="campo-nombre"><b>Nombre</b></label>
+        <input
+          id="campo-nombre"
+          class="w3-input"
+          type="text"
+          formControlName="nombre"
+          maxlength="150"
+          autocomplete="off"
+          [attr.aria-invalid]="mensajeError('nombre') ? 'true' : null"
+          [attr.aria-describedby]="describedBy('nombre')"
+        />
+        @if (mensajeError('nombre'); as m) {
+          <p id="error-nombre" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+        }
+      </div>
+
+      <div class="w3-section">
+        <label for="campo-costoUnitario"><b>Costo unitario ($)</b></label>
+        <input
+          id="campo-costoUnitario"
+          class="w3-input"
+          type="number"
+          min="0"
+          step="1"
+          inputmode="numeric"
+          formControlName="costoUnitario"
+          [attr.aria-invalid]="mensajeError('costoUnitario') ? 'true' : null"
+          [attr.aria-describedby]="describedBy('costoUnitario')"
+        />
+        @if (mensajeError('costoUnitario'); as m) {
+          <p id="error-costoUnitario" class="texto-error">
+            <span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}
+          </p>
+        }
       </div>
 
       <div class="w3-section">

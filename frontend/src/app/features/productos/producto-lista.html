@@ -8,7 +8,7 @@
 
 <div class="w3-row w3-container w3-border w3-margin w3-padding w3-light-grey">
   <div class="w3-col m5 w3-padding-small">
-    <label for="buscar-producto"><b>Buscar por nombre o código PTV</b></label>
+    <label for="buscar-producto"><b>Buscar por nombre o código</b></label>
     <input
       #campoBusqueda
       id="buscar-producto"
@@ -75,9 +75,9 @@
           </caption>
           <thead>
             <tr class="w3-light-grey">
-              <th scope="col" [attr.aria-sort]="ariaSort('codigoPtv')">
-                <button type="button" class="boton-orden" (click)="ordenarPor('codigoPtv')">
-                  Código PTV <i class="fa {{ iconoOrden('codigoPtv') }}" aria-hidden="true"></i>
+              <th scope="col" [attr.aria-sort]="ariaSort('codigo')">
+                <button type="button" class="boton-orden" (click)="ordenarPor('codigo')">
+                  Código <i class="fa {{ iconoOrden('codigo') }}" aria-hidden="true"></i>
                 </button>
               </th>
               <th scope="col" [attr.aria-sort]="ariaSort('nombre')">
@@ -108,7 +108,7 @@
           <tbody>
             @for (p of paginados(); track p.id) {
               <tr>
-                <td>{{ p.codigoPtv }}</td>
+                <td>{{ codigoDe(p) }}</td>
                 <td>{{ p.nombre }}</td>
                 <td>{{ p.categoriaNombre }}</td>
                 <td>{{ p.unidadMedidaNombre }}</td>
@@ -168,7 +168,7 @@
             <h2 class="w3-medium">
               <b>{{ p.nombre }}</b>
             </h2>
-            <p>{{ p.codigoPtv }} · {{ p.categoriaNombre }} · {{ p.unidadMedidaNombre }}</p>
+            <p>{{ codigoDe(p) }} · {{ p.categoriaNombre }} · {{ p.unidadMedidaNombre }}</p>
             <p>
               Mín / Crítico: {{ p.stockMinimo }} / {{ p.stockCritico }} · Perecible:
               {{ p.esPerecible ? 'Sí' : 'No' }} · Costo unitario:

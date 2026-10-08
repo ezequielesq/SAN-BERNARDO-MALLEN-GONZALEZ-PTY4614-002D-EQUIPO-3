@@ -1,6 +1,7 @@
 export interface Producto {
   id: number;
-  codigoPtv: string;
+  codigoPtv: string | null;
+  codigo: string | null;
   nombre: string;
   categoriaId: number;
   categoriaNombre: string;
@@ -14,7 +15,8 @@ export interface Producto {
 }
 
 export interface ProductoRequest {
-  codigoPtv: string;
+  codigoPtv: string | null;
+  codigo: string | null;
   nombre: string;
   categoriaId: number;
   unidadMedidaId: number;
