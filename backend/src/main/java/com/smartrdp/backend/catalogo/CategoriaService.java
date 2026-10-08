@@ -1,7 +1,7 @@
 package com.smartrdp.backend.catalogo;
 
 import com.smartrdp.backend.catalogo.dto.CatalogoRequest;
-import com.smartrdp.backend.catalogo.dto.CatalogoResponse;
+import com.smartrdp.backend.catalogo.dto.CategoriaResponse;
 import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -17,31 +17,38 @@ public class CategoriaService {
     private final CategoriaRepository categoriaRepository;
 
     @Transactional(readOnly = true)
-    public List<CatalogoResponse> listar(boolean soloActivas) {
+    public List<CategoriaResponse> listar(boolean soloActivas) {
         List<Categoria> categorias = soloActivas
                 ? categoriaRepository.findByActivoTrueOrderByNombreAsc()
                 : categoriaRepository.findAllByOrderByNombreAsc();
-        return categorias.stream().map(CatalogoResponse::from).toList();
+        return categorias.stream().map(CategoriaResponse::from).toList();
     }
 
     @Transactional
-    public CatalogoResponse crear(CatalogoRequest request) {
+    public CategoriaResponse crear(CatalogoRequest request) {
         String nombre = request.nombre().trim();
         if (categoriaRepository.existsByNombreIgnoreCase(nombre)) {
             throw duplicada(nombre);
         }
-        return CatalogoResponse.from(categoriaRepository.save(new Categoria(nombre)));
+        return CategoriaResponse.from(categoriaRepository.save(new Categoria(nombre)));
     }
 
     @Transactional
-    public CatalogoResponse renombrar(Long id, CatalogoRequest request) {
+    public CategoriaResponse renombrar(Long id, CatalogoRequest request) {
         String nombre = request.nombre().trim();
         Categoria categoria = buscar(id);
         if (categoriaRepository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
             throw duplicada(nombre);
         }
         categoria.setNombre(nombre);
-        return CatalogoResponse.from(categoria);
+        return CategoriaResponse.from(categoria);
+    }
+
+    @Transactional
+    public CategoriaResponse cambiarRequierePtv(Long id, boolean requierePtv) {
+        Categoria categoria = buscar(id);
+        categoria.setRequierePtv(requierePtv);
+        return CategoriaResponse.from(categoria);
     }
 
     @Transactional

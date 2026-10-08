@@ -25,6 +25,8 @@ public class DatosInicialesSeeder implements CommandLineRunner {
     static final List<String> CATEGORIAS = List.of(
             "Vinos", "Aguas y bebidas", "Licores", "Abarrotes", "Lácteos", "Frutas y verduras", "Aseo");
 
+    static final java.util.Set<String> CATEGORIAS_CON_PTV = java.util.Set.of("Vinos", "Licores");
+
     static final List<String> UNIDADES = List.of(
             "Unidad", "Botella", "Caja", "Paquete", "Kg", "g", "Litro", "ml");
 
@@ -44,7 +46,9 @@ public class DatosInicialesSeeder implements CommandLineRunner {
     public void run(String... args) {
         for (String nombre : CATEGORIAS) {
             if (!categoriaRepository.existsByNombreIgnoreCase(nombre)) {
-                categoriaRepository.save(new Categoria(nombre));
+                Categoria categoria = new Categoria(nombre);
+                categoria.setRequierePtv(CATEGORIAS_CON_PTV.contains(nombre));
+                categoriaRepository.save(categoria);
             }
         }
         for (String nombre : UNIDADES) {
