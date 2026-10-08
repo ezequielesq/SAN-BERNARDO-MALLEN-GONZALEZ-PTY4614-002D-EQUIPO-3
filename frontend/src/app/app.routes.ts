@@ -10,6 +10,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login').then(m => m.Login),
   },
   {
+    path: 'empleado',
+    title: 'Solicitudes de empleados · Smart RDP',
+    loadComponent: () => import('./features/empleado/empleado-pagina').then(m => m.EmpleadoPagina),
+  },
+  {
     path: '',
     component: Shell,
     canActivate: [authGuard],

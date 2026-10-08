@@ -92,12 +92,14 @@ main .w3-crimson a, main .w3-emerald a { color: #fff; }
 body { font-size: 80%; }
 
 /* ── Login no usa el shell — mismo patrón de footer pegado al fondo ── */
-app-login {
+app-login,
+app-empleado-pagina {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
 }
-app-login > main { flex: 1 0 auto; }
+app-login > main,
+app-empleado-pagina > main { flex: 1 0 auto; }
 
 /* ── Botón de orden en encabezados de tabla (Productos/Movimientos/Stock) ── */
 .boton-orden {

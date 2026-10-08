@@ -1,0 +1,82 @@
+@if (errorGeneral(); as mensaje) {
+  <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+    <p>{{ mensaje }}</p>
+  </div>
+}
+
+<div class="w3-container w3-padding">
+  <p>Indica cuánto devuelves de cada producto del pedido #{{ solicitud().id }}.</p>
+
+  <div class="w3-responsive">
+    <table class="w3-table-all">
+      <caption class="visualmente-oculto">Productos que puedes devolver</caption>
+      <thead>
+        <tr class="w3-light-grey">
+          <th scope="col">Producto</th>
+          <th scope="col">Entregado</th>
+          <th scope="col">Ya devuelto</th>
+          <th scope="col">Puedes devolver</th>
+          <th scope="col">Cantidad a devolver</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (d of detalles(); track d.detalleId) {
+          <tr>
+            <td>{{ d.productoNombre }}</td>
+            <td>{{ d.cantidadEntregada }}</td>
+            <td>{{ d.cantidadDevuelta ?? 0 }}</td>
+            <td>{{ d.devolvible }}</td>
+            <td>
+              <label class="visualmente-oculto" [for]="'devolver-' + d.detalleId">
+                Cantidad a devolver de {{ d.productoNombre }}
+              </label>
+              <input
+                [id]="'devolver-' + d.detalleId"
+                class="w3-input"
+                style="width: 6em"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                [value]="cantidadDe(d.detalleId)"
+                [attr.aria-invalid]="errorCantidad(d) ? 'true' : null"
+                (input)="actualizar(d.detalleId, $any($event.target).value)"
+              />
+              @if (errorCantidad(d); as mensaje) {
+                <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (intento() && total() === 0) {
+    <p class="texto-error" role="alert"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Indica al menos una cantidad a devolver.</p>
+  }
+
+  <div class="w3-section">
+    <label for="devolver-password"><b>Contraseña</b></label>
+    <input
+      id="devolver-password"
+      class="w3-input"
+      type="password"
+      autocomplete="off"
+      [formControl]="password"
+      [attr.aria-invalid]="password.invalid && (password.touched || intento()) ? 'true' : null"
+    />
+    @if (password.invalid && (password.touched || intento())) {
+      <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
+    }
+  </div>
+
+  <div class="w3-margin-top">
+    <button type="button" class="w3-button w3-emerald w3-round" [attr.aria-disabled]="guardando()" (click)="devolver()">
+      {{ guardando() ? 'Enviando…' : 'Enviar devolución' }}
+    </button>
+    <button type="button" class="w3-button w3-white w3-border w3-border-red w3-round w3-margin-left" (click)="cancelar.emit()">
+      Cancelar
+    </button>
+  </div>
+</div>

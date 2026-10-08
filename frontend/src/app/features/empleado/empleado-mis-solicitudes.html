@@ -1,0 +1,120 @@
+<section class="w3-white w3-card w3-border w3-padding w3-margin-bottom" aria-labelledby="titulo-mis">
+  <h2 id="titulo-mis" class="w3-large">Mis solicitudes</h2>
+
+  @if (errorGeneral(); as mensaje) {
+    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+      <p>{{ mensaje }}</p>
+    </div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="consultar()" novalidate>
+    <div class="w3-row">
+      <div class="w3-col m5 w3-padding-small">
+        <label for="mis-empleado"><b>Usuario</b></label>
+        <select
+          id="mis-empleado"
+          class="w3-select"
+          formControlName="empleadoId"
+          [attr.aria-invalid]="errorCampo('empleadoId') ? 'true' : null"
+        >
+          <option [ngValue]="null" disabled>Elige tu usuario</option>
+          @for (e of opcionesEmpleado(); track e.id) {
+            <option [ngValue]="e.id">{{ e.nombre }}</option>
+          }
+        </select>
+        @if (errorCampo('empleadoId')) {
+          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige tu usuario.</p>
+        }
+      </div>
+      <div class="w3-col m5 w3-padding-small">
+        <label for="mis-password"><b>Contraseña</b></label>
+        <input
+          id="mis-password"
+          class="w3-input"
+          type="password"
+          autocomplete="off"
+          formControlName="password"
+          [attr.aria-invalid]="errorCampo('password') ? 'true' : null"
+        />
+        @if (errorCampo('password')) {
+          <p class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa tu contraseña.</p>
+        }
+      </div>
+      <div class="w3-col m2 w3-padding-small">
+        <button type="submit" class="w3-button w3-info w3-round w3-margin-top" [attr.aria-disabled]="cargando()">
+          {{ cargando() ? 'Consultando…' : 'Consultar' }}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (solicitudes(); as lista) {
+    @if (lista.length === 0) {
+      <p>Todavía no tienes solicitudes.</p>
+    } @else {
+      @for (s of lista; track s.id) {
+        <article class="w3-card w3-white w3-border w3-padding w3-margin-top">
+          <div class="w3-bar">
+            <span class="w3-bar-item"><b>#{{ s.id }}</b></span>
+            <span class="w3-bar-item">{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</span>
+            <span class="w3-bar-item">
+              <app-estado-badge [estado]="badgeTipo(s)" />
+              <app-estado-badge [estado]="badgeEstado(s)" />
+              @if (s.solicitudOrigenId !== null) { · del pedido #{{ s.solicitudOrigenId }} }
+            </span>
+          </div>
+          <div class="w3-responsive w3-margin-top">
+            <table class="w3-table-all">
+              <caption class="visualmente-oculto">Productos de la solicitud #{{ s.id }}</caption>
+              <thead>
+                <tr class="w3-light-grey">
+                  <th scope="col">Producto</th>
+                  <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'A devolver' : 'Solicitado' }}</th>
+                  <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'Aceptado' : 'Entregado' }}</th>
+                  @if (s.tipo === 'PEDIDO') {
+                    <th scope="col">Ya devuelto</th>
+                    <th scope="col">Puedes devolver</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of s.detalles; track d.detalleId) {
+                  <tr>
+                    <td>{{ d.productoNombre }}</td>
+                    <td>{{ d.cantidadSolicitada }}</td>
+                    <td>{{ d.cantidadEntregada ?? '—' }}</td>
+                    @if (s.tipo === 'PEDIDO') {
+                      <td>{{ d.cantidadDevuelta ?? 0 }}</td>
+                      <td>{{ d.devolvible ?? 0 }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (puedeDevolver(s)) {
+            <div class="w3-margin-top">
+              <button type="button" class="w3-button w3-warning w3-round" (click)="devolviendo.set(s)">
+                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Devolver
+                <span class="visualmente-oculto">productos del pedido #{{ s.id }}</span>
+              </button>
+            </div>
+          }
+        </article>
+      }
+    }
+  }
+</section>
+
+@if (devolviendo(); as solicitud) {
+  @if (empleadoConsultado(); as empleado) {
+    <app-modal titulo="Devolver productos" (cerrar)="devolviendo.set(null)">
+      <app-empleado-devolucion
+        [solicitud]="solicitud"
+        [empleadoId]="empleado"
+        (devuelto)="alDevolver($event)"
+        (cancelar)="devolviendo.set(null)"
+      />
+    </app-modal>
+  }
+}
