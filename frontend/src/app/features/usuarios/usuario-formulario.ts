@@ -55,6 +55,19 @@ function noSoloEspacios(control: AbstractControl): ValidationErrors | null {
     : null;
 }
 
+const MAX_BYTES_PASSWORD = 72;
+const MENSAJE_PASSWORD_LARGA =
+  'La contraseña es demasiado larga (máximo 72 bytes; las tildes y los símbolos especiales cuentan más de uno).';
+
+function largoMaximoBytes(maximo: number) {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const valor: unknown = control.value;
+    return typeof valor === 'string' && new TextEncoder().encode(valor).length > maximo
+      ? { maxbytes: true }
+      : null;
+  };
+}
+
 function esCampo(valor: string): valor is Campo {
   return (CAMPOS as readonly string[]).includes(valor);
 }
@@ -86,7 +99,15 @@ export class UsuarioFormulario implements ConCambiosPendientes {
     nombre: ['', [Validators.required, Validators.maxLength(100), noSoloEspacios]],
     email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
     rol: this.fb.control<RolAdministrable | null>(null, Validators.required),
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(6),
+        noSoloEspacios,
+        largoMaximoBytes(MAX_BYTES_PASSWORD),
+      ],
+    ],
   });
 
   protected readonly enviado = signal(false);
@@ -105,8 +126,13 @@ export class UsuarioFormulario implements ConCambiosPendientes {
           password: '',
         });
         // Alta: contraseña obligatoria. Edición: opcional (vacía = no cambiarla).
+        const validadoresPassword = [
+          Validators.minLength(6),
+          noSoloEspacios,
+          largoMaximoBytes(MAX_BYTES_PASSWORD),
+        ];
         this.form.controls.password.setValidators(
-          u === null ? [Validators.required, Validators.minLength(6)] : [Validators.minLength(6)],
+          u === null ? [Validators.required, ...validadoresPassword] : validadoresPassword,
         );
         this.form.controls.password.updateValueAndValidity({ emitEvent: false });
       });
@@ -147,7 +173,10 @@ export class UsuarioFormulario implements ConCambiosPendientes {
     if (!errores) return null;
     const servidor: unknown = errores['servidor'];
     if (typeof servidor === 'string') return servidor;
+    if (errores['soloEspacios'] && campo === 'password')
+      return 'La contraseña no puede ser solo espacios.';
     if (errores['required'] || errores['soloEspacios']) return REQUERIDO[campo];
+    if (errores['maxbytes']) return MENSAJE_PASSWORD_LARGA;
     if (errores['maxlength'])
       return `${ETIQUETAS[campo]} admite como máximo ${MAXIMO[campo] ?? 0} caracteres.`;
     if (errores['email']) return REQUERIDO.email;

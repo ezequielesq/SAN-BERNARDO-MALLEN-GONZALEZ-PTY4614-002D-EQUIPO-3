@@ -90,6 +90,7 @@
       class="w3-input"
       formControlName="password"
       autocomplete="new-password"
+      maxlength="72"
       [attr.type]="mostrarPassword() ? 'text' : 'password'"
       [attr.aria-invalid]="mensajeError('password') ? 'true' : null"
       [attr.aria-describedby]="describedBy('password')"

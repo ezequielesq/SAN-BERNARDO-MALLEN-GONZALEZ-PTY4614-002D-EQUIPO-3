@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /** Administración de bodegueros y empleados por el ADMIN (los administradores no se gestionan aquí). */
@@ -19,6 +20,7 @@ public class UsuarioAdminService {
 
     private static final List<Rol> ROLES_ADMINISTRABLES = List.of(Rol.BODEGUERO, Rol.EMPLEADO);
     private static final int LARGO_MINIMO_PASSWORD = 6;
+    private static final int LARGO_MAXIMO_PASSWORD_BYTES = 72;
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
@@ -42,6 +44,7 @@ public class UsuarioAdminService {
         Usuario usuario = new Usuario();
         usuario.setNombre(nombre);
         usuario.setEmail(email);
+        validarLargoPassword(request.password());
         usuario.setPassword(passwordEncoder.encode(request.password()));
         usuario.setRol(rol);
         return UsuarioResponse.from(usuarioRepository.save(usuario));
@@ -57,10 +60,14 @@ public class UsuarioAdminService {
         if (rol == Rol.EMPLEADO && usuario.isActivo()) validarNombreEmpleado(nombre, id);
 
         String password = request.password();
-        if (password != null && !password.isBlank()) {
+        if (password != null && !password.isEmpty()) {
+            if (password.isBlank()) {
+                throw new BusinessException("La contraseña no puede ser solo espacios.", "password");
+            }
             if (password.length() < LARGO_MINIMO_PASSWORD) {
                 throw new BusinessException("La contraseña debe tener al menos 6 caracteres.", "password");
             }
+            validarLargoPassword(password);
             usuario.setPassword(passwordEncoder.encode(password));
         }
         usuario.setNombre(nombre);
@@ -84,6 +91,13 @@ public class UsuarioAdminService {
     private Usuario buscar(Long id) {
         return usuarioRepository.findByIdAndRolIn(id, ROLES_ADMINISTRABLES)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", id));
+    }
+
+    private void validarLargoPassword(String password) {
+        if (password.getBytes(StandardCharsets.UTF_8).length > LARGO_MAXIMO_PASSWORD_BYTES) {
+            throw new BusinessException("La contraseña es demasiado larga (máximo 72 bytes; "
+                    + "las tildes y los símbolos especiales cuentan más de uno).", "password");
+        }
     }
 
     private Rol validarRol(Rol rol) {
