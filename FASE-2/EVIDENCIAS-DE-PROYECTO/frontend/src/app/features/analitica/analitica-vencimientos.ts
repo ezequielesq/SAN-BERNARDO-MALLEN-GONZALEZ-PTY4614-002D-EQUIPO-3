@@ -1,9 +1,26 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
+import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
+import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
 import { ProductoService } from '../productos/producto.service';
+import { VencimientoDto } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { VencimientoCalendario } from './vencimiento-calendario';
+
+type ColumnaOrdenVencimiento = 'fechaVencimiento' | 'nombre' | 'cantidadEnRiesgo';
+
+const EXTRACTORES_VENCIMIENTO: Extractores<VencimientoDto, ColumnaOrdenVencimiento> = {
+  fechaVencimiento: (v) => Date.parse(v.fechaVencimiento),
+  nombre: (v) => v.nombre,
+  cantidadEnRiesgo: (v) => v.cantidadEnRiesgo,
+};
+
+const OPCIONES_VENCIMIENTO: readonly OpcionOrden[] = [
+  { valor: 'fechaVencimiento', etiqueta: 'Fecha de vencimiento' },
+  { valor: 'nombre', etiqueta: 'Producto' },
+  { valor: 'cantidadEnRiesgo', etiqueta: 'Cantidad en riesgo' },
+];
 
 interface OpcionCategoria {
   id: number;
@@ -16,7 +33,7 @@ function formatearFecha(fecha: Date): string {
 
 @Component({
   selector: 'app-analitica-vencimientos',
-  imports: [DatePipe, EstadoBadge, VencimientoCalendario],
+  imports: [DatePipe, EstadoBadge, SelectorOrden, VencimientoCalendario],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-vencimientos.html',
 })
@@ -48,6 +65,11 @@ export class AnaliticaVencimientos {
   }));
   protected readonly tarjetas = this.analiticaService.vencimientos(this.filtroUmbral);
   protected readonly filasTarjetas = computed(() => (this.tarjetas.hasValue() ? this.tarjetas.value() : []));
+  protected readonly ordenTarjetas = new Orden<ColumnaOrdenVencimiento>({ columna: 'fechaVencimiento' });
+  protected readonly opcionesTarjetas = OPCIONES_VENCIMIENTO;
+  protected readonly tarjetasOrdenadas = computed(() =>
+    ordenar(this.filasTarjetas(), this.ordenTarjetas, EXTRACTORES_VENCIMIENTO),
+  );
 
   private readonly filtroRango = computed(() => ({
     desde: this.desdeFiltro(),

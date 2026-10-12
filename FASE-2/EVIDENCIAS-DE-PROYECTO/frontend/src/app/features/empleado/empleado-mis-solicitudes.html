@@ -54,56 +54,61 @@
     @if (lista.length === 0) {
       <p>Todavía no tienes solicitudes.</p>
     } @else {
-      @for (s of lista; track s.id) {
-        <article class="w3-card w3-white w3-border w3-padding w3-margin-top">
-          <div class="w3-bar">
-            <span class="w3-bar-item"><b>#{{ s.id }}</b></span>
-            <span class="w3-bar-item">{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</span>
-            <span class="w3-bar-item">
-              <app-estado-badge [estado]="badgeTipo(s)" />
-              <app-estado-badge [estado]="badgeEstado(s)" />
-              @if (s.solicitudOrigenId !== null) { · del pedido #{{ s.solicitudOrigenId }} }
-            </span>
-          </div>
-          <div class="w3-responsive w3-margin-top">
-            <table class="w3-table-all">
-              <caption class="visualmente-oculto">Productos de la solicitud #{{ s.id }}</caption>
-              <thead>
-                <tr class="w3-light-grey">
-                  <th scope="col">Producto</th>
-                  <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'A devolver' : 'Solicitado' }}</th>
-                  <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'Aceptado' : 'Entregado' }}</th>
-                  @if (s.tipo === 'PEDIDO') {
-                    <th scope="col">Ya devuelto</th>
-                    <th scope="col">Puedes devolver</th>
-                  }
-                </tr>
-              </thead>
-              <tbody>
-                @for (d of s.detalles; track d.detalleId) {
-                  <tr>
-                    <td>{{ d.productoNombre }}</td>
-                    <td>{{ d.cantidadSolicitada }}</td>
-                    <td>{{ d.cantidadEntregada ?? '—' }}</td>
-                    @if (s.tipo === 'PEDIDO') {
-                      <td>{{ d.cantidadDevuelta ?? 0 }}</td>
-                      <td>{{ d.devolvible ?? 0 }}</td>
+      <app-selector-orden idCampo="orden-mis-solicitudes" [orden]="orden" [opciones]="opcionesOrden" />
+      <ul class="grilla-solicitudes">
+        @for (s of solicitudesOrdenadas(); track s.id) {
+          <li>
+            <article class="w3-card w3-white w3-border w3-padding">
+              <h3 class="w3-medium">
+                <b>Solicitud #{{ s.id }}</b>
+                <app-estado-badge [estado]="badgeTipo(s)" />
+                <app-estado-badge [estado]="badgeEstado(s)" />
+              </h3>
+              @if (s.solicitudOrigenId !== null) {
+                <p class="w3-small">Del pedido #{{ s.solicitudOrigenId }}</p>
+              }
+              <p class="w3-small">{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</p>
+              <div class="w3-responsive">
+                <table class="w3-table-all">
+                  <caption class="visualmente-oculto">Productos de la solicitud #{{ s.id }}</caption>
+                  <thead>
+                    <tr class="w3-light-grey">
+                      <th scope="col">Producto</th>
+                      <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'A devolver' : 'Solicitado' }}</th>
+                      <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'Aceptado' : 'Entregado' }}</th>
+                      @if (s.tipo === 'PEDIDO') {
+                        <th scope="col">Ya devuelto</th>
+                        <th scope="col">Puedes devolver</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (d of s.detalles; track d.detalleId) {
+                      <tr>
+                        <td>{{ d.productoNombre }}</td>
+                        <td>{{ d.cantidadSolicitada }}</td>
+                        <td>{{ d.cantidadEntregada ?? '—' }}</td>
+                        @if (s.tipo === 'PEDIDO') {
+                          <td>{{ d.cantidadDevuelta ?? 0 }}</td>
+                          <td>{{ d.devolvible ?? 0 }}</td>
+                        }
+                      </tr>
                     }
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-          @if (puedeDevolver(s)) {
-            <div class="w3-margin-top">
-              <button type="button" class="w3-button w3-warning w3-round" (click)="devolviendo.set(s)">
-                <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Devolver
-                <span class="visualmente-oculto">productos del pedido #{{ s.id }}</span>
-              </button>
-            </div>
-          }
-        </article>
-      }
+                  </tbody>
+                </table>
+              </div>
+              @if (puedeDevolver(s)) {
+                <div class="acciones-tarjeta">
+                  <button type="button" class="w3-button w3-warning w3-round" (click)="devolviendo.set(s)">
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Devolver
+                    <span class="visualmente-oculto">productos del pedido #{{ s.id }}</span>
+                  </button>
+                </div>
+              }
+            </article>
+          </li>
+        }
+      </ul>
     }
   }
 </section>

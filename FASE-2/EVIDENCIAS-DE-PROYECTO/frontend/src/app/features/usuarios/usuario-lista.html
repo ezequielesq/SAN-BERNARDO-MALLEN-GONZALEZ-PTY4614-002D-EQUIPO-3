@@ -50,15 +50,15 @@
           </caption>
           <thead>
             <tr class="w3-light-grey">
-              <th scope="col">Nombre</th>
-              <th scope="col">Correo</th>
-              <th scope="col">Rol</th>
-              <th scope="col">Estado</th>
+              <th appThOrden [orden]="orden" columna="nombre">Nombre</th>
+              <th appThOrden [orden]="orden" columna="email">Correo</th>
+              <th appThOrden [orden]="orden" columna="rol">Rol</th>
+              <th appThOrden [orden]="orden" columna="estado">Estado</th>
               <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
-            @for (u of filtrados(); track u.id) {
+            @for (u of ordenados(); track u.id) {
               <tr>
                 <td>{{ u.nombre }}</td>
                 <td>{{ u.email }}</td>

@@ -16,7 +16,17 @@ import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { EstadoBadge } from '../estado-badge/estado-badge';
 import { EstadoVista } from '../estado-vista/estado-vista';
+import { Extractores, Orden, ordenar } from '../ordenamiento/orden';
+import { ThOrden } from '../ordenamiento/th-orden';
 import { CatalogoItem, CatalogoService } from './catalogo.service';
+
+type ColumnaOrdenCatalogo = 'nombre' | 'requierePtv' | 'estado';
+
+const EXTRACTORES_CATALOGO: Extractores<CatalogoItem, ColumnaOrdenCatalogo> = {
+  nombre: (i) => i.nombre,
+  requierePtv: (i) => Number(i.requierePtv === true),
+  estado: (i) => Number(i.activo),
+};
 
 export interface ConfigCatalogo {
   titulo: string;
@@ -40,7 +50,7 @@ function capitalizar(texto: string): string {
 
 @Component({
   selector: 'app-catalogo-mantenedor',
-  imports: [ReactiveFormsModule, EstadoVista, EstadoBadge],
+  imports: [ReactiveFormsModule, EstadoVista, EstadoBadge, ThOrden],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './catalogo-mantenedor.html',
 })
@@ -55,6 +65,8 @@ export class CatalogoMantenedor {
   protected readonly singularMayuscula = capitalizar(this.config.singular);
   protected readonly items = this.catalogoService.listar(this.config.endpoint, false);
   protected readonly lista = computed(() => (this.items.hasValue() ? this.items.value() : []));
+  protected readonly orden = new Orden<ColumnaOrdenCatalogo>();
+  protected readonly listaOrdenada = computed(() => ordenar(this.lista(), this.orden, EXTRACTORES_CATALOGO));
 
   protected readonly nuevoForm = this.fb.group({
     nombre: ['', [Validators.required, Validators.maxLength(50)]],

@@ -34,8 +34,9 @@
   @if (filasTarjetas().length === 0) {
     <p>Sin productos próximos a vencer o vencidos.</p>
   } @else {
+    <app-selector-orden idCampo="orden-vencimientos-tarjetas" [orden]="ordenTarjetas" [opciones]="opcionesTarjetas" />
     <ul class="grilla-tarjetas">
-      @for (v of filasTarjetas(); track v.productoId) {
+      @for (v of tarjetasOrdenadas(); track v.productoId) {
         <li>
           <article class="w3-card w3-white w3-padding w3-border">
             <h3 class="w3-medium"><b>{{ v.nombre }}</b></h3>

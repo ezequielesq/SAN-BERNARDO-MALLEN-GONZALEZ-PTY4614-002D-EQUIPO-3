@@ -31,74 +31,78 @@
     mensajeVacio="No hay solicitudes pendientes."
     (reintentar)="pendientes.reload()"
   >
-    @for (s of listaPendientes(); track s.id) {
-      <div class="w3-card w3-white w3-margin-bottom w3-padding">
-        <div class="w3-bar">
-          <span class="w3-bar-item"><b>Solicitud #{{ s.id }}</b></span>
-          <span class="w3-bar-item">
-            <app-estado-badge [estado]="badgeTipo(s)" />
-            @if (s.solicitudOrigenId !== null) { · del pedido #{{ s.solicitudOrigenId }} }
-          </span>
-          <span class="w3-bar-item">{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }}</span>
-          <span class="w3-bar-item">{{ s.solicitanteNombre }}</span>
-        </div>
-        <div class="w3-responsive w3-margin-top">
-          <table class="w3-table-all">
-            <caption class="visualmente-oculto">Ítems de la solicitud #{{ s.id }}</caption>
-            <thead>
-              <tr class="w3-light-grey">
-                <th scope="col">Producto</th>
-                <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'Cantidad a devolver' : 'Cantidad solicitada' }}</th>
-                <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'Cantidad a aceptar' : 'Cantidad a entregar' }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (d of s.detalles; track d.detalleId) {
-                <tr>
-                  <td>{{ d.productoNombre }}</td>
-                  <td>{{ d.cantidadSolicitada }}</td>
-                  <td>
-                    <label class="visualmente-oculto" [for]="'entregada-' + d.detalleId">
-                      {{ s.tipo === 'DEVOLUCION' ? 'Cantidad a aceptar de' : 'Cantidad a entregar de' }} {{ d.productoNombre }}
-                    </label>
-                    <input
-                      [id]="'entregada-' + d.detalleId"
-                      class="w3-input"
-                      style="width: 6em"
-                      type="number"
-                      min="0"
-                      [attr.max]="d.cantidadSolicitada"
-                      step="1"
-                      inputmode="numeric"
-                      [value]="cantidadEditada(d)"
-                      (change)="actualizarCantidad(d.detalleId, $any($event.target).value)"
-                    />
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="w3-margin-top">
-          <button
-            type="button"
-            class="w3-button w3-emerald w3-round"
-            [attr.aria-disabled]="guardandoId() === s.id"
-            (click)="aprobar(s)"
-          >
-            {{ guardandoId() === s.id ? 'Procesando…' : 'Aprobar' }}
-          </button>
-          <button
-            type="button"
-            class="w3-button w3-crimson w3-round w3-margin-left"
-            [attr.aria-disabled]="guardandoId() === s.id"
-            (click)="rechazar(s)"
-          >
-            Rechazar
-          </button>
-        </div>
-      </div>
-    }
+    <app-selector-orden idCampo="orden-solicitudes-pendientes" [orden]="ordenPendientes" [opciones]="opcionesPendientes" />
+    <ul class="grilla-solicitudes">
+      @for (s of pendientesOrdenadas(); track s.id) {
+        <li>
+          <article class="w3-card w3-white w3-padding">
+            <h2 class="w3-medium">
+              <b>Solicitud #{{ s.id }}</b>
+              <app-estado-badge [estado]="badgeTipo(s)" />
+            </h2>
+            @if (s.solicitudOrigenId !== null) {
+              <p class="w3-small">Del pedido #{{ s.solicitudOrigenId }}</p>
+            }
+            <p class="w3-small">{{ s.fecha | date: 'dd-MM-yyyy HH:mm' }} · {{ s.solicitanteNombre }}</p>
+            <div class="w3-responsive">
+              <table class="w3-table-all">
+                <caption class="visualmente-oculto">Ítems de la solicitud #{{ s.id }}</caption>
+                <thead>
+                  <tr class="w3-light-grey">
+                    <th scope="col">Producto</th>
+                    <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'A devolver' : 'Solicitado' }}</th>
+                    <th scope="col">{{ s.tipo === 'DEVOLUCION' ? 'A aceptar' : 'A entregar' }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of s.detalles; track d.detalleId) {
+                    <tr>
+                      <td>{{ d.productoNombre }}</td>
+                      <td>{{ d.cantidadSolicitada }}</td>
+                      <td>
+                        <label class="visualmente-oculto" [for]="'entregada-' + d.detalleId">
+                          {{ s.tipo === 'DEVOLUCION' ? 'Cantidad a aceptar de' : 'Cantidad a entregar de' }} {{ d.productoNombre }}
+                        </label>
+                        <input
+                          [id]="'entregada-' + d.detalleId"
+                          class="w3-input"
+                          style="width: 5em"
+                          type="number"
+                          min="0"
+                          [attr.max]="d.cantidadSolicitada"
+                          step="1"
+                          inputmode="numeric"
+                          [value]="cantidadEditada(d)"
+                          (change)="actualizarCantidad(d.detalleId, $any($event.target).value)"
+                        />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <div class="acciones-tarjeta">
+              <button
+                type="button"
+                class="w3-button w3-emerald w3-round"
+                [attr.aria-disabled]="guardandoId() === s.id"
+                (click)="aprobar(s)"
+              >
+                {{ guardandoId() === s.id ? 'Procesando…' : 'Aprobar' }}
+              </button>
+              <button
+                type="button"
+                class="w3-button w3-crimson w3-round w3-margin-left"
+                [attr.aria-disabled]="guardandoId() === s.id"
+                (click)="rechazar(s)"
+              >
+                Rechazar
+              </button>
+            </div>
+          </article>
+        </li>
+      }
+    </ul>
   </app-estado-vista>
   </div>
 } @else {
@@ -141,11 +145,11 @@
         <caption class="visualmente-oculto">Historial de solicitudes</caption>
         <thead>
           <tr class="w3-light-grey">
-            <th scope="col">Fecha</th>
-            <th scope="col">Solicitante</th>
-            <th scope="col">Tipo</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Ítems</th>
+            <th appThOrden [orden]="orden" columna="fecha">Fecha</th>
+            <th appThOrden [orden]="orden" columna="solicitanteNombre">Solicitante</th>
+            <th appThOrden [orden]="orden" columna="tipo">Tipo</th>
+            <th appThOrden [orden]="orden" columna="estado">Estado</th>
+            <th appThOrden [orden]="orden" columna="items">Ítems</th>
             <th scope="col"><span class="visualmente-oculto">Detalle</span></th>
           </tr>
         </thead>

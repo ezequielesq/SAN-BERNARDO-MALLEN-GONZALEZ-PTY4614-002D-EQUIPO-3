@@ -16,6 +16,8 @@ import { NotificacionService } from '../../core/notificaciones/notificacion.serv
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Modal } from '../../shared/modal/modal';
+import { Orden, ordenar } from '../../shared/ordenamiento/orden';
+import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { descargarArchivo } from '../../shared/utils/descargar-archivo';
 import { ProductoFormulario } from './producto-formulario';
@@ -39,7 +41,7 @@ function normalizar(texto: string): string {
 
 @Component({
   selector: 'app-producto-lista',
-  imports: [EstadoVista, EstadoBadge, Paginacion, Modal, ProductoFormulario],
+  imports: [EstadoVista, EstadoBadge, Paginacion, ThOrden, Modal, ProductoFormulario],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './producto-lista.html',
 })
@@ -60,8 +62,7 @@ export class ProductoLista {
   protected readonly paginaActual = signal(1);
   protected readonly tamanoPagina = signal(10);
   protected readonly exportando = signal(false);
-  protected readonly columnaOrden = signal<ColumnaOrdenProducto | null>(null);
-  protected readonly direccionOrden = signal<'asc' | 'desc'>('asc');
+  protected readonly orden = new Orden<ColumnaOrdenProducto>(null, () => this.paginaActual.set(1));
 
   protected readonly modalProducto = signal<'nuevo' | number | null>(null);
 
@@ -101,27 +102,14 @@ export class ProductoLista {
     );
   });
 
-  protected readonly ordenados = computed(() => {
-    const columna = this.columnaOrden();
-    const lista = [...this.filtrados()];
-    if (columna === null) return lista;
-    const dir = this.direccionOrden() === 'asc' ? 1 : -1;
-    lista.sort((a, b) => {
-      switch (columna) {
-        case 'codigo':
-          return (
-            this.codigoDe(a).localeCompare(this.codigoDe(b), 'es', { numeric: true }) * dir
-          );
-        case 'nombre':
-          return a.nombre.localeCompare(b.nombre, 'es') * dir;
-        case 'categoriaNombre':
-          return a.categoriaNombre.localeCompare(b.categoriaNombre, 'es') * dir;
-        case 'estado':
-          return (Number(a.activo) - Number(b.activo)) * dir;
-      }
-    });
-    return lista;
-  });
+  protected readonly ordenados = computed(() =>
+    ordenar(this.filtrados(), this.orden, {
+      codigo: (p) => this.codigoDe(p),
+      nombre: (p) => p.nombre,
+      categoriaNombre: (p) => p.categoriaNombre,
+      estado: (p) => Number(p.activo),
+    }),
+  );
 
   protected readonly mensajeVacio = computed(() =>
     this.puedeGestionar()
@@ -164,25 +152,6 @@ export class ProductoLista {
 
   protected cerrarModalProducto(): void {
     this.modalProducto.set(null);
-  }
-
-  protected ordenarPor(columna: ColumnaOrdenProducto): void {
-    if (this.columnaOrden() === columna) {
-      this.direccionOrden.update((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      this.columnaOrden.set(columna);
-      this.direccionOrden.set('asc');
-    }
-  }
-
-  protected iconoOrden(columna: ColumnaOrdenProducto): string {
-    if (this.columnaOrden() !== columna) return 'fa-sort';
-    return this.direccionOrden() === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-  }
-
-  protected ariaSort(columna: ColumnaOrdenProducto): 'ascending' | 'descending' | null {
-    if (this.columnaOrden() !== columna) return null;
-    return this.direccionOrden() === 'asc' ? 'ascending' : 'descending';
   }
 
   protected cambiarPagina(pagina: number): void {

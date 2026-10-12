@@ -49,16 +49,16 @@
         </caption>
         <thead>
           <tr class="w3-light-grey">
-            <th scope="col">Nombre</th>
+            <th appThOrden [orden]="orden" columna="nombre">Nombre</th>
             @if (config.conRequierePtv) {
-              <th scope="col">Requiere código PTV</th>
+              <th appThOrden [orden]="orden" columna="requierePtv">Requiere código PTV</th>
             }
-            <th scope="col">Estado</th>
+            <th appThOrden [orden]="orden" columna="estado">Estado</th>
             <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (item of lista(); track item.id) {
+          @for (item of listaOrdenada(); track item.id) {
             @if (editandoId() === item.id) {
               <tr>
                 <td [attr.colspan]="config.conRequierePtv ? 4 : 3">

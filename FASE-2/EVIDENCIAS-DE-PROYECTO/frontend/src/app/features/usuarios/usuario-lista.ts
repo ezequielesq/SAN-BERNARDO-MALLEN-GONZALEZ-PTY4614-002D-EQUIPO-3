@@ -7,9 +7,20 @@ import { NotificacionService } from '../../core/notificaciones/notificacion.serv
 import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Modal } from '../../shared/modal/modal';
+import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
+import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { UsuarioFormulario } from './usuario-formulario';
 import { Usuario } from './usuario.modelo';
 import { UsuarioService } from './usuario.service';
+
+type ColumnaOrdenUsuario = 'nombre' | 'email' | 'rol' | 'estado';
+
+const EXTRACTORES_USUARIO: Extractores<Usuario, ColumnaOrdenUsuario> = {
+  nombre: (u) => u.nombre,
+  email: (u) => u.email,
+  rol: (u) => ETIQUETA_ROL[u.rol],
+  estado: (u) => Number(u.activo),
+};
 
 function normalizar(texto: string): string {
   return texto
@@ -21,7 +32,7 @@ function normalizar(texto: string): string {
 
 @Component({
   selector: 'app-usuario-lista',
-  imports: [EstadoVista, Modal, UsuarioFormulario],
+  imports: [EstadoVista, Modal, ThOrden, UsuarioFormulario],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './usuario-lista.html',
 })
@@ -45,6 +56,9 @@ export class UsuarioLista {
         texto === '' || normalizar(u.nombre).includes(texto) || normalizar(u.email).includes(texto),
     );
   });
+
+  protected readonly orden = new Orden<ColumnaOrdenUsuario>();
+  protected readonly ordenados = computed(() => ordenar(this.filtrados(), this.orden, EXTRACTORES_USUARIO));
 
   protected readonly tituloModal = computed(() =>
     this.modalUsuario() === 'nuevo' ? 'Nuevo usuario' : 'Editar usuario',

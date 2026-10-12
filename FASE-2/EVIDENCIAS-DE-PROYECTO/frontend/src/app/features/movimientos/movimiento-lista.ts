@@ -10,6 +10,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { Modal } from '../../shared/modal/modal';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
+import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
+import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { ProductoService } from '../productos/producto.service';
 import { MovimientoCalendario } from './movimiento-calendario';
@@ -20,9 +22,17 @@ import { MovimientoService } from './movimiento.service';
 
 type ColumnaOrdenMovimiento = 'fecha' | 'productoNombre' | 'tipo' | 'cantidad' | 'usuarioEmail';
 
+const EXTRACTORES_MOVIMIENTO: Extractores<Movimiento, ColumnaOrdenMovimiento> = {
+  fecha: (m) => new Date(m.fecha).getTime(),
+  productoNombre: (m) => m.productoNombre,
+  tipo: (m) => m.tipo,
+  cantidad: (m) => m.cantidad,
+  usuarioEmail: (m) => m.usuarioEmail,
+};
+
 @Component({
   selector: 'app-movimiento-lista',
-  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, MovimientoCalendario, Modal, MovimientoFormularioEntrada, MovimientoFormularioSalida],
+  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, ThOrden, MovimientoCalendario, Modal, MovimientoFormularioEntrada, MovimientoFormularioSalida],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimiento-lista.html',
 })
@@ -50,8 +60,7 @@ export class MovimientoLista {
   protected readonly tamanoPagina = signal(10);
   protected readonly tipoFiltro = signal<TipoMovimiento | null>(null);
   protected readonly usuarioFiltro = signal('');
-  protected readonly columnaOrden = signal<ColumnaOrdenMovimiento | null>(null);
-  protected readonly direccionOrden = signal<'asc' | 'desc'>('asc');
+  protected readonly orden = new Orden<ColumnaOrdenMovimiento>(null, () => this.paginaActual.set(1));
 
   protected readonly productos = this.productoService.listar(signal(true));
   protected readonly opcionesProducto = computed(() =>
@@ -79,27 +88,7 @@ export class MovimientoLista {
     );
   });
 
-  protected readonly ordenados = computed(() => {
-    const columna = this.columnaOrden();
-    const lista = [...this.filtrados()];
-    if (columna === null) return lista;
-    const dir = this.direccionOrden() === 'asc' ? 1 : -1;
-    lista.sort((a, b) => {
-      switch (columna) {
-        case 'fecha':
-          return (new Date(a.fecha).getTime() - new Date(b.fecha).getTime()) * dir;
-        case 'productoNombre':
-          return a.productoNombre.localeCompare(b.productoNombre, 'es') * dir;
-        case 'tipo':
-          return a.tipo.localeCompare(b.tipo, 'es') * dir;
-        case 'cantidad':
-          return (a.cantidad - b.cantidad) * dir;
-        case 'usuarioEmail':
-          return (a.usuarioEmail ?? '').localeCompare(b.usuarioEmail ?? '', 'es') * dir;
-      }
-    });
-    return lista;
-  });
+  protected readonly ordenados = computed(() => ordenar(this.filtrados(), this.orden, EXTRACTORES_MOVIMIENTO));
 
   protected readonly paginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
@@ -154,25 +143,6 @@ export class MovimientoLista {
     this.tipoFiltro.set(null);
     this.usuarioFiltro.set('');
     this.paginaActual.set(1);
-  }
-
-  protected ordenarPor(columna: ColumnaOrdenMovimiento): void {
-    if (this.columnaOrden() === columna) {
-      this.direccionOrden.update((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      this.columnaOrden.set(columna);
-      this.direccionOrden.set('asc');
-    }
-  }
-
-  protected iconoOrden(columna: ColumnaOrdenMovimiento): string {
-    if (this.columnaOrden() !== columna) return 'fa-sort';
-    return this.direccionOrden() === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-  }
-
-  protected ariaSort(columna: ColumnaOrdenMovimiento): 'ascending' | 'descending' | null {
-    if (this.columnaOrden() !== columna) return null;
-    return this.direccionOrden() === 'asc' ? 'ascending' : 'descending';
   }
 
   protected costoTotal(m: Movimiento): number | null {

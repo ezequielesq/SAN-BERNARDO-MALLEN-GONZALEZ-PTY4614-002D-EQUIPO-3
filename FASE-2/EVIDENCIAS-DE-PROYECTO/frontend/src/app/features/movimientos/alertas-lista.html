@@ -24,8 +24,9 @@
     mensajeVacio="No hay lotes por vencer en el rango seleccionado."
     (reintentar)="alertas.reload()"
   >
+    <app-selector-orden idCampo="orden-alertas" [orden]="orden" [opciones]="opciones" />
     <ul class="grilla-tarjetas">
-      @for (a of todos(); track a.loteId) {
+      @for (a of ordenadas(); track a.loteId) {
         <li>
           <article class="w3-card w3-white w3-border w3-padding">
             <h2 class="w3-medium"><b>{{ a.productoNombre }}</b></h2>

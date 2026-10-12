@@ -8,15 +8,34 @@ import { NotificacionService } from '../../core/notificaciones/notificacion.serv
 import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
+import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
+import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
+import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { AprobarSolicitudRequest, DetalleSolicitud, EstadoSolicitud, Solicitud } from './solicitud.modelo';
 import { SolicitudService } from './solicitud.service';
 
 type Vista = 'pendientes' | 'todas';
+type ColumnaOrdenSolicitud = 'id' | 'fecha' | 'solicitanteNombre' | 'tipo' | 'estado' | 'items';
+
+const EXTRACTORES_SOLICITUD: Extractores<Solicitud, ColumnaOrdenSolicitud> = {
+  id: (s) => s.id,
+  fecha: (s) => new Date(s.fecha).getTime(),
+  solicitanteNombre: (s) => s.solicitanteNombre,
+  tipo: (s) => s.tipo,
+  estado: (s) => s.estado,
+  items: (s) => s.detalles.length,
+};
+
+const OPCIONES_PENDIENTES: readonly OpcionOrden[] = [
+  { valor: 'fecha', etiqueta: 'Fecha' },
+  { valor: 'solicitanteNombre', etiqueta: 'Solicitante' },
+  { valor: 'id', etiqueta: 'Número' },
+];
 
 @Component({
   selector: 'app-solicitud-lista',
-  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion],
+  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, ThOrden, SelectorOrden],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './solicitud-lista.html',
 })
@@ -48,9 +67,18 @@ export class SolicitudLista {
   );
   protected readonly listaTodas = computed(() => (this.todasLista.hasValue() ? this.todasLista.value() : []));
 
+  protected readonly opcionesPendientes = OPCIONES_PENDIENTES;
+  protected readonly ordenPendientes = new Orden<ColumnaOrdenSolicitud>({ columna: 'fecha' });
+  protected readonly orden = new Orden<ColumnaOrdenSolicitud>(null, () => this.paginaActual.set(1));
+
+  protected readonly pendientesOrdenadas = computed(() =>
+    ordenar(this.listaPendientes(), this.ordenPendientes, EXTRACTORES_SOLICITUD),
+  );
+  protected readonly ordenadas = computed(() => ordenar(this.listaTodas(), this.orden, EXTRACTORES_SOLICITUD));
+
   protected readonly paginadas = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
-    return this.listaTodas().slice(inicio, inicio + this.tamanoPagina());
+    return this.ordenadas().slice(inicio, inicio + this.tamanoPagina());
   });
 
   protected badgeTipo(s: Solicitud): TipoEstado {
