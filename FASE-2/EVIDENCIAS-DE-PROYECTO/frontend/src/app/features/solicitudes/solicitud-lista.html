@@ -33,7 +33,7 @@
   >
     <app-selector-orden idCampo="orden-solicitudes-pendientes" [orden]="ordenPendientes" [opciones]="opcionesPendientes" />
     <ul class="grilla-solicitudes">
-      @for (s of pendientesOrdenadas(); track s.id) {
+      @for (s of pendientesPaginadas(); track s.id) {
         <li>
           <article class="w3-card w3-white w3-padding">
             <h2 class="w3-medium">
@@ -103,6 +103,15 @@
         </li>
       }
     </ul>
+    <app-paginacion
+      [pagina]="paginaPendientesActual()"
+      [totalItems]="listaPendientes().length"
+      [tamanoPagina]="tamanoPendientes()"
+      [opcionesTamano]="opcionesTamanoPendientes"
+      etiquetaTamano="Tarjetas por página"
+      (paginaCambiada)="cambiarPaginaPendientes($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoPendientes($event)"
+    />
   </app-estado-vista>
   </div>
 } @else {

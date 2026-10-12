@@ -26,7 +26,7 @@
   >
     <app-selector-orden idCampo="orden-alertas" [orden]="orden" [opciones]="opciones" />
     <ul class="grilla-tarjetas">
-      @for (a of ordenadas(); track a.loteId) {
+      @for (a of paginadas(); track a.loteId) {
         <li>
           <article class="w3-card w3-white w3-border w3-padding">
             <h2 class="w3-medium"><b>{{ a.productoNombre }}</b></h2>
@@ -37,5 +37,14 @@
         </li>
       }
     </ul>
+    <app-paginacion
+      [pagina]="paginaActual()"
+      [totalItems]="ordenadas().length"
+      [tamanoPagina]="tamanoPagina()"
+      [opcionesTamano]="opcionesTamano"
+      etiquetaTamano="Tarjetas por página"
+      (paginaCambiada)="cambiarPagina($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+    />
   </app-estado-vista>
 </div>

@@ -68,12 +68,25 @@ export class SolicitudLista {
   protected readonly listaTodas = computed(() => (this.todasLista.hasValue() ? this.todasLista.value() : []));
 
   protected readonly opcionesPendientes = OPCIONES_PENDIENTES;
-  protected readonly ordenPendientes = new Orden<ColumnaOrdenSolicitud>({ columna: 'fecha' });
+  protected readonly paginaPendientes = signal(1);
+  protected readonly tamanoPendientes = signal(9);
+  protected readonly opcionesTamanoPendientes = [6, 9, 12, 24] as const;
+  protected readonly ordenPendientes = new Orden<ColumnaOrdenSolicitud>({ columna: 'fecha' }, () =>
+    this.paginaPendientes.set(1),
+  );
   protected readonly orden = new Orden<ColumnaOrdenSolicitud>(null, () => this.paginaActual.set(1));
 
   protected readonly pendientesOrdenadas = computed(() =>
     ordenar(this.listaPendientes(), this.ordenPendientes, EXTRACTORES_SOLICITUD),
   );
+  /** Al aprobar o rechazar la última tarjeta de una página, la lista queda en la página anterior. */
+  protected readonly paginaPendientesActual = computed(() =>
+    Math.min(this.paginaPendientes(), Math.max(1, Math.ceil(this.listaPendientes().length / this.tamanoPendientes()))),
+  );
+  protected readonly pendientesPaginadas = computed(() => {
+    const inicio = (this.paginaPendientesActual() - 1) * this.tamanoPendientes();
+    return this.pendientesOrdenadas().slice(inicio, inicio + this.tamanoPendientes());
+  });
   protected readonly ordenadas = computed(() => ordenar(this.listaTodas(), this.orden, EXTRACTORES_SOLICITUD));
 
   protected readonly paginadas = computed(() => {
@@ -93,6 +106,15 @@ export class SolicitudLista {
   protected cambiarHasta(valor: string): void {
     this.hastaFiltro.set(valor === '' ? null : valor);
     this.paginaActual.set(1);
+  }
+
+  protected cambiarPaginaPendientes(pagina: number): void {
+    this.paginaPendientes.set(pagina);
+  }
+
+  protected cambiarTamanoPendientes(tamano: number): void {
+    this.tamanoPendientes.set(tamano);
+    this.paginaPendientes.set(1);
   }
 
   protected cambiarPagina(pagina: number): void {
