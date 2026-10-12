@@ -13,7 +13,7 @@
     } @else {
       <app-selector-orden idCampo="orden-stock-tarjetas" [orden]="ordenTarjetas" [opciones]="opcionesTarjetas" />
       <ul class="grilla-tarjetas">
-        @for (p of criticosYAgotados(); track p.productoId) {
+        @for (p of tarjetasPaginadas(); track p.productoId) {
           <li>
             <article class="w3-card w3-white w3-border w3-border w3-padding">
               <h3 class="w3-medium"><b>{{ p.productoNombre }}</b></h3>
@@ -24,6 +24,15 @@
           </li>
         }
       </ul>
+      <app-paginacion
+        [pagina]="paginaTarjetas()"
+        [totalItems]="criticosYAgotados().length"
+        [tamanoPagina]="tamanoTarjetas()"
+        [opcionesTamano]="opcionesTamanoTarjetas"
+        etiquetaTamano="Tarjetas por página"
+        (paginaCambiada)="cambiarPaginaTarjetas($event)"
+        (tamanoPaginaCambiado)="cambiarTamanoTarjetas($event)"
+      />
     }
   </div>
 

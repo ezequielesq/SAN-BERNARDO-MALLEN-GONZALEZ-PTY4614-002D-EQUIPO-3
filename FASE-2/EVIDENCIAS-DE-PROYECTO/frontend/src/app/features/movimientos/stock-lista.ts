@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
+import { Paginacion } from '../../shared/paginacion/paginacion';
 import { StockStatus } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
@@ -33,7 +34,7 @@ const OPCIONES_TARJETAS: readonly OpcionOrden[] = [
 
 @Component({
   selector: 'app-stock-lista',
-  imports: [EstadoVista, EstadoBadge, ThOrden, SelectorOrden],
+  imports: [EstadoVista, EstadoBadge, ThOrden, SelectorOrden, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './stock-lista.html',
 })
@@ -44,7 +45,12 @@ export class StockLista {
   protected readonly todos = computed(() => (this.stock.hasValue() ? this.stock.value() : []));
 
   protected readonly opcionesTarjetas = OPCIONES_TARJETAS;
-  protected readonly ordenTarjetas = new Orden<ColumnaOrdenStock>({ columna: 'stockActual' });
+  protected readonly paginaTarjetas = signal(1);
+  protected readonly tamanoTarjetas = signal(15);
+  protected readonly opcionesTamanoTarjetas = [10, 15, 20, 50] as const;
+  protected readonly ordenTarjetas = new Orden<ColumnaOrdenStock>({ columna: 'stockActual' }, () =>
+    this.paginaTarjetas.set(1),
+  );
   protected readonly orden = new Orden<ColumnaOrdenStock>();
 
   protected readonly criticosYAgotados = computed(() =>
@@ -55,7 +61,21 @@ export class StockLista {
     ),
   );
 
+  protected readonly tarjetasPaginadas = computed(() => {
+    const inicio = (this.paginaTarjetas() - 1) * this.tamanoTarjetas();
+    return this.criticosYAgotados().slice(inicio, inicio + this.tamanoTarjetas());
+  });
+
   protected readonly ordenados = computed(() => ordenar(this.todos(), this.orden, EXTRACTORES_STOCK));
+
+  protected cambiarPaginaTarjetas(pagina: number): void {
+    this.paginaTarjetas.set(pagina);
+  }
+
+  protected cambiarTamanoTarjetas(tamano: number): void {
+    this.tamanoTarjetas.set(tamano);
+    this.paginaTarjetas.set(1);
+  }
 
   protected estadoBadge(estado: string): TipoEstado {
     return estado.toLowerCase() as TipoEstado;
