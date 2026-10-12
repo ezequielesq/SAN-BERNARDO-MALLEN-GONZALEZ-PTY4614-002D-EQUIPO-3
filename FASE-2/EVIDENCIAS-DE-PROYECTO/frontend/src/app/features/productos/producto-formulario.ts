@@ -300,7 +300,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
         return `${ETIQUETAS[campo]} admite como máximo ${MAXIMO[campo] ?? 0} caracteres.`;
       if (errores['min']) return `${ETIQUETAS[campo]} no puede ser negativo.`;
       if (errores['pattern']) {
-        if (campo === 'codigoPtv') return 'El código PTV solo admite letras y números.';
+        if (campo === 'codigoPtv') return 'El código PTV solo admite letras, números y guiones.';
         if (campo === 'codigo') return 'El código solo admite números.';
         return `${ETIQUETAS[campo]} debe ser un número entero.`;
       }
@@ -448,7 +448,7 @@ export class ProductoFormulario implements ConCambiosPendientes {
       ptv.setValidators([
         Validators.required,
         Validators.maxLength(20),
-        Validators.pattern(/^[A-Za-z0-9]+$/),
+        Validators.pattern(/^[A-Za-z0-9][A-Za-z0-9-]*$/),
         noSoloEspacios,
       ]);
       ptv.enable({ emitEvent: false });

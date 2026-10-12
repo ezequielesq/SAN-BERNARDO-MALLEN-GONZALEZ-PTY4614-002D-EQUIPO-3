@@ -153,7 +153,7 @@ public class ProductoService {
     }
 
     /**
-     * Regla de la categoría: si requiere PTV, el producto lleva código PTV (letras y números) y no
+     * Regla de la categoría: si requiere PTV, el producto lleva código PTV (letras, números y guiones) y no
      * código numérico; si no, lleva código numérico y no PTV. Cada código es único por separado.
      */
     private Codigos validarCodigos(ProductoRequest request, Categoria categoria, Long idActual) {
@@ -164,8 +164,8 @@ public class ProductoService {
             if (ptv == null) {
                 throw new BusinessException("Ingresa el código PTV del producto.", "codigoPtv");
             }
-            if (!ptv.matches("[A-Za-z0-9]+")) {
-                throw new BusinessException("El código PTV solo admite letras y números.", "codigoPtv");
+            if (!ptv.matches("[A-Za-z0-9][A-Za-z0-9-]*")) {
+                throw new BusinessException("El código PTV solo admite letras, números y guiones.", "codigoPtv");
             }
             if (codigo != null) {
                 throw new BusinessException(
