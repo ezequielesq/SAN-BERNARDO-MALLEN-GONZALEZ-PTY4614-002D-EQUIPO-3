@@ -16,6 +16,7 @@ import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge'
 import { Modal } from '../../shared/modal/modal';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
+import { Paginacion } from '../../shared/paginacion/paginacion';
 import { Solicitud } from '../solicitudes/solicitud.modelo';
 import { EmpleadoDevolucion } from './empleado-devolucion';
 import { EmpleadoService } from './empleado.service';
@@ -38,7 +39,7 @@ const OPCIONES_MI_SOLICITUD: readonly OpcionOrden[] = [
 
 @Component({
   selector: 'app-empleado-mis-solicitudes',
-  imports: [ReactiveFormsModule, DatePipe, EstadoBadge, Modal, EmpleadoDevolucion, SelectorOrden],
+  imports: [ReactiveFormsModule, DatePipe, EstadoBadge, Modal, EmpleadoDevolucion, SelectorOrden, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './empleado-mis-solicitudes.html',
 })
@@ -65,11 +66,29 @@ export class EmpleadoMisSolicitudes {
   protected readonly empleadoConsultado = signal<number | null>(null);
   protected readonly devolviendo = signal<Solicitud | null>(null);
 
-  protected readonly orden = new Orden<ColumnaOrdenMiSolicitud>({ columna: 'fecha', direccion: 'desc' });
+  protected readonly paginaActual = signal(1);
+  protected readonly tamanoPagina = signal(9);
+  protected readonly opcionesTamano = [6, 9, 12, 24] as const;
+  protected readonly orden = new Orden<ColumnaOrdenMiSolicitud>({ columna: 'fecha', direccion: 'desc' }, () =>
+    this.paginaActual.set(1),
+  );
   protected readonly opcionesOrden = OPCIONES_MI_SOLICITUD;
   protected readonly solicitudesOrdenadas = computed(() =>
     ordenar(this.solicitudes() ?? [], this.orden, EXTRACTORES_MI_SOLICITUD),
   );
+  protected readonly paginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
+    return this.solicitudesOrdenadas().slice(inicio, inicio + this.tamanoPagina());
+  });
+
+  protected cambiarPagina(pagina: number): void {
+    this.paginaActual.set(pagina);
+  }
+
+  protected cambiarTamanoPagina(tamano: number): void {
+    this.tamanoPagina.set(tamano);
+    this.paginaActual.set(1);
+  }
 
   protected errorCampo(campo: 'empleadoId' | 'password'): boolean {
     const control = this.form.controls[campo];
@@ -125,6 +144,7 @@ export class EmpleadoMisSolicitudes {
         next: (lista) => {
           this.cargando.set(false);
           this.solicitudes.set(lista);
+          this.paginaActual.set(1);
           this.empleadoConsultado.set(empleadoId);
         },
         error: (err: unknown) => {
