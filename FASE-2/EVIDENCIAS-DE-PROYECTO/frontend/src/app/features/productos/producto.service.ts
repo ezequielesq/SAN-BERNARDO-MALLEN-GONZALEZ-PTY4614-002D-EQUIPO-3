@@ -2,7 +2,7 @@ import { HttpClient, HttpResourceRef, httpResource } from '@angular/common/http'
 import { Injectable, Signal, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Producto, ProductoRequest } from './producto.modelo';
+import { FilaImportacion, FilaValidada, Producto, ProductoRequest } from './producto.modelo';
 
 @Injectable({ providedIn: 'root' })
 export class ProductoService {
@@ -47,5 +47,25 @@ export class ProductoService {
 
   exportarPdf(soloActivos: boolean): Observable<Blob> {
     return this.http.get(`${this.url}/exportar/pdf`, { params: { soloActivos }, responseType: 'blob' });
+  }
+
+  descargarPlantilla(): Observable<Blob> {
+    return this.http.get(`${this.url}/plantilla/xlsx`, { responseType: 'blob' });
+  }
+
+  /** Lee el Excel y devuelve las filas validadas; no guarda nada. */
+  leerImportacion(archivo: File): Observable<FilaValidada[]> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo);
+    return this.http.post<FilaValidada[]>(`${this.url}/importar/leer`, cuerpo);
+  }
+
+  /** Revalida filas ya editadas; no guarda nada. */
+  validarImportacion(filas: FilaImportacion[]): Observable<FilaValidada[]> {
+    return this.http.post<FilaValidada[]>(`${this.url}/importar/validar`, { filas });
+  }
+
+  importar(filas: FilaImportacion[]): Observable<Producto[]> {
+    return this.http.post<Producto[]>(`${this.url}/importar`, { filas });
   }
 }

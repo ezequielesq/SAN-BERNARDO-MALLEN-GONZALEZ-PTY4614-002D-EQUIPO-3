@@ -20,3 +20,8 @@
 .app-modal-dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.4);
 }
+
+.app-modal-dialog--amplio {
+  width: 96%;
+  max-width: 1400px;
+}

@@ -12,8 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,70 @@ public class ProductoService {
         Producto producto = new Producto();
         aplicar(producto, request, categoria, codigos);
         return toResponse(productoRepository.save(producto));
+    }
+
+    /**
+     * Revisa un producto sin guardarlo y devuelve todos sus problemas (campo → mensaje) en vez de solo el
+     * primero; vacío si se puede crear. Usa las mismas reglas que {@link #crear}.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, String> diagnosticar(ProductoRequest request) {
+        Map<String, String> errores = new LinkedHashMap<>();
+        if (request.nombre() == null || request.nombre().isBlank()) {
+            errores.put("nombre", "Ingresa el nombre del producto.");
+        } else if (request.nombre().trim().length() > 150) {
+            errores.put("nombre", "El nombre admite hasta 150 caracteres.");
+        }
+        for (String[] codigo : new String[][] {{"codigoPtv", request.codigoPtv()}, {"codigo", request.codigo()}}) {
+            if (codigo[1] != null && codigo[1].trim().length() > 20) {
+                errores.put(codigo[0], "Admite hasta 20 caracteres.");
+            }
+        }
+
+        Categoria categoria = null;
+        if (request.categoriaId() == null) {
+            errores.put("categoriaId", "Elige una categoría.");
+        } else {
+            try {
+                categoria = resolverCategoria(request.categoriaId(), null);
+            } catch (BusinessException | ResourceNotFoundException e) {
+                errores.put("categoriaId", e.getMessage());
+            }
+        }
+        if (request.unidadMedidaId() == null) {
+            errores.put("unidadMedidaId", "Elige una unidad de medida.");
+        } else {
+            try {
+                resolverUnidad(request.unidadMedidaId(), null);
+            } catch (BusinessException | ResourceNotFoundException e) {
+                errores.put("unidadMedidaId", e.getMessage());
+            }
+        }
+        if (categoria != null) {
+            try {
+                validarCodigos(request, categoria, null);
+            } catch (BusinessException e) {
+                errores.putIfAbsent(e.getCampo() != null ? e.getCampo() : "codigo", e.getMessage());
+            }
+        }
+
+        if (request.stockMinimo() == null || request.stockMinimo() < 0) {
+            errores.put("stockMinimo", "Ingresa el stock mínimo (0 o más).");
+        }
+        if (request.stockCritico() == null || request.stockCritico() < 0) {
+            errores.put("stockCritico", "Ingresa el stock crítico (0 o más).");
+        }
+        if (request.costoUnitario() == null || request.costoUnitario() < 0) {
+            errores.put("costoUnitario", "Ingresa el costo unitario (0 o más).");
+        }
+        if (!errores.containsKey("stockMinimo") && !errores.containsKey("stockCritico")) {
+            try {
+                validarUmbrales(request);
+            } catch (BusinessException e) {
+                errores.put(e.getCampo(), e.getMessage());
+            }
+        }
+        return errores;
     }
 
     @Transactional
@@ -67,7 +133,7 @@ public class ProductoService {
             var sheet = wb.createSheet("Productos");
             var header = sheet.createRow(0);
             String[] columnas = {"Código PTV", "Código", "Nombre", "Categoría", "Unidad", "Perecible",
-                    "Stock mínimo", "Stock crítico", "Activo"};
+                    "Stock mínimo", "Stock crítico", "Costo unitario", "Activo"};
             for (int i = 0; i < columnas.length; i++) header.createCell(i).setCellValue(columnas[i]);
 
             int fila = 1;
@@ -81,7 +147,8 @@ public class ProductoService {
                 row.createCell(5).setCellValue(p.esPerecible() ? "Sí" : "No");
                 row.createCell(6).setCellValue(p.stockMinimo());
                 row.createCell(7).setCellValue(p.stockCritico());
-                row.createCell(8).setCellValue(p.activo() ? "Sí" : "No");
+                if (p.costoUnitario() != null) row.createCell(8).setCellValue(p.costoUnitario());
+                row.createCell(9).setCellValue(p.activo() ? "Sí" : "No");
             }
             wb.write(out);
             return out.toByteArray();

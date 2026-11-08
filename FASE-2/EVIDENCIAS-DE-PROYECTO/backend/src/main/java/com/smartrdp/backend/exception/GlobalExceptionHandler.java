@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -35,6 +36,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     public ErrorResponse handleBusiness(BusinessException ex) {
         return new ErrorResponse(422, "Business Error", ex.getMessage(), ex.getCampo(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ErrorResponse handleArchivoGrande(MaxUploadSizeExceededException ex) {
+        return new ErrorResponse(422, "Business Error", "El archivo supera el tamaño máximo de 2 MB.", null, LocalDateTime.now());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

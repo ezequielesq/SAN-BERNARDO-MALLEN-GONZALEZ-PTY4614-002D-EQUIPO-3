@@ -167,6 +167,43 @@ app-empleado-pagina > main { flex: 1 0 auto; }
   padding-top: 12px;
 }
 
+/* Fila para entregar un producto que no estaba en el pedido (tarjeta de solicitud pendiente) */
+.agregar-producto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.agregar-producto select {
+  flex: 1 1 100%;
+}
+.agregar-producto input {
+  width: 6em;
+}
+
+/* ── Importación masiva de productos (modal con tabla editable) ── */
+.importacion-barra {
+  position: sticky;
+  top: -16px;
+  z-index: 3;
+  background: #fff;
+  padding: 8px 0;
+  border-bottom: 1px solid #ccc;
+}
+.importacion-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.importacion-controles label { display: block; }
+.importacion-barra .w3-tag { margin-right: 4px; }
+.importacion-espacio { flex: 1 1 auto; }
+.importacion-tabla td { vertical-align: top; }
+.importacion-tabla .fila-con-error { background-color: #fdecee; }
+.importacion-tabla small { display: block; max-width: 18em; }
+
 /* ── Grilla de tarjetas (Stock: críticos/agotados; Alertas de vencimiento) ── */
 .grilla-tarjetas {
   display: flex;

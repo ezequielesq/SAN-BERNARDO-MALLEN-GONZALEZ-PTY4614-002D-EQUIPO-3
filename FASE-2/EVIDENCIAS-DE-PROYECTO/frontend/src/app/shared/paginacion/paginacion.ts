@@ -27,9 +27,9 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
         Siguiente <i class="fa fa-chevron-right" aria-hidden="true"></i>
       </button>
       <div class="w3-bar-item w3-right" style="display:flex; align-items:center; gap:4px">
-        <label for="paginacion-tamano" class="w3-small">{{ etiquetaTamano() }}:</label>
+        <label [for]="idTamano()" class="w3-small">{{ etiquetaTamano() }}:</label>
         <select
-          id="paginacion-tamano"
+          [id]="idTamano()"
           class="w3-select w3-border"
           style="width:auto"
           (change)="tamanoPaginaCambiado.emit(Number($any($event.target).value))"
@@ -50,6 +50,8 @@ export class Paginacion {
   readonly tamanoPagina = input.required<number>();
   readonly opcionesTamano = input<readonly number[]>([5, 10, 20, 50]);
   readonly etiquetaTamano = input('Filas por página');
+  /** Cambiarlo si hay dos paginadores visibles a la vez (por ejemplo, una lista y una modal). */
+  readonly idTamano = input('paginacion-tamano');
   readonly totalPaginas = computed(() => Math.max(1, Math.ceil(this.totalItems() / this.tamanoPagina())));
 
   readonly paginaCambiada = output<number>();

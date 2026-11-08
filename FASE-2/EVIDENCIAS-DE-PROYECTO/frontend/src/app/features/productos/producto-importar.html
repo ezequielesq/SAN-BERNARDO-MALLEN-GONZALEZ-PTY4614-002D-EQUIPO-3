@@ -1,0 +1,279 @@
+<div class="importacion-barra">
+  <p class="w3-margin-0" aria-live="polite">
+    <b>{{ filas().length }}</b> {{ filas().length === 1 ? 'fila' : 'filas' }} ·
+    <span class="w3-tag w3-round w3-emerald">{{ validas() }} válidas</span>
+    <span class="w3-tag w3-round" [class.w3-crimson]="conErrores() > 0" [class.w3-light-grey]="conErrores() === 0">
+      {{ conErrores() }} con error
+    </span>
+    @if (validando()) {
+      <span class="w3-small"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Validando…</span>
+    }
+  </p>
+
+  <div class="importacion-controles">
+    <div>
+      <label for="importacion-vista" class="w3-small"><b>Mostrar</b></label>
+      <select
+        #selectVista
+        id="importacion-vista"
+        class="w3-select w3-border"
+        style="width: auto"
+        (change)="cambiarVista(selectVista.value)"
+      >
+        <option value="todas" [selected]="vista() === 'todas'">Todas las filas</option>
+        <option value="errores" [selected]="vista() === 'errores'">Solo con errores</option>
+      </select>
+    </div>
+    @if (ordenDesactualizado()) {
+      <button type="button" class="w3-button w3-border w3-round" (click)="reordenar()">
+        <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Actualizar orden
+      </button>
+    }
+    <span class="importacion-espacio"></span>
+    <button type="button" class="w3-button w3-white w3-border w3-round" (click)="solicitarCierre()">Cancelar</button>
+    <button
+      type="button"
+      class="w3-button w3-emerald w3-round"
+      [attr.aria-disabled]="creando() || validando() || conErrores() > 0 || filas().length === 0"
+      (click)="crear()"
+    >
+      {{ creando() ? 'Creando…' : 'Crear ' + filas().length + (filas().length === 1 ? ' producto' : ' productos') }}
+    </button>
+  </div>
+  @if (conErrores() > 0) {
+    <p class="w3-small w3-margin-0">
+      Corrige o quita las filas con error para poder crear los productos. Ordena por «Estado» para verlas primero.
+    </p>
+  }
+</div>
+
+@if (mostradas().length === 0) {
+  <p class="w3-padding">
+    @if (filas().length === 0) {
+      No quedan filas por importar.
+    } @else {
+      Ninguna fila tiene errores.
+    }
+  </p>
+} @else {
+  <div class="w3-responsive">
+    <table class="w3-table-all importacion-tabla">
+      <caption class="visualmente-oculto">
+        Productos detectados en el archivo, editables
+      </caption>
+      <thead>
+        <tr class="w3-light-grey">
+          <th appThOrden [orden]="orden" columna="fila">Fila</th>
+          <th appThOrden [orden]="orden" columna="estado">Estado</th>
+          <th appThOrden [orden]="orden" columna="codigoPtv">Código PTV</th>
+          <th appThOrden [orden]="orden" columna="codigo">Código</th>
+          <th appThOrden [orden]="orden" columna="nombre">Nombre</th>
+          <th appThOrden [orden]="orden" columna="categoria">Categoría</th>
+          <th appThOrden [orden]="orden" columna="unidad">Unidad</th>
+          <th appThOrden [orden]="orden" columna="perecible">Perecible</th>
+          <th appThOrden [orden]="orden" columna="stockMinimo">Mín.</th>
+          <th appThOrden [orden]="orden" columna="stockCritico">Crít.</th>
+          <th appThOrden [orden]="orden" columna="costoUnitario">Costo</th>
+          <th scope="col"><span class="visualmente-oculto">Quitar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (f of paginadas(); track f.datos.fila) {
+          <tr [class]="claseErrorFila(f)">
+            <td>{{ f.datos.fila }}</td>
+            <td>
+              @if (tieneErrores(f)) {
+                <span class="w3-tag w3-round w3-crimson">
+                  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                  {{ cantidadErrores(f) }} {{ cantidadErrores(f) === 1 ? 'error' : 'errores' }}
+                </span>
+              } @else {
+                <span class="w3-tag w3-round w3-emerald">
+                  <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Válida
+                </span>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-ptv-' + f.datos.fila">Código PTV, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-ptv-' + f.datos.fila"
+                class="w3-input"
+                style="min-width: 7em"
+                type="text"
+                maxlength="20"
+                [value]="f.datos.codigoPtv ?? ''"
+                [attr.aria-invalid]="f.errores['codigoPtv'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['codigoPtv'] ? 'imp-ptv-error-' + f.datos.fila : null"
+                (change)="editarTexto(f.datos.fila ?? 0, 'codigoPtv', $any($event.target).value)"
+              />
+              @if (f.errores['codigoPtv']) {
+                <small class="texto-error" [id]="'imp-ptv-error-' + f.datos.fila">{{ f.errores['codigoPtv'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-codigo-' + f.datos.fila">Código, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-codigo-' + f.datos.fila"
+                class="w3-input"
+                style="min-width: 6em"
+                type="text"
+                maxlength="20"
+                inputmode="numeric"
+                [value]="f.datos.codigo ?? ''"
+                [attr.aria-invalid]="f.errores['codigo'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['codigo'] ? 'imp-codigo-error-' + f.datos.fila : null"
+                (change)="editarTexto(f.datos.fila ?? 0, 'codigo', $any($event.target).value)"
+              />
+              @if (f.errores['codigo']) {
+                <small class="texto-error" [id]="'imp-codigo-error-' + f.datos.fila">{{ f.errores['codigo'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-nombre-' + f.datos.fila">Nombre, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-nombre-' + f.datos.fila"
+                class="w3-input"
+                style="min-width: 14em"
+                type="text"
+                maxlength="150"
+                [value]="f.datos.nombre ?? ''"
+                [attr.aria-invalid]="f.errores['nombre'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['nombre'] ? 'imp-nombre-error-' + f.datos.fila : null"
+                (change)="editarTexto(f.datos.fila ?? 0, 'nombre', $any($event.target).value)"
+              />
+              @if (f.errores['nombre']) {
+                <small class="texto-error" [id]="'imp-nombre-error-' + f.datos.fila">{{ f.errores['nombre'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-categoria-' + f.datos.fila">Categoría, fila {{ f.datos.fila }}</label>
+              <select
+                [id]="'imp-categoria-' + f.datos.fila"
+                class="w3-select"
+                style="min-width: 9em"
+                [attr.aria-invalid]="f.errores['categoriaId'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['categoriaId'] ? 'imp-categoria-error-' + f.datos.fila : null"
+                (change)="editarId(f.datos.fila ?? 0, 'categoriaId', $any($event.target).value)"
+              >
+                <option value="" [selected]="f.datos.categoriaId === null">Elige…</option>
+                @for (c of categorias(); track c.id) {
+                  <option [value]="c.id" [selected]="f.datos.categoriaId === c.id">
+                    {{ c.nombre }}{{ c.requierePtv ? ' (PTV)' : '' }}
+                  </option>
+                }
+              </select>
+              @if (f.errores['categoriaId']) {
+                <small class="texto-error" [id]="'imp-categoria-error-' + f.datos.fila">{{ f.errores['categoriaId'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-unidad-' + f.datos.fila">Unidad, fila {{ f.datos.fila }}</label>
+              <select
+                [id]="'imp-unidad-' + f.datos.fila"
+                class="w3-select"
+                style="min-width: 7em"
+                [attr.aria-invalid]="f.errores['unidadMedidaId'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['unidadMedidaId'] ? 'imp-unidad-error-' + f.datos.fila : null"
+                (change)="editarId(f.datos.fila ?? 0, 'unidadMedidaId', $any($event.target).value)"
+              >
+                <option value="" [selected]="f.datos.unidadMedidaId === null">Elige…</option>
+                @for (u of unidades(); track u.id) {
+                  <option [value]="u.id" [selected]="f.datos.unidadMedidaId === u.id">{{ u.nombre }}</option>
+                }
+              </select>
+              @if (f.errores['unidadMedidaId']) {
+                <small class="texto-error" [id]="'imp-unidad-error-' + f.datos.fila">{{ f.errores['unidadMedidaId'] }}</small>
+              }
+            </td>
+            <td>
+              <input
+                [id]="'imp-perecible-' + f.datos.fila"
+                class="w3-check"
+                type="checkbox"
+                [checked]="f.datos.esPerecible"
+                (change)="editarPerecible(f.datos.fila ?? 0, $any($event.target).checked)"
+              />
+              <label [for]="'imp-perecible-' + f.datos.fila" class="visualmente-oculto">Perecible, fila {{ f.datos.fila }}</label>
+              @if (f.errores['esPerecible']) {
+                <small class="texto-error">{{ f.errores['esPerecible'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-minimo-' + f.datos.fila">Stock mínimo, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-minimo-' + f.datos.fila"
+                class="w3-input"
+                style="width: 5.5em"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                [value]="f.datos.stockMinimo ?? ''"
+                [attr.aria-invalid]="f.errores['stockMinimo'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['stockMinimo'] ? 'imp-minimo-error-' + f.datos.fila : null"
+                (change)="editarNumero(f.datos.fila ?? 0, 'stockMinimo', $any($event.target).value)"
+              />
+              @if (f.errores['stockMinimo']) {
+                <small class="texto-error" [id]="'imp-minimo-error-' + f.datos.fila">{{ f.errores['stockMinimo'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-critico-' + f.datos.fila">Stock crítico, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-critico-' + f.datos.fila"
+                class="w3-input"
+                style="width: 5.5em"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                [value]="f.datos.stockCritico ?? ''"
+                [attr.aria-invalid]="f.errores['stockCritico'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['stockCritico'] ? 'imp-critico-error-' + f.datos.fila : null"
+                (change)="editarNumero(f.datos.fila ?? 0, 'stockCritico', $any($event.target).value)"
+              />
+              @if (f.errores['stockCritico']) {
+                <small class="texto-error" [id]="'imp-critico-error-' + f.datos.fila">{{ f.errores['stockCritico'] }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-costo-' + f.datos.fila">Costo unitario, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-costo-' + f.datos.fila"
+                class="w3-input"
+                style="width: 6.5em"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                [value]="f.datos.costoUnitario ?? ''"
+                [attr.aria-invalid]="f.errores['costoUnitario'] ? 'true' : null"
+                [attr.aria-describedby]="f.errores['costoUnitario'] ? 'imp-costo-error-' + f.datos.fila : null"
+                (change)="editarNumero(f.datos.fila ?? 0, 'costoUnitario', $any($event.target).value)"
+              />
+              @if (f.errores['costoUnitario']) {
+                <small class="texto-error" [id]="'imp-costo-error-' + f.datos.fila">{{ f.errores['costoUnitario'] }}</small>
+              }
+            </td>
+            <td>
+              <button type="button" class="w3-button w3-small w3-crimson w3-round" (click)="quitar(f.datos.fila ?? 0)">
+                <i class="fa fa-trash" aria-hidden="true"></i>
+                <span class="visualmente-oculto">Quitar la fila {{ f.datos.fila }}</span>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginacion
+    [pagina]="paginaActual()"
+    [totalItems]="mostradas().length"
+    [tamanoPagina]="tamanoPagina()"
+    idTamano="importacion-tamano"
+    [opcionesTamano]="opcionesTamano"
+    (paginaCambiada)="cambiarPagina($event)"
+    (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+  />
+}

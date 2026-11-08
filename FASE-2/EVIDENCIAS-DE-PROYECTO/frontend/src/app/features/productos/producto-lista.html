@@ -3,6 +3,32 @@
     <button type="button" class="w3-button w3-info w3-round w3-margin-left" (click)="modalProducto.set('nuevo')">
       <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo producto
     </button>
+    <button
+      type="button"
+      class="w3-button w3-info w3-round w3-margin-left"
+      [attr.aria-disabled]="leyendoArchivo()"
+      (click)="archivoExcel.click()"
+    >
+      <i class="fa-solid fa-file-excel" aria-hidden="true"></i>
+      {{ leyendoArchivo() ? 'Leyendo archivo…' : 'Importar Excel' }}
+    </button>
+    <button
+      type="button"
+      class="w3-button w3-white w3-border w3-round w3-margin-left"
+      [attr.aria-disabled]="descargandoPlantilla()"
+      (click)="descargarPlantilla()"
+    >
+      <i class="fa fa-download" aria-hidden="true"></i> Descargar plantilla
+    </button>
+    <input
+      #archivoExcel
+      type="file"
+      class="visualmente-oculto"
+      tabindex="-1"
+      aria-hidden="true"
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      (change)="leerArchivo(archivoExcel)"
+    />
   </p>
 }
 
@@ -200,6 +226,17 @@
       [productoId]="productoIdModal()"
       (guardado)="alGuardarProducto()"
       (cerrarSolicitado)="cerrarModalProducto()"
+    />
+  </app-modal>
+}
+
+@if (filasImportacion() !== null) {
+  <app-modal titulo="Importar productos desde Excel" [amplio]="true" (cerrar)="importacion.solicitarCierre()">
+    <app-producto-importar
+      #importacion
+      [filasIniciales]="filasImportacion()!"
+      (importado)="alImportar($event)"
+      (cerrarSolicitado)="filasImportacion.set(null)"
     />
   </app-modal>
 }

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth/auth.service';
+import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
@@ -21,7 +22,8 @@ import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { descargarArchivo } from '../../shared/utils/descargar-archivo';
 import { ProductoFormulario } from './producto-formulario';
-import { Producto } from './producto.modelo';
+import { ProductoImportar } from './producto-importar';
+import { FilaValidada, Producto } from './producto.modelo';
 import { ProductoService } from './producto.service';
 
 type ColumnaOrdenProducto = 'codigo' | 'nombre' | 'categoriaNombre' | 'estado';
@@ -41,7 +43,7 @@ function normalizar(texto: string): string {
 
 @Component({
   selector: 'app-producto-lista',
-  imports: [EstadoVista, EstadoBadge, Paginacion, ThOrden, Modal, ProductoFormulario],
+  imports: [EstadoVista, EstadoBadge, Paginacion, ThOrden, Modal, ProductoFormulario, ProductoImportar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './producto-lista.html',
 })
@@ -62,6 +64,10 @@ export class ProductoLista {
   protected readonly paginaActual = signal(1);
   protected readonly tamanoPagina = signal(10);
   protected readonly exportando = signal(false);
+  protected readonly leyendoArchivo = signal(false);
+  protected readonly descargandoPlantilla = signal(false);
+  /** Filas leídas del Excel que se están revisando en la modal; `null` = modal cerrada. */
+  protected readonly filasImportacion = signal<FilaValidada[] | null>(null);
   protected readonly orden = new Orden<ColumnaOrdenProducto>(null, () => this.paginaActual.set(1));
 
   protected readonly modalProducto = signal<'nuevo' | number | null>(null);
@@ -180,5 +186,49 @@ export class ProductoLista {
         this.notificaciones.error(`No se pudo generar el archivo ${formato.toUpperCase()}. Inténtalo de nuevo.`);
       },
     });
+  }
+
+  protected descargarPlantilla(): void {
+    if (this.descargandoPlantilla()) return;
+    this.descargandoPlantilla.set(true);
+    this.productoService
+      .descargarPlantilla()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.descargandoPlantilla.set(false);
+          descargarArchivo(blob, 'plantilla-productos.xlsx');
+        },
+        error: () => {
+          this.descargandoPlantilla.set(false);
+          this.notificaciones.error('No se pudo descargar la plantilla. Inténtalo de nuevo.');
+        },
+      });
+  }
+
+  protected leerArchivo(campo: HTMLInputElement): void {
+    const archivo = campo.files?.item(0);
+    campo.value = '';
+    if (!archivo || this.leyendoArchivo()) return;
+    this.leyendoArchivo.set(true);
+    this.productoService
+      .leerImportacion(archivo)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (filas) => {
+          this.leyendoArchivo.set(false);
+          this.filasImportacion.set(filas);
+        },
+        error: (err: unknown) => {
+          this.leyendoArchivo.set(false);
+          this.notificaciones.error(traducirError(err).mensaje);
+        },
+      });
+  }
+
+  protected alImportar(cantidad: number): void {
+    this.filasImportacion.set(null);
+    this.productos.reload();
+    this.notificaciones.exito(`Se crearon ${cantidad} ${cantidad === 1 ? 'producto' : 'productos'}.`);
   }
 }

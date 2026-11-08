@@ -17,6 +17,8 @@ import {
 })
 export class Modal implements AfterViewInit, OnDestroy {
   readonly titulo = input.required<string>();
+  /** Para contenidos anchos, como una tabla editable. */
+  readonly amplio = input(false);
   readonly cerrar = output<void>();
 
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
