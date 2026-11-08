@@ -1,7 +1,7 @@
 <div class="w3-modal" style="display: block">
   <dialog
     #dialog
-    (cancel)="alCancelar()"
+    (cancel)="$event.preventDefault(); alCancelar()"
     class="w3-modal-content w3-animate-opacity w3-card-4 w3-margin-bottom app-modal-dialog"
     [class.app-modal-dialog--amplio]="amplio()"
     aria-labelledby="app-modal-titulo"
