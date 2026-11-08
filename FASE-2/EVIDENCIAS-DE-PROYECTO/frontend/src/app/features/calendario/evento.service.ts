@@ -9,12 +9,15 @@ export class EventoService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/eventos`;
 
-  /** Llamar desde un inicializador de campo del componente (requiere contexto de inyección). */
-  listar(rango: () => { desde: string; hasta: string }): HttpResourceRef<Evento[]> {
+  /**
+   * Llamar desde un inicializador de campo del componente (requiere contexto de inyección).
+   * Si el rango devuelve `undefined` el recurso queda inactivo y no consulta al servidor.
+   */
+  listar(rango: () => { desde: string; hasta: string } | undefined): HttpResourceRef<Evento[]> {
     return httpResource<Evento[]>(
       () => {
-        const { desde, hasta } = rango();
-        return { url: this.url, params: { desde, hasta } };
+        const r = rango();
+        return r === undefined ? undefined : { url: this.url, params: { desde: r.desde, hasta: r.hasta } };
       },
       { defaultValue: [] },
     );

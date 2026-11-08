@@ -4,130 +4,121 @@
   </button>
 </p>
 
+<!-- Contenedor 1: calendario + filtros, mismo patrón que Movimientos -->
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
   <div class="w3-row">
     <div class="w3-col s12 m5 l4 w3-padding">
-      <div class="w3-bar w3-asphalt w3-border barra-mes">
-        <button
-          type="button"
-          class="w3-button w3-border w3-white w3-margin-small w3-round"
-          (click)="cambiarMes(-1)"
-        >
-          <i class="fa fa-chevron-left" aria-hidden="true"></i> <span class="texto-nav">Mes anterior</span>
-        </button>
-        <span class="w3-center etiqueta-mes" aria-live="polite">{{ etiquetaMes() }}</span>
-        <button
-          type="button"
-          class="w3-button w3-border w3-white w3-margin-small w3-round"
-          (click)="cambiarMes(1)"
-        >
-          <span class="texto-nav">Mes siguiente</span>
-          <i class="fa fa-chevron-right" aria-hidden="true"></i>
-        </button>
-      </div>
-
-      <div class="w3-white w3-border w3-padding-small">
-        <p class="w3-center w3-margin-small">
-          <button type="button" class="w3-button w3-white w3-border w3-small w3-round" (click)="irAHoy()">
-            Hoy
-          </button>
-        </p>
-
-        @if (eventos.status() === 'loading') {
-          <p role="status" class="w3-center w3-small w3-text-grey">Cargando…</p>
-        }
-
-        <div class="calendario-grilla w3-margin-bottom">
-          @for (etiqueta of DIAS_ES; track etiqueta) {
-            <div class="w3-center w3-small w3-text-grey" style="font-weight: bold">{{ etiqueta }}</div>
-          }
-        </div>
-
-        <div class="calendario-grilla">
-          @for (dia of diasDelMes(); track $index) {
-            @if (dia.tipo === 'vacio') {
-              <div></div>
-            } @else {
-              <button
-                type="button"
-                class="calendario-dia"
-                [class.seleccionado]="diaActivo() === dia.fecha"
-                [class.hoy]="fechaHoy === dia.fecha"
-                [attr.aria-pressed]="diaActivo() === dia.fecha"
-                (click)="alternarDia(dia.fecha!)"
-              >
-                <span class="numero-dia">{{ dia.dia }}</span>
-                <span class="marca-dia">
-                  @if (conteo(dia.fecha!) > 0) {
-                    <span class="marca-eventos" aria-hidden="true">{{ conteo(dia.fecha!) }}</span>
-                  }
-                </span>
-                <span class="visualmente-oculto">
-                  @if (fechaHoy === dia.fecha) { hoy, }
-                  @if (conteo(dia.fecha!) === 1) { 1 evento }
-                  @else if (conteo(dia.fecha!) > 1) { {{ conteo(dia.fecha!) }} eventos }
-                  @else { sin eventos }
-                </span>
-              </button>
-            }
-          }
-        </div>
-
-        <div class="w3-bar w3-small w3-text-grey w3-margin-top w3-border-top w3-padding-small">
-          <span class="w3-bar-item"><span class="marca-eventos" aria-hidden="true">2</span> Cantidad de eventos</span>
-        </div>
-      </div>
+      <app-calendario-mes
+        [marcas]="marcasPorDia()"
+        [leyenda]="leyenda"
+        [diaActivo]="diaActivo()"
+        [cargando]="eventosMes.status() === 'loading'"
+        (diaSeleccionado)="alSeleccionarDiaCalendario($event)"
+        (rangoCambiado)="alCambiarRangoCalendario($event)"
+      />
     </div>
-
-    <div class="w3-col s12 m7 l8 w3-padding">
-      <div class="encabezado-lista">
-        <h2 class="w3-large w3-margin-0" aria-live="polite">{{ tituloLista() }}</h2>
-        @if (diaActivo() !== null) {
-          <button type="button" class="w3-button w3-white w3-border w3-round" (click)="quitarFiltro()">
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i> Quitar filtro
-          </button>
-        }
+    <div class="w3-col s12 m7 l8">
+      <div class="w3-row">
+        <div class="w3-col s12 m4 w3-padding">
+          <label for="filtro-busqueda-evento"><b>Buscar por título o descripción</b></label>
+          <input
+            #campoBusqueda
+            id="filtro-busqueda-evento"
+            class="w3-input"
+            type="search"
+            [value]="busqueda()"
+            (input)="cambiarBusqueda(campoBusqueda.value)"
+          />
+        </div>
+        <div class="w3-col s12 m4 w3-padding">
+          <label for="filtro-desde-evento"><b>Desde</b></label>
+          <input
+            #campoDesde
+            id="filtro-desde-evento"
+            class="w3-input"
+            type="date"
+            [value]="desdeFiltro()"
+            [attr.aria-invalid]="errorRango() !== null"
+            [attr.aria-describedby]="errorRango() !== null ? 'error-rango-evento' : null"
+            (change)="cambiarDesde(campoDesde.value)"
+          />
+        </div>
+        <div class="w3-col s12 m4 w3-padding">
+          <label for="filtro-hasta-evento"><b>Hasta</b></label>
+          <input
+            #campoHasta
+            id="filtro-hasta-evento"
+            class="w3-input"
+            type="date"
+            [value]="hastaFiltro()"
+            [attr.aria-invalid]="errorRango() !== null"
+            [attr.aria-describedby]="errorRango() !== null ? 'error-rango-evento' : null"
+            (change)="cambiarHasta(campoHasta.value)"
+          />
+        </div>
       </div>
+      @if (errorRango(); as mensaje) {
+        <p id="error-rango-evento" class="texto-error w3-padding" role="alert">
+          <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}
+        </p>
+      }
+    </div>
+  </div>
+</div>
 
-      <app-estado-vista
-        [cargando]="eventos.status() === 'loading'"
-        [error]="eventos.error()"
-        [vacio]="false"
-        mensajeCarga="Cargando eventos…"
-        (reintentar)="eventos.reload()"
-      >
-        @if (eventosVisibles().length === 0) {
-          <p role="status">
-            @if (diaActivo() !== null) {
-              No hay eventos para este día.
-            } @else {
-              No hay eventos en {{ etiquetaMes() }}. Agrega el primero con «Nuevo evento».
-            }
-          </p>
-        } @else {
-          <ul class="w3-ul w3-white w3-border lista-eventos">
-            @for (e of eventosVisibles(); track e.id) {
-              <li class="w3-padding">
-                <div class="evento-fila">
-                  <div class="evento-datos">
-                    <p class="w3-margin-0 w3-small w3-text-grey">
-                      {{ fechaCorta(e) }} · <b>{{ horaCorta(e) }}</b>
-                    </p>
-                    <h3 class="w3-medium w3-margin-0"><b>{{ e.titulo }}</b></h3>
-                    @if (e.descripcion) {
-                      <p class="w3-margin-0 descripcion-evento">{{ e.descripcion }}</p>
-                    }
-                    <p class="w3-margin-0 w3-small w3-text-grey">Creado por {{ e.creadoPorNombre }}</p>
-                  </div>
-                  <div class="evento-acciones">
-                    <button type="button" class="w3-button w3-warning w3-round" (click)="modalEvento.set(e)">
+<!-- Contenedor 2: tabla de resultados, separado del panel de arriba -->
+<div class="w3-container w3-border w3-margin w3-light-grey">
+  @if (errorRango() !== null) {
+    <p role="status">Corrige el rango de fechas para ver los eventos.</p>
+  } @else {
+    <app-estado-vista
+      [cargando]="eventos.status() === 'loading'"
+      [error]="eventos.error()"
+      [vacio]="todos().length === 0"
+      mensajeCarga="Cargando eventos…"
+      mensajeVacio="No hay eventos en el rango seleccionado."
+      (reintentar)="eventos.reload()"
+    >
+      @if (filtrados().length === 0) {
+        <p>Ningún evento coincide con los filtros.</p>
+        <button type="button" class="w3-button w3-white w3-border w3-round" (click)="limpiarFiltrosCliente()">
+          Limpiar filtros
+        </button>
+      } @else {
+        <div class="w3-responsive">
+          <table class="w3-table-all">
+            <caption class="visualmente-oculto">Eventos del calendario</caption>
+            <thead>
+              <tr class="w3-light-grey">
+                <th appThOrden [orden]="orden" columna="fecha">Fecha</th>
+                <th appThOrden [orden]="orden" columna="hora">Hora</th>
+                <th appThOrden [orden]="orden" columna="titulo">Título</th>
+                <th appThOrden [orden]="orden" columna="descripcion">Descripción</th>
+                <th appThOrden [orden]="orden" columna="creadoPorNombre">Creado por</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of paginados(); track e.id) {
+                <tr>
+                  <td>{{ fechaCorta(e) }}</td>
+                  <td>{{ horaCorta(e) }}</td>
+                  <td>{{ e.titulo }}</td>
+                  <td style="white-space: pre-line; overflow-wrap: anywhere">{{ e.descripcion || '—' }}</td>
+                  <td>{{ e.creadoPorNombre }}</td>
+                  <td>
+                    <button
+                      type="button"
+                      class="w3-button w3-small w3-warning w3-round"
+                      (click)="modalEvento.set(e)"
+                    >
                       <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto">
                         {{ e.titulo }}</span
                       >
                     </button>
                     <button
                       type="button"
-                      class="w3-button w3-border w3-border-red w3-round"
+                      class="w3-button w3-small w3-border w3-border-red w3-round"
                       [attr.aria-disabled]="procesandoId() === e.id"
                       (click)="eliminar(e)"
                     >
@@ -135,15 +126,23 @@
                         {{ e.titulo }}</span
                       >
                     </button>
-                  </div>
-                </div>
-              </li>
-            }
-          </ul>
-        }
-      </app-estado-vista>
-    </div>
-  </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <app-paginacion
+          [pagina]="paginaActual()"
+          [totalItems]="filtrados().length"
+          [tamanoPagina]="tamanoPagina()"
+          (paginaCambiada)="cambiarPagina($event)"
+          (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+        />
+      }
+    </app-estado-vista>
+  }
 </div>
 
 @if (modalEvento() !== null) {
