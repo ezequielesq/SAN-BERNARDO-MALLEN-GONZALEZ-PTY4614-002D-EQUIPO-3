@@ -46,6 +46,14 @@ public class SolicitudService {
             if (!producto.isActivo()) {
                 throw new BusinessException("El producto '" + producto.getNombre() + "' está deshabilitado.");
             }
+            // Solo se valida contra el disponible actual: no se reserva nada.
+            int stock = vistas.stock(producto.getId()).map(VistasInventario.StockProducto::stock).orElse(0);
+            if (stock <= 0) {
+                throw new BusinessException("'" + producto.getNombre() + "' ya no tiene stock disponible.");
+            }
+            if (pedido.getValue() > stock) {
+                throw new BusinessException("Solo hay " + stock + " de '" + producto.getNombre() + "'.");
+            }
             agregarDetalle(solicitud, producto, pedido.getValue());
         }
         return aRespuestas(List.of(solicitudRepository.saveAndFlush(solicitud)), false).get(0);
