@@ -1,7 +1,9 @@
 # Diagramas UML — Smart RDP
 
 > Proyecto de Título PTY4614-002D · Equipo 3 · Duoc UC, Sede San Bernardo
-> Versión: borrador para revisión · 12-10-2026
+> Versión: borrador para revisión · 08-11-2026
+
+> **Nota.** Las imágenes `.png` de esta carpeta (entidad-relación, clases, secuencia y tablas de auditoría) corresponden al modelo anterior y están desactualizadas; los diagramas vigentes son los bloques Mermaid de este documento. Hay que regenerar los PNG a partir de ellos antes de entregarlos.
 
 ## 1. Alcance
 
@@ -40,7 +42,7 @@ flowchart LR
         uc10(["Crear pedido de insumos"])
         uc11(["Devolver productos"])
         uc12(["Consultar mis solicitudes"])
-        uc13(["Registrar movimiento Solicitado o Devolución"])
+        uc13(["Registrar operación Entrega de pedido o Devolución"])
         uc14(["Verificar identidad con contraseña"])
     end
 
@@ -68,7 +70,7 @@ flowchart LR
 
 ## 3. Diagrama de clases del dominio
 
-Las nueve entidades heredan de `BaseEntity` (`id`, `createdAt`, `updatedAt`). Solo `Movimiento`, `Solicitud` y `Usuario` tienen historial con Hibernate Envers.
+Todas las entidades de negocio heredan de `BaseEntity` (`id`, `createdAt`, `updatedAt`). Solo `Solicitud` y `Usuario` tienen historial con Hibernate Envers; `Operacion`, `Movimiento` y `Lote` son inmutables (`@Immutable`, y triggers en la base). El stock no es un atributo: se calcula con vistas.
 
 ```mermaid
 classDiagram
@@ -80,11 +82,14 @@ classDiagram
         -LocalDateTime createdAt
         -LocalDateTime updatedAt
     }
+    class Rol {
+        -String codigo
+        -String nombre
+    }
     class Usuario {
         -String nombre
         -String email
         -String password
-        -Rol rol
         -boolean activo
     }
     class Categoria {
@@ -101,84 +106,64 @@ classDiagram
         -String codigoPtv
         -String codigo
         -boolean esPerecible
-        -Integer stockMinimo
-        -Integer stockCritico
+        -int stockMinimo
+        -int stockCritico
         -Integer costoUnitario
         -boolean activo
     }
     class Lote {
         -String numeroLote
         -LocalDate fechaVencimiento
-        -Integer cantidadOriginal
-        -Integer cantidadDisponible
-    }
-    class Movimiento {
-        -TipoMovimiento tipo
-        -Integer cantidad
-        -String motivo
         -Integer costoUnitario
     }
-    class ConsumoLote {
-        -Integer cantidad
-        -Integer cantidadDevuelta
+    class TipoOperacion {
+        -String codigo
+        -String nombre
+        -short sentido
+        -String solicitudRequerida
+        -boolean seleccionable
     }
-    class Solicitud {
-        -TipoSolicitud tipo
-        -EstadoSolicitud estado
-        -String observacion
+    class Operacion {
+        -String nota
+        +agregarMovimiento(Lote, int)
     }
-    class DetalleSolicitud {
-        -Integer cantidadSolicitada
-        -Integer cantidadEntregada
-    }
-    class Rol {
-        <<enumeration>>
-        ADMIN
-        BODEGUERO
-        EMPLEADO
-    }
-    class TipoMovimiento {
-        <<enumeration>>
-        ENTRADA
-        SALIDA
-        SOLICITADO
-        DEVOLUCION
-    }
-    class TipoSolicitud {
-        <<enumeration>>
-        PEDIDO
-        DEVOLUCION
+    class Movimiento {
+        -int cantidad
     }
     class EstadoSolicitud {
-        <<enumeration>>
-        PENDIENTE
-        APROBADA
-        RECHAZADA
+        -String codigo
+        -String nombre
+    }
+    class Solicitud {
+        -String observacion
+        +esDevolucion() boolean
+    }
+    class DetalleSolicitud {
+        -int cantidadSolicitada
     }
 
-    Categoria "1" -- "*" Producto : clasifica
-    UnidadMedida "1" -- "*" Producto : mide
-    Producto "1" *-- "*" Lote : tiene
-    Producto "1" -- "*" Movimiento : registra
-    Lote "0..1" -- "*" Movimiento : afecta
-    Usuario "0..1" -- "*" Movimiento : realiza
-    Movimiento "1" *-- "*" ConsumoLote : descuenta
-    Lote "1" -- "*" ConsumoLote : es consumido en
-    Usuario "0..1" -- "*" Solicitud : solicitante
-    Usuario "0..1" -- "*" Solicitud : bodeguero
-    Solicitud "0..1" -- "*" Solicitud : solicitudOrigen
-    Solicitud "1" *-- "*" DetalleSolicitud : contiene
-    Producto "1" -- "*" DetalleSolicitud : se pide en
-    DetalleSolicitud "0..1" -- "0..1" Movimiento : genera
-    Usuario ..> Rol
-    Movimiento ..> TipoMovimiento
-    Solicitud ..> TipoSolicitud
-    Solicitud ..> EstadoSolicitud
+
+    Rol "1" <-- "*" Usuario : tiene
+    Categoria "1" <-- "*" Producto : clasifica
+    UnidadMedida "1" <-- "*" Producto : mide
+    Producto "1" <-- "*" Lote : tiene
+    TipoOperacion "1" <-- "*" Operacion : clasifica
+    Usuario "1" <-- "*" Operacion : registra
+    Operacion "1" *-- "1..*" Movimiento : contiene
+    Lote "1" <-- "*" Movimiento : afecta
+    Operacion "0..1" <-- "0..1" Operacion : corrige
+    Solicitud "0..1" <-- "0..1" Operacion : se cumple con
+    EstadoSolicitud "1" <-- "*" Solicitud : estado
+    Usuario "1" <-- "*" Solicitud : solicita
+    Usuario "0..1" <-- "*" Solicitud : resuelve
+    Solicitud "0..1" <-- "*" Solicitud : devolución de
+    Solicitud "1" *-- "1..*" DetalleSolicitud : contiene
+    Producto "1" <-- "*" DetalleSolicitud : se pide en
 ```
 
 ## 4. Diagrama de secuencia: aprobar un pedido
 
-El bodeguero revisa un pedido pendiente, ajusta si es necesario la cantidad que realmente entrega y lo aprueba. El sistema descuenta del stock por FEFO y deja un movimiento **Solicitado**. Toda la aprobación ocurre en una sola transacción: si falla un descuento, no queda nada a medias.
+El bodeguero revisa un pedido pendiente, ajusta si es necesario la cantidad que realmente entrega y lo aprueba. El sistema descuenta del stock por FEFO y deja una operación **Entrega de pedido** (`ENTREGA_PEDIDO`). Toda la aprobación ocurre en una sola transacción: si falla un descuento, no queda nada a medias.
 
 ```mermaid
 sequenceDiagram
@@ -190,33 +175,29 @@ sequenceDiagram
     participant M as MovimientoService
     participant DB as PostgreSQL
 
-    B->>UI: Ajusta las cantidades entregadas y pulsa Aprobar
-    UI->>C: PUT /api/solicitudes/{id}/aprobar con token JWT
+    B->>UI: Ajusta lo que entrega por producto (puede agregar otros) y pulsa Aprobar
+    UI->>C: PUT /api/solicitudes/{id}/aprobar {items: [{productoId, cantidad}]} con token JWT
     C->>S: aprobar(id, request)
-    S->>DB: Busca la solicitud y la bloquea (findByIdForUpdate)
-    DB-->>S: Solicitud
+    S->>DB: Busca la solicitud y la bloquea (FOR UPDATE)
     alt La solicitud ya no está pendiente
         S-->>C: BusinessException "La solicitud ya fue procesada"
         C-->>UI: 422
     else La solicitud está pendiente
-        loop Por cada línea con cantidad entregada mayor que cero
-            S->>S: Valida que lo entregado no supere lo solicitado
-            S->>M: registrarSolicitado(productoId, cantidad, motivo)
-            M->>DB: Lee los lotes del producto ordenados por vencimiento
-            alt Stock insuficiente
-                M-->>S: BusinessException "Stock insuficiente"
-                S-->>C: Se revierte toda la aprobación
-                C-->>UI: 422
-            else Stock suficiente
-                M->>DB: Descuenta de cada lote y guarda consumo_lote
-                M->>DB: Guarda el Movimiento de tipo SOLICITADO
-                M-->>S: Movimiento
-            end
+        S->>M: entregarPedido(solicitud, bodeguero, entregas por producto)
+        M->>DB: Bloquea los lotes de cada producto (FOR UPDATE, orden por id)
+        M->>DB: Lee los saldos (vista saldo_lote) y reparte por FEFO
+        alt Stock insuficiente
+            M-->>S: BusinessException "Stock insuficiente"
+            S-->>C: Se revierte toda la aprobación
+            C-->>UI: 422
+        else Stock suficiente
+            M->>DB: Inserta la Operación ENTREGA_PEDIDO con un Movimiento por lote
+            S->>DB: Marca la solicitud APROBADA y registra al bodeguero
+            Note over S,DB: Al confirmar, los triggers diferidos verifican saldo ≥ 0 y solicitud aprobada ⇔ operación
+            S-->>C: SolicitudResponse
+            C-->>UI: 200 OK
+            UI-->>B: Muestra la solicitud aprobada
         end
-        S->>DB: Marca la solicitud APROBADA y registra al bodeguero
-        S-->>C: SolicitudResponse
-        C-->>UI: 200 OK
-        UI-->>B: Muestra la solicitud aprobada
     end
 ```
 
