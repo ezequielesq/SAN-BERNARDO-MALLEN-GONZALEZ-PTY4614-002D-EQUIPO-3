@@ -1,0 +1,19 @@
+# Revisión semanal de dependencias vulnerables o desactualizadas.
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/FASE-2/EVIDENCIAS-DE-PROYECTO/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+  - package-ecosystem: "npm"
+    directory: "/FASE-2/EVIDENCIAS-DE-PROYECTO/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"

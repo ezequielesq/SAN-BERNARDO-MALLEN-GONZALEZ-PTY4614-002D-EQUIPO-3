@@ -53,5 +53,9 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'productos' },
     ],
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    title: 'Página no encontrada · Smart RDP',
+    loadComponent: () => import('./features/no-encontrada/no-encontrada').then(m => m.NoEncontrada),
+  },
 ];
