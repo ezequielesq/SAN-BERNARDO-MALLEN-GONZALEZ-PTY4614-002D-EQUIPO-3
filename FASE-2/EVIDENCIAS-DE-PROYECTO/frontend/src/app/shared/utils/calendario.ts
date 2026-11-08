@@ -33,3 +33,9 @@ export function construirDiasDelMes(anio: number, mesIndex: number): DiaCalendar
 
   return dias;
 }
+
+/** Rango yyyy-MM-dd del primer al último día del mes indicado (mesIndex 0-11). */
+export function rangoDelMes(anio: number, mesIndex: number): { desde: string; hasta: string } {
+  const ultimoDia = new Date(anio, mesIndex + 1, 0).getDate();
+  return { desde: formatearFecha(anio, mesIndex, 1), hasta: formatearFecha(anio, mesIndex, ultimoDia) };
+}

@@ -6,7 +6,7 @@
   >
     <i class="fa fa-chevron-left" aria-hidden="true"></i> Mes anterior
   </button>
-  <span class="w3-center" style="flex: 1; font-weight: bold">{{ etiquetaMes() }}</span>
+  <span class="w3-center" style="flex: 1; font-weight: bold" aria-live="polite">{{ etiquetaMes() }}</span>
   <button
     type="button"
     class="w3-button w3-border w3-white w3-margin w3-round"
@@ -17,7 +17,7 @@
 </div>
 
 <div class="w3-white w3-border w3-padding-small">
-  @if (vencimientos.status() === 'loading') {
+  @if (cargando()) {
     <p role="status" class="w3-center w3-small w3-text-grey">Cargando…</p>
   }
 
@@ -35,22 +35,21 @@
         <button
           type="button"
           class="calendario-mes-dia"
+          [class.hoy]="dia.fecha === fechaHoy"
           [class.seleccionado]="diaActivo() === dia.fecha"
           [attr.aria-pressed]="diaActivo() === dia.fecha"
           (click)="seleccionarDia(dia.fecha!)"
         >
           <span class="numero-dia">{{ dia.dia }}</span>
           <span class="puntos-dia">
-            @if (resumenPorDia().get(dia.fecha!)?.proximo) {
-              <span class="punto punto-proximo" aria-hidden="true"></span>
-            }
-            @if (resumenPorDia().get(dia.fecha!)?.vencido) {
-              <span class="punto punto-vencido" aria-hidden="true"></span>
+            @for (marca of marcasPorDia().get(dia.fecha!); track marca.clave) {
+              <span class="punto" [style.background]="marca.color" aria-hidden="true"></span>
             }
           </span>
           <span class="visualmente-oculto">
-            @if (resumenPorDia().get(dia.fecha!)?.proximo) { con productos próximos a vencer }
-            @if (resumenPorDia().get(dia.fecha!)?.vencido) { con productos vencidos }
+            @for (marca of marcasPorDia().get(dia.fecha!); track marca.clave) {
+              {{ marca.descripcion }}
+            }
           </span>
         </button>
       }
@@ -58,7 +57,8 @@
   </div>
 
   <div class="w3-bar w3-small w3-text-grey w3-margin-top w3-border-top w3-padding-small">
-    <span class="w3-bar-item"><span class="punto punto-proximo" aria-hidden="true"></span> Próximo a vencer</span>
-    <span class="w3-bar-item"><span class="punto punto-vencido" aria-hidden="true"></span> Vencido</span>
+    @for (marca of leyenda(); track marca.clave) {
+      <span class="w3-bar-item"><span class="punto" [style.background]="marca.color" aria-hidden="true"></span> {{ marca.etiqueta }}</span>
+    }
   </div>
 </div>

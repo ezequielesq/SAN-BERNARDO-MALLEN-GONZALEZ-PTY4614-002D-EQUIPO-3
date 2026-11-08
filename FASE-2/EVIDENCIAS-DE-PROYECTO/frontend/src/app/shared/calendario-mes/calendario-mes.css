@@ -19,6 +19,9 @@
 .calendario-mes-dia:hover {
   background: #f0f0f0;
 }
+.calendario-mes-dia.hoy {
+  border-color: var(--w3-cobalt);
+}
 .calendario-mes-dia.seleccionado {
   background-color: var(--w3-cobalt);
   border-color: var(--w3-cobalt);
@@ -42,5 +45,3 @@
   border-radius: 50%;
   display: inline-block;
 }
-.punto-proximo { background: #ff9800; }
-.punto-vencido { background: #f44336; }

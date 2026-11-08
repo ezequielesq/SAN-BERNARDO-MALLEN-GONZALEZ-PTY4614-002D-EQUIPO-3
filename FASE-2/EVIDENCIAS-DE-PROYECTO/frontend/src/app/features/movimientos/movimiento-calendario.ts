@@ -1,26 +1,27 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-import {
-  DIAS_ES,
-  DiaCalendario,
-  MESES_ES,
-  construirDiasDelMes,
-  formatearFecha,
-} from '../../shared/utils/calendario';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { CalendarioMes, MarcaCalendario } from '../../shared/calendario-mes/calendario-mes';
+import { rangoDelMes } from '../../shared/utils/calendario';
 import { MovimientoService } from './movimiento.service';
+
+const LEYENDA: readonly MarcaCalendario[] = [
+  { clave: 'entrada', etiqueta: 'Entrada', color: '#008a00', descripcion: 'con entradas' },
+  { clave: 'salida', etiqueta: 'Salida', color: '#a20025', descripcion: 'con salidas' },
+];
 
 @Component({
   selector: 'app-movimiento-calendario',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './movimiento-calendario.html',
-  styleUrl: './movimiento-calendario.css',
+  imports: [CalendarioMes],
+  template: `
+    <app-calendario-mes
+      [marcas]="marcasPorDia()"
+      [leyenda]="leyenda"
+      [diaActivo]="diaActivo()"
+      [cargando]="movimientos.status() === 'loading'"
+      (diaSeleccionado)="diaSeleccionado.emit($event)"
+      (rangoCambiado)="alCambiarRango($event)"
+    />
+  `,
 })
 export class MovimientoCalendario {
   private readonly movimientoService = inject(MovimientoService);
@@ -29,54 +30,30 @@ export class MovimientoCalendario {
   readonly diaActivo = input<string | null>(null);
   readonly diaSeleccionado = output<string | null>();
 
-  protected readonly DIAS_ES = DIAS_ES;
+  protected readonly leyenda = LEYENDA;
 
   private readonly hoy = new Date();
-  protected readonly anioActual = signal(this.hoy.getFullYear());
-  protected readonly mesActual = signal(this.hoy.getMonth());
+  private readonly rango = signal(rangoDelMes(this.hoy.getFullYear(), this.hoy.getMonth()));
 
-  protected readonly etiquetaMes = computed(
-    () => `${MESES_ES[this.mesActual()]} ${this.anioActual()}`,
-  );
+  private readonly filtro = computed(() => ({ productoId: this.productoId(), ...this.rango() }));
 
-  protected readonly diasDelMes = computed<DiaCalendario[]>(() =>
-    construirDiasDelMes(this.anioActual(), this.mesActual()),
-  );
+  protected readonly movimientos = this.movimientoService.listar(this.filtro);
 
-  private readonly rangoMes = computed(() => {
-    const anio = this.anioActual();
-    const mes = this.mesActual();
-    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
-    return {
-      productoId: this.productoId(),
-      desde: formatearFecha(anio, mes, 1),
-      hasta: formatearFecha(anio, mes, ultimoDia),
-    };
-  });
-
-  protected readonly movimientos = this.movimientoService.listar(this.rangoMes);
-
-  protected readonly resumenPorDia = computed(() => {
-    const mapa = new Map<string, { entrada: boolean; salida: boolean }>();
+  protected readonly marcasPorDia = computed(() => {
+    const mapa = new Map<string, string[]>();
     if (!this.movimientos.hasValue()) return mapa;
     for (const m of this.movimientos.value()) {
       const fecha = m.fecha.slice(0, 10);
-      const actual = mapa.get(fecha) ?? { entrada: false, salida: false };
-      if (m.sentido > 0) actual.entrada = true;
-      else actual.salida = true;
-      mapa.set(fecha, actual);
+      const claves = mapa.get(fecha) ?? [];
+      const clave = m.sentido > 0 ? 'entrada' : 'salida';
+      if (!claves.includes(clave)) claves.push(clave);
+      mapa.set(fecha, claves);
     }
     return mapa;
   });
 
-  protected cambiarMes(delta: number): void {
-    const fecha = new Date(this.anioActual(), this.mesActual() + delta, 1);
-    this.anioActual.set(fecha.getFullYear());
-    this.mesActual.set(fecha.getMonth());
-  }
-
-  protected seleccionarDia(fecha: string): void {
-    const nueva = this.diaActivo() === fecha ? null : fecha;
-    this.diaSeleccionado.emit(nueva);
+  protected alCambiarRango(nuevo: { desde: string; hasta: string }): void {
+    const actual = this.rango();
+    if (actual.desde !== nuevo.desde || actual.hasta !== nuevo.hasta) this.rango.set(nuevo);
   }
 }
