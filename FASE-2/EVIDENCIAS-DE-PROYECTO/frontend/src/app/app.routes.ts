@@ -36,6 +36,11 @@ export const routes: Routes = [
         loadChildren: () => import('./features/solicitudes/solicitudes.routes').then(m => m.SOLICITUDES_ROUTES),
       },
       {
+        path: 'calendario',
+        canActivate: [rolGuard(['BODEGUERO'])],
+        loadChildren: () => import('./features/calendario/calendario.routes').then(m => m.CALENDARIO_ROUTES),
+      },
+      {
         path: 'analitica',
         canActivate: [rolGuard(['ADMIN', 'BODEGUERO'])],
         loadChildren: () => import('./features/analitica/analitica.routes').then(m => m.ANALITICA_ROUTES),

@@ -1,0 +1,104 @@
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-white w3-padding w3-card w3-border">
+  @if (errorGeneral(); as mensaje) {
+    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+      <p>{{ mensaje }}</p>
+    </div>
+  }
+
+  @if (camposConError().length > 0) {
+    <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+      <p>
+        <b
+          >Revisa
+          {{ camposConError().length === 1 ? '1 campo' : camposConError().length + ' campos' }}
+          antes de guardar:</b
+        >
+      </p>
+      <ul>
+        @for (campo of camposConError(); track campo) {
+          <li>
+            <a [href]="'#campo-' + campo" (click)="irACampo($event, campo)">{{ ETIQUETAS[campo] }}</a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="w3-section">
+    <label for="campo-titulo"><b>Título</b></label>
+    <input
+      id="campo-titulo"
+      class="w3-input"
+      type="text"
+      formControlName="titulo"
+      maxlength="120"
+      autocomplete="off"
+      [attr.aria-invalid]="mensajeError('titulo') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('titulo')"
+    />
+    @if (mensajeError('titulo'); as m) {
+      <p id="error-titulo" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="campo-fecha"><b>Fecha</b></label>
+    <input
+      id="campo-fecha"
+      class="w3-input"
+      type="date"
+      formControlName="fecha"
+      [attr.aria-invalid]="mensajeError('fecha') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('fecha')"
+    />
+    @if (mensajeError('fecha'); as m) {
+      <p id="error-fecha" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="campo-hora"><b>Hora</b> (opcional)</label>
+    <p id="ayuda-hora" class="w3-small">Déjala vacía si el evento dura todo el día.</p>
+    <input
+      id="campo-hora"
+      class="w3-input"
+      type="time"
+      formControlName="hora"
+      [attr.aria-invalid]="mensajeError('hora') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('hora')"
+    />
+    @if (mensajeError('hora'); as m) {
+      <p id="error-hora" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="campo-descripcion"><b>Descripción</b> (opcional)</label>
+    <p id="ayuda-descripcion" class="w3-small">Máximo 500 caracteres.</p>
+    <textarea
+      id="campo-descripcion"
+      class="w3-input w3-border"
+      rows="4"
+      formControlName="descripcion"
+      maxlength="500"
+      [attr.aria-invalid]="mensajeError('descripcion') ? 'true' : null"
+      [attr.aria-describedby]="describedBy('descripcion')"
+    ></textarea>
+    @if (mensajeError('descripcion'); as m) {
+      <p id="error-descripcion" class="texto-error"><span aria-hidden="true"><i class="fa-solid fa-exclamation"></i>  </span>{{ m }}</p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <button type="submit" class="w3-button w3-info w3-round" [attr.aria-disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : esEdicion() ? 'Guardar cambios' : 'Guardar evento' }}
+    </button>
+    <button
+      type="button"
+      class="w3-button w3-white w3-border w3-border-red w3-margin-left w3-round"
+      (click)="solicitarCierre()"
+    >
+      Cancelar
+    </button>
+  </div>
+</form>

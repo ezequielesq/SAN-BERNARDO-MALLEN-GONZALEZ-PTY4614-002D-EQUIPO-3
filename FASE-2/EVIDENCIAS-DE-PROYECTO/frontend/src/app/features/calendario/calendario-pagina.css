@@ -1,0 +1,108 @@
+.barra-mes {
+  display: flex;
+  align-items: center;
+}
+.etiqueta-mes {
+  flex: 1;
+  font-weight: bold;
+}
+
+.calendario-grilla {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendario-dia {
+  background: #fff;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  padding: 6px 2px 4px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  cursor: pointer;
+}
+.calendario-dia:hover {
+  background: #f0f0f0;
+}
+.calendario-dia.hoy {
+  border-color: var(--w3-cobalt);
+}
+.calendario-dia.seleccionado {
+  background-color: var(--w3-cobalt);
+  border-color: var(--w3-cobalt);
+}
+.calendario-dia.seleccionado .numero-dia {
+  color: #fff;
+}
+.numero-dia {
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 1;
+}
+.marca-dia {
+  display: flex;
+  min-height: 16px;
+}
+.marca-eventos {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #6a00ff;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 16px;
+  text-align: center;
+  display: inline-block;
+}
+.calendario-dia.seleccionado .marca-eventos {
+  background: #fff;
+  color: var(--w3-cobalt);
+}
+
+.encabezado-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.evento-fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.evento-datos {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.descripcion-evento {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.evento-acciones {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  /* En móvil el botón queda solo con el ícono; el texto se mantiene para lectores de pantalla. */
+  .texto-nav {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
