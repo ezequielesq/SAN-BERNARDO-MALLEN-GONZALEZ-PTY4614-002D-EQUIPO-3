@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { ProductoService } from '../productos/producto.service';
 import { EntradaRequest } from './movimiento.modelo';
@@ -37,12 +38,17 @@ export class MovimientoFormularioEntrada {
     this.productos.hasValue() ? this.productos.value() : [],
   );
 
+  private readonly tipos = this.movimientoService.listarTipos(1);
+  protected readonly opcionesTipo = computed(() => (this.tipos.hasValue() ? this.tipos.value() : []));
+
   protected readonly form = this.fb.group({
+    tipo: ['', Validators.required],
     productoId: this.fb.control<number | null>(null, Validators.required),
     cantidad: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     fechaVencimiento: [''],
     numeroLote: ['', Validators.maxLength(50)],
-    motivo: ['', Validators.maxLength(200)],
+    costoUnitario: this.fb.control<number | null>(null, Validators.min(0)),
+    nota: ['', Validators.maxLength(300)],
   });
 
   protected readonly enviado = signal(false);
@@ -65,6 +71,14 @@ export class MovimientoFormularioEntrada {
   });
 
   constructor() {
+    effect(() => {
+      const tipos = this.opcionesTipo();
+      const control = this.form.controls.tipo;
+      if (tipos.length > 0 && control.value === '') {
+        control.setValue((tipos.find((t) => t.codigo === 'COMPRA') ?? tipos[0]).codigo);
+      }
+    });
+
     // La fecha de vencimiento solo es obligatoria cuando el producto elegido
     // es perecible. Si el usuario cambia a un producto no perecible después
     // de haber ingresado una fecha (de un producto perecible previamente
@@ -95,11 +109,17 @@ export class MovimientoFormularioEntrada {
     const v = this.form.getRawValue();
     if (v.productoId === null || v.cantidad === null) return;
     const request: EntradaRequest = {
-      productoId: v.productoId,
-      cantidad: v.cantidad,
-      fechaVencimiento: v.fechaVencimiento.trim() === '' ? null : v.fechaVencimiento,
-      numeroLote: v.numeroLote.trim() === '' ? null : v.numeroLote.trim(),
-      motivo: v.motivo.trim() === '' ? null : v.motivo.trim(),
+      tipo: v.tipo,
+      nota: v.nota.trim() === '' ? null : v.nota.trim(),
+      lineas: [
+        {
+          productoId: v.productoId,
+          cantidad: v.cantidad,
+          fechaVencimiento: v.fechaVencimiento.trim() === '' ? null : v.fechaVencimiento,
+          numeroLote: v.numeroLote.trim() === '' ? null : v.numeroLote.trim(),
+          costoUnitario: v.costoUnitario,
+        },
+      ],
     };
     this.guardando.set(true);
     this.movimientoService.registrarEntrada(request).subscribe({
@@ -108,9 +128,9 @@ export class MovimientoFormularioEntrada {
         this.notificaciones.exito('Entrada registrada.');
         this.guardado.emit();
       },
-      error: () => {
+      error: (err: unknown) => {
         this.guardando.set(false);
-        this.errorGeneral.set('No se pudo registrar la entrada. Inténtalo de nuevo.');
+        this.errorGeneral.set(traducirError(err).mensaje);
       },
     });
   }
@@ -119,6 +139,7 @@ export class MovimientoFormularioEntrada {
     afterNextRender(
       () => {
         const orden: { id: string; invalido: boolean }[] = [
+          { id: 'entrada-tipo', invalido: this.form.controls.tipo.invalid },
           { id: 'entrada-producto', invalido: this.form.controls.productoId.invalid },
           { id: 'entrada-cantidad', invalido: this.form.controls.cantidad.invalid },
           { id: 'entrada-vencimiento', invalido: this.form.controls.fechaVencimiento.invalid },

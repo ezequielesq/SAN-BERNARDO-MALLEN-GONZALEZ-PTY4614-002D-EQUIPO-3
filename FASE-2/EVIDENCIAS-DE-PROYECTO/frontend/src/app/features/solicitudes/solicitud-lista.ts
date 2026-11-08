@@ -17,14 +17,14 @@ import {
   AprobarSolicitudRequest,
   DetalleSolicitud,
   EstadoSolicitud,
-  ItemAgregado,
+  ItemAprobado,
   Solicitud,
 } from './solicitud.modelo';
 import { SolicitudService } from './solicitud.service';
 
 type Vista = 'pendientes' | 'todas';
 
-interface ProductoAgregado extends ItemAgregado {
+interface ProductoAgregado extends ItemAprobado {
   productoNombre: string;
 }
 type ColumnaOrdenSolicitud = 'id' | 'fecha' | 'solicitanteNombre' | 'tipo' | 'estado' | 'items';
@@ -66,7 +66,7 @@ export class SolicitudLista {
   protected readonly paginaActual = signal(1);
   protected readonly tamanoPagina = signal(10);
   protected readonly expandidoId = signal<number | null>(null);
-  protected readonly cantidadesEditadas = signal(new Map<number, number>());
+  protected readonly cantidadesEditadas = signal(new Map<string, number>());
   protected readonly guardandoId = signal<number | null>(null);
   /** Productos que el bodeguero entregará además de lo pedido, por solicitud (solo estado local hasta aprobar). */
   protected readonly agregadosPorSolicitud = signal(new Map<number, ProductoAgregado[]>());
@@ -156,15 +156,19 @@ export class SolicitudLista {
     return estado.toLowerCase() as TipoEstado;
   }
 
-  protected cantidadEditada(detalle: DetalleSolicitud): number {
-    return this.cantidadesEditadas().get(detalle.detalleId) ?? detalle.cantidadSolicitada;
+  private clave(solicitudId: number, productoId: number): string {
+    return `${solicitudId}:${productoId}`;
   }
 
-  protected actualizarCantidad(detalleId: number, valor: string): void {
+  protected cantidadEditada(s: Solicitud, detalle: DetalleSolicitud): number {
+    return this.cantidadesEditadas().get(this.clave(s.id, detalle.productoId)) ?? detalle.cantidadSolicitada;
+  }
+
+  protected actualizarCantidad(s: Solicitud, productoId: number, valor: string): void {
     const numero = Number(valor);
     if (!Number.isInteger(numero) || numero < 0) return;
     const mapa = new Map(this.cantidadesEditadas());
-    mapa.set(detalleId, numero);
+    mapa.set(this.clave(s.id, productoId), numero);
     this.cantidadesEditadas.set(mapa);
   }
 
@@ -223,11 +227,10 @@ export class SolicitudLista {
         switchMap(() => {
           this.guardandoId.set(s.id);
           const request: AprobarSolicitudRequest = {
-            items: s.detalles.map((d) => ({
-              detalleId: d.detalleId,
-              cantidadEntregada: this.cantidadEditada(d),
-            })),
-            agregados: this.agregadosDe(s).map((a) => ({ productoId: a.productoId, cantidad: a.cantidad })),
+            items: [
+              ...s.detalles.map((d) => ({ productoId: d.productoId, cantidad: this.cantidadEditada(s, d) })),
+              ...this.agregadosDe(s).map((a) => ({ productoId: a.productoId, cantidad: a.cantidad })),
+            ],
           };
           return this.solicitudService.aprobar(s.id, request);
         }),
@@ -240,6 +243,11 @@ export class SolicitudLista {
           this.agregadosPorSolicitud.update((m) => {
             const copia = new Map(m);
             copia.delete(s.id);
+            return copia;
+          });
+          this.cantidadesEditadas.update((m) => {
+            const copia = new Map(m);
+            for (const clave of [...copia.keys()]) if (clave.startsWith(`${s.id}:`)) copia.delete(clave);
             return copia;
           });
           this.pendientes.reload();

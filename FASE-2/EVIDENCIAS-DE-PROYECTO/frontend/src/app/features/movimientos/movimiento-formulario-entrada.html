@@ -6,6 +6,25 @@
 
 <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card w3-border">
   <div class="w3-section">
+    <label for="entrada-tipo"><b>Tipo de entrada</b></label>
+    <select
+      id="entrada-tipo"
+      class="w3-select"
+      formControlName="tipo"
+      [attr.aria-invalid]="enviado() && form.controls.tipo.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.tipo.invalid ? 'error-entrada-tipo' : null"
+    >
+      <option value="" disabled>Elige un tipo</option>
+      @for (t of opcionesTipo(); track t.id) {
+        <option [value]="t.codigo">{{ t.nombre }}</option>
+      }
+    </select>
+    @if (enviado() && form.controls.tipo.invalid) {
+      <p class="texto-error" id="error-entrada-tipo"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige el tipo de entrada.</p>
+    }
+  </div>
+
+  <div class="w3-section">
     <label for="entrada-producto"><b>Producto</b></label>
     <select
       id="entrada-producto"
@@ -67,8 +86,22 @@
   </div>
 
   <div class="w3-section">
-    <label for="entrada-motivo"><b>Motivo (opcional)</b></label>
-    <input id="entrada-motivo" class="w3-input" type="text" maxlength="200" formControlName="motivo" />
+    <label for="entrada-costo"><b>Costo unitario (opcional)</b></label>
+    <input
+      id="entrada-costo"
+      class="w3-input"
+      type="number"
+      min="0"
+      step="1"
+      inputmode="numeric"
+      formControlName="costoUnitario"
+      [attr.aria-invalid]="enviado() && form.controls.costoUnitario.invalid ? 'true' : null"
+    />
+  </div>
+
+  <div class="w3-section">
+    <label for="entrada-nota"><b>Nota (opcional)</b></label>
+    <input id="entrada-nota" class="w3-input" type="text" maxlength="300" formControlName="nota" />
   </div>
 
   <div class="w3-section">

@@ -55,16 +55,16 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (d of s.detalles; track d.detalleId) {
+                  @for (d of s.detalles; track d.productoId) {
                     <tr>
                       <td>{{ d.productoNombre }}</td>
                       <td>{{ d.cantidadSolicitada }}</td>
                       <td>
-                        <label class="visualmente-oculto" [for]="'entregada-' + d.detalleId">
+                        <label class="visualmente-oculto" [for]="'entregada-' + s.id + '-' + d.productoId">
                           {{ s.tipo === 'DEVOLUCION' ? 'Cantidad a aceptar de' : 'Cantidad a entregar de' }} {{ d.productoNombre }}
                         </label>
                         <input
-                          [id]="'entregada-' + d.detalleId"
+                          [id]="'entregada-' + s.id + '-' + d.productoId"
                           class="w3-input"
                           style="width: 5em"
                           type="number"
@@ -72,8 +72,8 @@
                           [attr.max]="d.cantidadSolicitada"
                           step="1"
                           inputmode="numeric"
-                          [value]="cantidadEditada(d)"
-                          (change)="actualizarCantidad(d.detalleId, $any($event.target).value)"
+                          [value]="cantidadEditada(s, d)"
+                          (change)="actualizarCantidad(s, d.productoId, $any($event.target).value)"
                         />
                       </td>
                     </tr>
@@ -231,7 +231,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (d of s.detalles; track d.detalleId) {
+                      @for (d of s.detalles; track d.productoId) {
                         <tr>
                           <td>
                             {{ d.productoNombre }}

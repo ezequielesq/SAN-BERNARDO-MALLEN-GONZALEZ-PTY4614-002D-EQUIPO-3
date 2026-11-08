@@ -6,8 +6,10 @@ import {
   AlertaVencimiento,
   EntradaRequest,
   Movimiento,
+  OperacionResponse,
   SalidaRequest,
   StockStatus,
+  TipoOperacion,
 } from './movimiento.modelo';
 
 export interface FiltroMovimientos {
@@ -36,12 +38,32 @@ export class MovimientoService {
     );
   }
 
-  registrarEntrada(request: EntradaRequest): Observable<Movimiento> {
-    return this.http.post<Movimiento>(`${this.url}/entradas`, request);
+  /**
+   * Tipos de operación que se pueden registrar a mano. Sin `sentido` devuelve todos (para reconocer
+   * qué movimientos son corregibles). Llamar desde un inicializador de campo (requiere contexto de inyección).
+   */
+  listarTipos(sentido?: 1 | -1): HttpResourceRef<TipoOperacion[]> {
+    return httpResource<TipoOperacion[]>(
+      () => {
+        const params: Record<string, number> = {};
+        if (sentido !== undefined) params['sentido'] = sentido;
+        return { url: `${this.url}/tipos`, params };
+      },
+      { defaultValue: [] },
+    );
   }
 
-  registrarSalida(request: SalidaRequest): Observable<Movimiento> {
-    return this.http.post<Movimiento>(`${this.url}/salidas`, request);
+  registrarEntrada(request: EntradaRequest): Observable<OperacionResponse> {
+    return this.http.post<OperacionResponse>(`${this.url}/entradas`, request);
+  }
+
+  registrarSalida(request: SalidaRequest): Observable<OperacionResponse> {
+    return this.http.post<OperacionResponse>(`${this.url}/salidas`, request);
+  }
+
+  /** Contrarresta una operación manual con otra de sentido contrario (el libro nunca se edita). */
+  corregir(operacionId: number, nota: string | null): Observable<OperacionResponse> {
+    return this.http.post<OperacionResponse>(`${this.url}/operaciones/${operacionId}/correccion`, { nota });
   }
 
   /** Llamar desde un inicializador de campo del componente (requiere contexto de inyección). */

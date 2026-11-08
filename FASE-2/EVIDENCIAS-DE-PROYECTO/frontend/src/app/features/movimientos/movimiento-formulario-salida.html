@@ -6,6 +6,25 @@
 
 <form [formGroup]="form" (ngSubmit)="guardar()" novalidate class="w3-section w3-white w3-padding w3-card w3-border">
   <div class="w3-section">
+    <label for="salida-tipo"><b>Motivo de la salida</b></label>
+    <select
+      id="salida-tipo"
+      class="w3-select"
+      formControlName="tipo"
+      [attr.aria-invalid]="enviado() && form.controls.tipo.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.tipo.invalid ? 'error-salida-tipo' : null"
+    >
+      <option value="" disabled>Elige un motivo</option>
+      @for (t of opcionesTipo(); track t.id) {
+        <option [value]="t.codigo">{{ t.nombre }}</option>
+      }
+    </select>
+    @if (enviado() && form.controls.tipo.invalid) {
+      <p class="texto-error" id="error-salida-tipo"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige el motivo de la salida.</p>
+    }
+  </div>
+
+  <div class="w3-section">
     <label for="salida-producto"><b>Producto</b></label>
     <select
       id="salida-producto"
@@ -43,19 +62,8 @@
   </div>
 
   <div class="w3-section">
-    <label for="salida-motivo"><b>Motivo</b></label>
-    <input
-      id="salida-motivo"
-      class="w3-input"
-      type="text"
-      maxlength="200"
-      formControlName="motivo"
-      [attr.aria-invalid]="enviado() && form.controls.motivo.invalid ? 'true' : null"
-      [attr.aria-describedby]="enviado() && form.controls.motivo.invalid ? 'error-salida-motivo' : null"
-    />
-    @if (enviado() && form.controls.motivo.invalid) {
-      <p class="texto-error" id="error-salida-motivo"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa el motivo de la salida.</p>
-    }
+    <label for="salida-nota"><b>Nota (opcional)</b></label>
+    <input id="salida-nota" class="w3-input" type="text" maxlength="300" formControlName="nota" />
   </div>
 
   <div class="w3-section">

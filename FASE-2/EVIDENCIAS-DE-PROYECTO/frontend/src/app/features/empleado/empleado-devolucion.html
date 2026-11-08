@@ -20,18 +20,18 @@
         </tr>
       </thead>
       <tbody>
-        @for (d of detalles(); track d.detalleId) {
+        @for (d of detalles(); track d.productoId) {
           <tr>
             <td>{{ d.productoNombre }}</td>
             <td>{{ d.cantidadEntregada }}</td>
             <td>{{ d.cantidadDevuelta ?? 0 }}</td>
             <td>{{ d.devolvible }}</td>
             <td>
-              <label class="visualmente-oculto" [for]="'devolver-' + d.detalleId">
+              <label class="visualmente-oculto" [for]="'devolver-' + d.productoId">
                 Cantidad a devolver de {{ d.productoNombre }}
               </label>
               <input
-                [id]="'devolver-' + d.detalleId"
+                [id]="'devolver-' + d.productoId"
                 class="w3-input"
                 style="width: 6em"
                 type="number"
@@ -40,11 +40,11 @@
                 inputmode="numeric"
                 value="0"
                 [attr.aria-invalid]="errorCantidad(d) ? 'true' : null"
-                [attr.aria-describedby]="errorCantidad(d) ? 'devolver-cantidad-error-' + d.detalleId : null"
-                (input)="actualizar(d.detalleId, $any($event.target).value)"
+                [attr.aria-describedby]="errorCantidad(d) ? 'devolver-cantidad-error-' + d.productoId : null"
+                (input)="actualizar(d.productoId, $any($event.target).value)"
               />
               @if (errorCantidad(d); as mensaje) {
-                <p [id]="'devolver-cantidad-error-' + d.detalleId" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
+                <p [id]="'devolver-cantidad-error-' + d.productoId" class="texto-error"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}</p>
               }
             </td>
           </tr>

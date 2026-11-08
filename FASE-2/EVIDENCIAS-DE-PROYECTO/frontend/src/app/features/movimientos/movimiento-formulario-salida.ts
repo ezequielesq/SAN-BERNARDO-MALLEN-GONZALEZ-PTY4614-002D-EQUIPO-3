@@ -4,6 +4,7 @@ import {
   Injector,
   afterNextRender,
   computed,
+  effect,
   inject,
   output,
   signal,
@@ -36,15 +37,27 @@ export class MovimientoFormularioSalida {
     this.productos.hasValue() ? this.productos.value() : [],
   );
 
+  private readonly tipos = this.movimientoService.listarTipos(-1);
+  protected readonly opcionesTipo = computed(() => (this.tipos.hasValue() ? this.tipos.value() : []));
+
   protected readonly form = this.fb.group({
+    tipo: ['', Validators.required],
     productoId: this.fb.control<number | null>(null, Validators.required),
     cantidad: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
-    motivo: ['', [Validators.required, Validators.maxLength(200)]],
+    nota: ['', Validators.maxLength(300)],
   });
 
   protected readonly enviado = signal(false);
   protected readonly guardando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const tipos = this.opcionesTipo();
+      const control = this.form.controls.tipo;
+      if (tipos.length > 0 && control.value === '') control.setValue(tipos[0].codigo);
+    });
+  }
 
   protected guardar(): void {
     if (this.guardando()) return;
@@ -57,7 +70,11 @@ export class MovimientoFormularioSalida {
     }
     const v = this.form.getRawValue();
     if (v.productoId === null || v.cantidad === null) return;
-    const request: SalidaRequest = { productoId: v.productoId, cantidad: v.cantidad, motivo: v.motivo.trim() };
+    const request: SalidaRequest = {
+      tipo: v.tipo,
+      nota: v.nota.trim() === '' ? null : v.nota.trim(),
+      lineas: [{ productoId: v.productoId, cantidad: v.cantidad }],
+    };
     this.guardando.set(true);
     this.movimientoService.registrarSalida(request).subscribe({
       next: () => {
@@ -76,9 +93,10 @@ export class MovimientoFormularioSalida {
     afterNextRender(
       () => {
         const orden: { id: string; invalido: boolean }[] = [
+          { id: 'salida-tipo', invalido: this.form.controls.tipo.invalid },
           { id: 'salida-producto', invalido: this.form.controls.productoId.invalid },
           { id: 'salida-cantidad', invalido: this.form.controls.cantidad.invalid },
-          { id: 'salida-motivo', invalido: this.form.controls.motivo.invalid },
+          { id: 'salida-nota', invalido: this.form.controls.nota.invalid },
         ];
         const primero = orden.find((c) => c.invalido);
         if (primero) document.getElementById(primero.id)?.focus();

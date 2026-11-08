@@ -77,7 +77,20 @@
         </div>
       </div>
       <div class="w3-row">
-        <div class="w3-col s12 m6 w3-padding">
+        <div class="w3-col s12 m4 w3-padding">
+          <label for="filtro-sentido-movimiento"><b>Movimiento</b></label>
+          <select
+            #selectSentido
+            id="filtro-sentido-movimiento"
+            class="w3-select"
+            (change)="cambiarSentidoFiltro(selectSentido.value)"
+          >
+            <option value="" [selected]="sentidoFiltro() === null">Todos</option>
+            <option value="1" [selected]="sentidoFiltro() === 1">Entradas</option>
+            <option value="-1" [selected]="sentidoFiltro() === -1">Salidas</option>
+          </select>
+        </div>
+        <div class="w3-col s12 m4 w3-padding">
           <label for="filtro-tipo-movimiento"><b>Tipo</b></label>
           <select
             #selectTipo
@@ -86,13 +99,12 @@
             (change)="cambiarTipoFiltro(selectTipo.value)"
           >
             <option value="" [selected]="tipoFiltro() === null">Todos</option>
-            <option value="ENTRADA" [selected]="tipoFiltro() === 'ENTRADA'">Entrada</option>
-            <option value="SALIDA" [selected]="tipoFiltro() === 'SALIDA'">Salida</option>
-            <option value="SOLICITADO" [selected]="tipoFiltro() === 'SOLICITADO'">Solicitado</option>
-            <option value="DEVOLUCION" [selected]="tipoFiltro() === 'DEVOLUCION'">Devolución</option>
+            @for (t of opcionesTipo(); track t.codigo) {
+              <option [value]="t.codigo" [selected]="tipoFiltro() === t.codigo">{{ t.nombre }}</option>
+            }
           </select>
         </div>
-        <div class="w3-col s12 m6 w3-padding">
+        <div class="w3-col s12 m4 w3-padding">
           <label for="filtro-usuario-movimiento"><b>Usuario</b></label>
           <input
             #campoUsuario
@@ -121,7 +133,7 @@
     @if (filtrados().length === 0) {
       <p>Ningún movimiento coincide con los filtros.</p>
       <button type="button" class="w3-button w3-white w3-border w3-round" (click)="limpiarFiltrosCliente()">
-        Limpiar filtros de tipo/usuario
+        Limpiar filtros de movimiento/tipo/usuario
       </button>
     } @else {
     <div class="w3-responsive">
@@ -133,10 +145,14 @@
             <th appThOrden [orden]="orden" columna="productoNombre">Producto</th>
             <th appThOrden [orden]="orden" columna="tipo">Tipo</th>
             <th appThOrden [orden]="orden" columna="cantidad">Cantidad</th>
+            <th scope="col">Lote</th>
             <th scope="col">Costo unitario</th>
             <th scope="col">Costo total</th>
-            <th scope="col">Motivo</th>
+            <th scope="col">Nota</th>
             <th appThOrden [orden]="orden" columna="usuarioEmail">Usuario</th>
+            @if (puedeCorregir()) {
+              <th scope="col">Acciones</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -145,13 +161,31 @@
               <td>{{ m.fecha | date: 'dd-MM-yyyy HH:mm' }}</td>
               <td>{{ m.productoNombre }}</td>
               <td>
-                <app-estado-badge [estado]="estadoTipo(m.tipo)" />
+                <app-estado-badge [estado]="estadoSentido(m)" />
+                <span class="w3-small">{{ m.tipoNombre }}</span>
+                @if (m.corregida) { <span class="w3-tag w3-small w3-round">Corregida</span> }
+                @if (m.esCorreccion) { <span class="w3-tag w3-small w3-round">Corrección</span> }
               </td>
               <td>{{ m.cantidad }}</td>
+              <td>{{ m.numeroLote || '#' + m.loteId }}</td>
               <td>{{ m.costoUnitario !== null ? '$' + m.costoUnitario : '—' }}</td>
               <td>{{ costoTotal(m) !== null ? '$' + costoTotal(m) : '—' }}</td>
-              <td>{{ m.motivo || '—' }}</td>
+              <td>{{ m.nota || '—' }}</td>
               <td>{{ m.usuarioEmail || '—' }}</td>
+              @if (puedeCorregir()) {
+                <td>
+                  @if (esCorregible(m)) {
+                    <button
+                      type="button"
+                      class="w3-button w3-small w3-border w3-round"
+                      [attr.aria-disabled]="corrigiendoId() === m.operacionId"
+                      (click)="corregir(m)"
+                    >
+                      Corregir <span class="visualmente-oculto">la operación {{ m.operacionId }}</span>
+                    </button>
+                  }
+                </td>
+              }
             </tr>
           }
         </tbody>

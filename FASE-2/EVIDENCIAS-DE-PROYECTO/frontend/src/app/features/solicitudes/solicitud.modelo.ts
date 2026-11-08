@@ -2,7 +2,6 @@ export type EstadoSolicitud = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 export type TipoSolicitud = 'PEDIDO' | 'DEVOLUCION';
 
 export interface DetalleSolicitud {
-  detalleId: number;
   productoId: number;
   productoNombre: string;
   cantidadSolicitada: number;
@@ -22,17 +21,12 @@ export interface Solicitud {
   detalles: DetalleSolicitud[];
 }
 
-export interface ItemEntregado {
-  detalleId: number;
-  cantidadEntregada: number;
-}
-
-export interface ItemAgregado {
+/** Cantidad por producto: lo que se entrega (pedido) o se acepta (devolución). Un producto fuera del pedido es un agregado. */
+export interface ItemAprobado {
   productoId: number;
   cantidad: number;
 }
 
 export interface AprobarSolicitudRequest {
-  items: ItemEntregado[];
-  agregados: ItemAgregado[];
+  items: ItemAprobado[];
 }

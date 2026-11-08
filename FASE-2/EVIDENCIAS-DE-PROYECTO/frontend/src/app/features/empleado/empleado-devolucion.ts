@@ -42,24 +42,24 @@ export class EmpleadoDevolucion {
   protected readonly cantidades = signal<Record<number, number>>({});
   protected readonly password = this.fb.control('', Validators.required);
   protected readonly total = computed(() =>
-    this.detalles().reduce((suma, d) => suma + Math.max(0, this.cantidadDe(d.detalleId)), 0),
+    this.detalles().reduce((suma, d) => suma + Math.max(0, this.cantidadDe(d.productoId)), 0),
   );
 
   protected readonly intento = signal(false);
   protected readonly guardando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
 
-  protected cantidadDe(detalleId: number): number {
-    return this.cantidades()[detalleId] ?? 0;
+  protected cantidadDe(productoId: number): number {
+    return this.cantidades()[productoId] ?? 0;
   }
 
-  protected actualizar(detalleId: number, valor: string): void {
+  protected actualizar(productoId: number, valor: string): void {
     const numero = valor === '' ? 0 : Number(valor);
-    this.cantidades.update((c) => ({ ...c, [detalleId]: Number.isFinite(numero) ? numero : -1 }));
+    this.cantidades.update((c) => ({ ...c, [productoId]: Number.isFinite(numero) ? numero : -1 }));
   }
 
   protected errorCantidad(d: DetalleSolicitud): string | null {
-    const n = this.cantidadDe(d.detalleId);
+    const n = this.cantidadDe(d.productoId);
     if (!Number.isInteger(n) || n < 0) return 'Ingresa un número entero de 0 o más.';
     if (n > (d.devolvible ?? 0)) return `Puedes devolver hasta ${d.devolvible ?? 0}.`;
     return null;
@@ -77,7 +77,7 @@ export class EmpleadoDevolucion {
     if (this.detalles().some((d) => this.errorCantidad(d) !== null) || this.total() === 0) return;
 
     const items = this.detalles()
-      .map((d) => ({ detalleId: d.detalleId, cantidad: this.cantidadDe(d.detalleId) }))
+      .map((d) => ({ productoId: d.productoId, cantidad: this.cantidadDe(d.productoId) }))
       .filter((i) => i.cantidad > 0);
     const password = this.password.value;
 

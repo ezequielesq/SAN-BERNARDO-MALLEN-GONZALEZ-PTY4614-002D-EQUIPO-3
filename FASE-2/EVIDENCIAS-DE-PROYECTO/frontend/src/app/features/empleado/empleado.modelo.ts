@@ -24,7 +24,7 @@ export interface SolicitudPublicaRequest extends CredencialesEmpleado {
 }
 
 export interface ItemDevolucion {
-  detalleId: number;
+  productoId: number;
   cantidad: number;
 }
 
