@@ -4,7 +4,6 @@ import {
   Injector,
   afterNextRender,
   computed,
-  effect,
   inject,
   output,
   signal,
@@ -50,14 +49,6 @@ export class MovimientoFormularioSalida {
   protected readonly enviado = signal(false);
   protected readonly guardando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
-
-  constructor() {
-    effect(() => {
-      const tipos = this.opcionesTipo();
-      const control = this.form.controls.tipo;
-      if (tipos.length > 0 && control.value === '') control.setValue(tipos[0].codigo);
-    });
-  }
 
   protected guardar(): void {
     if (this.guardando()) return;

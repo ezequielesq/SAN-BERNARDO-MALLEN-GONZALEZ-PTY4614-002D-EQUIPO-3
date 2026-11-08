@@ -96,7 +96,11 @@
       inputmode="numeric"
       formControlName="costoUnitario"
       [attr.aria-invalid]="enviado() && form.controls.costoUnitario.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.costoUnitario.invalid ? 'error-entrada-costo' : null"
     />
+    @if (enviado() && form.controls.costoUnitario.invalid) {
+      <p class="texto-error" id="error-entrada-costo"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa un costo entero de 0 o más.</p>
+    }
   </div>
 
   <div class="w3-section">

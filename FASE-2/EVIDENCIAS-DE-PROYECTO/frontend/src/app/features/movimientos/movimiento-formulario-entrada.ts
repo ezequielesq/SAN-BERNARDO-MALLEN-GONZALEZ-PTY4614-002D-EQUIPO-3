@@ -10,12 +10,18 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { ProductoService } from '../productos/producto.service';
 import { EntradaRequest } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
+
+/** El costo es opcional, pero si se ingresa debe ser un entero (el mínimo de 0 lo valida Validators.min). */
+function costoEntero(control: AbstractControl): ValidationErrors | null {
+  const valor = control.value;
+  return valor === null || valor === '' || Number.isInteger(valor) ? null : { entero: true };
+}
 
 @Component({
   selector: 'app-movimiento-formulario-entrada',
@@ -47,7 +53,7 @@ export class MovimientoFormularioEntrada {
     cantidad: this.fb.control<number | null>(null, [Validators.required, Validators.min(1)]),
     fechaVencimiento: [''],
     numeroLote: ['', Validators.maxLength(50)],
-    costoUnitario: this.fb.control<number | null>(null, Validators.min(0)),
+    costoUnitario: this.fb.control<number | null>(null, [Validators.min(0), costoEntero]),
     nota: ['', Validators.maxLength(300)],
   });
 
@@ -143,6 +149,7 @@ export class MovimientoFormularioEntrada {
           { id: 'entrada-producto', invalido: this.form.controls.productoId.invalid },
           { id: 'entrada-cantidad', invalido: this.form.controls.cantidad.invalid },
           { id: 'entrada-vencimiento', invalido: this.form.controls.fechaVencimiento.invalid },
+          { id: 'entrada-costo', invalido: this.form.controls.costoUnitario.invalid },
         ];
         const primero = orden.find((c) => c.invalido);
         if (primero) document.getElementById(primero.id)?.focus();

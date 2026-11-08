@@ -257,7 +257,7 @@ Todas las tablas de negocio (no las de auditoría) heredan de `BaseEntity` estas
 | `solicitante_id` | bigint | No | Empleado que la hizo. Clave foránea a `usuarios.id`. |
 | `bodeguero_id` | bigint | Sí | Quien la resolvió; nulo mientras está pendiente. Clave foránea a `usuarios.id`. |
 | `solicitud_origen_id` | bigint | Sí | Nulo = es un pedido; con valor = es una devolución de ese pedido. Clave foránea a `solicitudes.id`. |
-| `observacion` | character varying(300) | Sí | Texto libre (p. ej. motivo de rechazo). |
+| `observacion` | character varying(300) | Sí | Texto libre opcional. |
 
 ### 3.11 `detalle_solicitudes`
 
@@ -323,7 +323,8 @@ Criterio: lo que cabe en una fila lo garantiza la base con `CHECK`, `UNIQUE` o c
 | Toda operación tiene al menos un movimiento, y todo lote nace con una entrada. | Triggers T6 y T7 (diferidos). |
 | Una solicitud resuelta y su detalle no se modifican. | Trigger `INM`. |
 | Las salidas descuentan por FEFO: primero el lote que vence antes. | Backend (`MovimientoService`). |
-| En un pedido lo entregado puede ser menor, igual o mayor a lo solicitado; lo que no se pidió es un «agregado». | Backend y vista `solicitado_vs_entregado`. |
+| En un pedido el bodeguero entrega, de cada producto solicitado, hasta lo que se pidió (o menos), y puede sumar otros productos que no se pidieron: esos son los «agregados». | Backend y vista `solicitado_vs_entregado`. |
+| «Productos más usados» (Analítica) cuenta las salidas netas de devoluciones: por producto, lo que sale (sentido −1) menos lo devuelto (`DEVOLUCION`), sin correcciones ni operaciones corregidas; los productos con neto 0 no aparecen. | Backend (`AnaliticaService`). |
 | No se borran productos, categorías, unidades ni usuarios: se desactivan con `activo = false`. | Backend. |
 
 ## 5. Valores permitidos
