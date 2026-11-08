@@ -7,44 +7,14 @@ import {
   output,
   signal,
 } from '@angular/core';
+import {
+  DIAS_ES,
+  DiaCalendario,
+  MESES_ES,
+  construirDiasDelMes,
+  formatearFecha,
+} from '../../shared/utils/calendario';
 import { MovimientoService } from './movimiento.service';
-
-type TipoDiaCalendario = 'vacio' | 'dia';
-
-interface DiaCalendario {
-  tipo: TipoDiaCalendario;
-  fecha?: string;
-  dia?: number;
-}
-
-const DIAS_ES = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'] as const;
-const MESES_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-] as const;
-
-function formatearFecha(anio: number, mesIndex: number, dia: number): string {
-  return `${anio}-${String(mesIndex + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-}
-
-function construirDiasDelMes(anio: number, mesIndex: number): DiaCalendario[] {
-  const primerDia = new Date(anio, mesIndex, 1);
-  const ultimoDia = new Date(anio, mesIndex + 1, 0);
-  const dias: DiaCalendario[] = [];
-
-  let inicioSemana = primerDia.getDay();
-  inicioSemana = inicioSemana === 0 ? 6 : inicioSemana - 1;
-  for (let i = 0; i < inicioSemana; i++) dias.push({ tipo: 'vacio' });
-
-  for (let d = 1; d <= ultimoDia.getDate(); d++) {
-    dias.push({ tipo: 'dia', fecha: formatearFecha(anio, mesIndex, d), dia: d });
-  }
-
-  const resto = dias.length % 7;
-  if (resto > 0) for (let i = resto; i < 7; i++) dias.push({ tipo: 'vacio' });
-
-  return dias;
-}
 
 @Component({
   selector: 'app-movimiento-calendario',
