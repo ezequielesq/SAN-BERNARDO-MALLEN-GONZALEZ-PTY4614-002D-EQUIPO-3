@@ -13,6 +13,10 @@ import java.util.Base64;
 @Configuration
 @ConfigurationProperties(prefix = "app.jwt")
 public class JwtProperties {
+    /** Secreto que estuvo escrito en el historial de Git hasta el 12-10-2026: ya no es secreto. */
+    private static final String SECRETO_FILTRADO =
+            "c21hcnRyZHAtc2VjcmV0LWtleS1mb3ItaHMtMjU2LXNpZ25pbmctMjAyNi1kdW9jdWM=";
+
     private String secret;
     private long expirationMs;
 
@@ -22,6 +26,10 @@ public class JwtProperties {
         if (secret == null || secret.isBlank() || secret.startsWith("${")) {
             throw new IllegalStateException(
                     "Define la variable de entorno SMARTRDP_JWT_SECRET (Base64, de al menos 32 bytes).");
+        }
+        if (SECRETO_FILTRADO.equals(secret)) {
+            throw new IllegalStateException("SMARTRDP_JWT_SECRET es el secreto antiguo que quedó en el historial "
+                    + "de Git: cámbialo. Genera uno nuevo con: openssl rand -base64 48");
         }
         byte[] bytes;
         try {
