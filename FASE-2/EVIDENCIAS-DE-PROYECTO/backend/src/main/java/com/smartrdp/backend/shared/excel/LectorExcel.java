@@ -9,8 +9,10 @@ import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,11 +21,16 @@ import java.util.Map;
 public final class LectorExcel {
 
     private static final List<DateTimeFormatter> FORMATOS_FECHA = List.of(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-            DateTimeFormatter.ofPattern("dd-MM-yyyy"),
-            DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            formato("uuuu-MM-dd"),
+            formato("dd-MM-uuuu"),
+            formato("dd/MM/uuuu"));
 
     private LectorExcel() {}
+
+    /** Resolución estricta: «31-02-2026» es inválida en vez de ajustarse en silencio a 28-02-2026. */
+    private static DateTimeFormatter formato(String patron) {
+        return DateTimeFormatter.ofPattern(patron).withResolverStyle(ResolverStyle.STRICT);
+    }
 
     public static Object valor(Cell celda, FormulaEvaluator evaluador) {
         if (celda == null) return null;
@@ -82,8 +89,10 @@ public final class LectorExcel {
     public static LocalDate fecha(Cell celda, FormulaEvaluator evaluador, String campo, Map<String, String> errores) {
         Object valor = valor(celda, evaluador);
         if (valor == null || (valor instanceof String s && s.isBlank())) return null;
-        if (valor instanceof Double d && DateUtil.isCellDateFormatted(celda)) {
-            return DateUtil.getLocalDateTime(d).toLocalDate();
+        if (valor instanceof Double && DateUtil.isCellDateFormatted(celda)) {
+            // Respeta el sistema de fechas del libro (1900 o 1904).
+            LocalDateTime fechaHora = celda.getLocalDateTimeCellValue();
+            if (fechaHora != null) return fechaHora.toLocalDate();
         }
         if (valor instanceof String s) {
             String recortado = s.trim();
