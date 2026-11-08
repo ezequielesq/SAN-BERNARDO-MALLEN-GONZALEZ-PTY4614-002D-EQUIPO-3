@@ -11,5 +11,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     boolean existsByCodigo(String codigo);
     boolean existsByCodigoAndIdNot(String codigo, Long id);
     Optional<Producto> findByCodigoPtv(String codigoPtv);
+    Optional<Producto> findByCodigoPtvIgnoreCase(String codigoPtv);
+    Optional<Producto> findByCodigo(String codigo);
     List<Producto> findByActivoTrue();
 }

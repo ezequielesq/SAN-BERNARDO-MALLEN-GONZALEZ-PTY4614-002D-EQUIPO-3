@@ -7,10 +7,9 @@ import com.smartrdp.backend.producto.dto.FilaImportacion;
 import com.smartrdp.backend.producto.dto.FilaValidada;
 import com.smartrdp.backend.producto.dto.ProductoRequest;
 import com.smartrdp.backend.producto.dto.ProductoResponse;
+import com.smartrdp.backend.shared.excel.LectorExcel;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.CellValue;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
@@ -24,8 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.math.BigDecimal;
-import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -174,7 +171,7 @@ public class ProductoImportacionService {
                 if (row == null) continue;
                 Map<String, Integer> candidatas = new HashMap<>();
                 for (Cell celda : row) {
-                    String campo = ALIAS.get(clave(texto(valor(celda, evaluador))));
+                    String campo = ALIAS.get(LectorExcel.clave(LectorExcel.texto(LectorExcel.valor(celda, evaluador))));
                     if (campo != null) candidatas.putIfAbsent(campo, celda.getColumnIndex());
                 }
                 if (candidatas.containsKey("nombre")) {
@@ -196,9 +193,9 @@ public class ProductoImportacionService {
             }
 
             Map<String, Long> categorias = new HashMap<>();
-            categoriaRepository.findAll().forEach(c -> categorias.put(clave(c.getNombre()), c.getId()));
+            categoriaRepository.findAll().forEach(c -> categorias.put(LectorExcel.clave(c.getNombre()), c.getId()));
             Map<String, Long> unidades = new HashMap<>();
-            unidadMedidaRepository.findAll().forEach(u -> unidades.put(clave(u.getNombre()), u.getId()));
+            unidadMedidaRepository.findAll().forEach(u -> unidades.put(LectorExcel.clave(u.getNombre()), u.getId()));
 
             List<FilaLeida> filas = new ArrayList<>();
             for (int r = filaEncabezado.getRowNum() + 1; r <= hoja.getLastRowNum(); r++) {
@@ -207,9 +204,9 @@ public class ProductoImportacionService {
                 Map<String, Object> celdas = new HashMap<>();
                 boolean vacia = true;
                 for (var columna : columnas.entrySet()) {
-                    Object v = valor(row.getCell(columna.getValue()), evaluador);
+                    Object v = LectorExcel.valor(row.getCell(columna.getValue()), evaluador);
                     celdas.put(columna.getKey(), v);
-                    if (texto(v) != null) vacia = false;
+                    if (LectorExcel.texto(v) != null) vacia = false;
                 }
                 if (vacia) continue;
                 if (filas.size() >= MAXIMO_FILAS) {
@@ -233,18 +230,18 @@ public class ProductoImportacionService {
                                     Map<String, Long> unidades) {
         Map<String, String> errores = new LinkedHashMap<>();
 
-        String categoriaTexto = texto(celdas.get("categoria"));
+        String categoriaTexto = LectorExcel.texto(celdas.get("categoria"));
         Long categoriaId = null;
         if (categoriaTexto != null) {
-            categoriaId = categorias.get(clave(categoriaTexto));
+            categoriaId = categorias.get(LectorExcel.clave(categoriaTexto));
             if (categoriaId == null) {
                 errores.put("categoriaId", "No existe la categoría «" + categoriaTexto + "». Elige una de la lista.");
             }
         }
-        String unidadTexto = texto(celdas.get("unidad"));
+        String unidadTexto = LectorExcel.texto(celdas.get("unidad"));
         Long unidadId = null;
         if (unidadTexto != null) {
-            unidadId = unidades.get(clave(unidadTexto));
+            unidadId = unidades.get(LectorExcel.clave(unidadTexto));
             if (unidadId == null) {
                 errores.put("unidadMedidaId", "No existe la unidad «" + unidadTexto + "». Elige una de la lista.");
             }
@@ -252,17 +249,17 @@ public class ProductoImportacionService {
 
         var datos = new FilaImportacion(
                 numero,
-                texto(celdas.get("codigoPtv")),
-                texto(celdas.get("codigo")),
-                texto(celdas.get("nombre")),
+                LectorExcel.texto(celdas.get("codigoPtv")),
+                LectorExcel.texto(celdas.get("codigo")),
+                LectorExcel.texto(celdas.get("nombre")),
                 categoriaId,
                 unidadId,
                 categoriaTexto,
                 unidadTexto,
                 perecible(celdas.get("perecible"), errores),
-                entero(celdas.get("stockMinimo"), "stockMinimo", errores),
-                entero(celdas.get("stockCritico"), "stockCritico", errores),
-                entero(celdas.get("costo"), "costoUnitario", errores));
+                LectorExcel.entero(celdas.get("stockMinimo"), "stockMinimo", errores),
+                LectorExcel.entero(celdas.get("stockCritico"), "stockCritico", errores),
+                LectorExcel.entero(celdas.get("costo"), "costoUnitario", errores));
         return new FilaLeida(datos, errores);
     }
 
@@ -314,8 +311,8 @@ public class ProductoImportacionService {
         Map<String, List<Integer>> porCodigo = new LinkedHashMap<>();
         for (int i = 0; i < filas.size(); i++) {
             FilaImportacion f = filas.get(i);
-            String ptv = limpiar(f.codigoPtv());
-            String codigo = limpiar(f.codigo());
+            String ptv = LectorExcel.limpiar(f.codigoPtv());
+            String codigo = LectorExcel.limpiar(f.codigo());
             if (ptv != null) porCodigo.computeIfAbsent("ptv:" + ptv.toUpperCase(Locale.ROOT), k -> new ArrayList<>()).add(i);
             if (codigo != null) porCodigo.computeIfAbsent("num:" + codigo, k -> new ArrayList<>()).add(i);
         }
@@ -338,78 +335,13 @@ public class ProductoImportacionService {
 
     // ───────────────────────────── Celdas ─────────────────────────────
 
-    private static Object valor(Cell celda, FormulaEvaluator evaluador) {
-        if (celda == null) return null;
-        CellType tipo = celda.getCellType();
-        if (tipo == CellType.FORMULA) {
-            try {
-                CellValue resultado = evaluador.evaluate(celda);
-                return switch (resultado.getCellType()) {
-                    case STRING -> resultado.getStringValue();
-                    case NUMERIC -> resultado.getNumberValue();
-                    case BOOLEAN -> resultado.getBooleanValue();
-                    default -> null;
-                };
-            } catch (RuntimeException e) {
-                return null;
-            }
-        }
-        return switch (tipo) {
-            case STRING -> celda.getStringCellValue();
-            case NUMERIC -> celda.getNumericCellValue();
-            case BOOLEAN -> celda.getBooleanCellValue();
-            default -> null;
-        };
-    }
-
-    /** Texto recortado; un número entero (por ejemplo un código pegado como número) pierde el «.0». */
-    private static String texto(Object valor) {
-        if (valor == null) return null;
-        if (valor instanceof Double d) {
-            return d == Math.rint(d) && Math.abs(d) < 1e15
-                    ? Long.toString(d.longValue())
-                    : BigDecimal.valueOf(d).toPlainString();
-        }
-        String recortado = valor.toString().trim();
-        return recortado.isEmpty() ? null : recortado;
-    }
-
-    private static Integer entero(Object valor, String campo, Map<String, String> errores) {
-        if (valor == null || (valor instanceof String s && s.isBlank())) return null;
-        try {
-            if (valor instanceof Double d) {
-                if (d != Math.rint(d)) throw new NumberFormatException();
-                return Math.toIntExact(d.longValue());
-            }
-            return Integer.parseInt(valor.toString().trim().replace(" ", ""));
-        } catch (NumberFormatException | ArithmeticException e) {
-            errores.put(campo, "Debe ser un número entero, sin decimales ni símbolos.");
-            return null;
-        }
-    }
-
     private static boolean perecible(Object valor, Map<String, String> errores) {
         if (valor == null) return false;
         if (valor instanceof Boolean b) return b;
-        String normalizado = clave(texto(valor));
+        String normalizado = LectorExcel.clave(LectorExcel.texto(valor));
         if (normalizado.isEmpty() || NO.contains(normalizado)) return false;
         if (SI.contains(normalizado)) return true;
         errores.put("esPerecible", "Escribe Sí o No.");
         return false;
-    }
-
-    /** Minúsculas sin tildes ni símbolos: «Código PTV» y «codigo_ptv» dan la misma clave. */
-    private static String clave(String texto) {
-        if (texto == null) return "";
-        return Normalizer.normalize(texto, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]", "");
-    }
-
-    private static String limpiar(String valor) {
-        if (valor == null) return null;
-        String recortado = valor.trim();
-        return recortado.isEmpty() ? null : recortado;
     }
 }
