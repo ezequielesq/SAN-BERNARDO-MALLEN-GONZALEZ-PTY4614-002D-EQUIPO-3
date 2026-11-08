@@ -19,7 +19,7 @@ Los diagramas están escritos en [Mermaid](https://mermaid.js.org), que GitHub d
 
 ## 2. Diagrama de casos de uso
 
-El **Administrador** ve Analítica y administra usuarios. El **Bodeguero** administra todo lo demás pero no a los usuarios y es el único que aprueba solicitudes. El **Empleado** no inicia sesión: usa la vista pública y se identifica con su nombre y su contraseña en cada acción.
+El **Administrador** ve Analítica y administra usuarios. El **Bodeguero** administra todo lo demás pero no a los usuarios, es el único que aprueba solicitudes, puede cargar entradas de stock desde una planilla Excel y lleva el calendario de eventos de la bodega. El **Empleado** no inicia sesión: usa la vista pública y se identifica con su nombre y su contraseña en cada acción.
 
 ```mermaid
 flowchart LR
@@ -42,6 +42,8 @@ flowchart LR
         uc12(["Consultar mis solicitudes"])
         uc13(["Registrar operación Entrega de pedido o Devolución"])
         uc14(["Verificar identidad con contraseña"])
+        uc15(["Cargar entradas desde Excel"])
+        uc16(["Gestionar eventos del calendario"])
     end
 
     adm --- uc1
@@ -55,6 +57,8 @@ flowchart LR
     bod --- uc7
     bod --- uc8
     bod --- uc9
+    bod --- uc15
+    bod --- uc16
 
     emp --- uc10
     emp --- uc11
@@ -68,7 +72,7 @@ flowchart LR
 
 ## 3. Diagrama de clases del dominio
 
-Todas las entidades de negocio heredan de `BaseEntity` (`id`, `createdAt`, `updatedAt`). Solo `Solicitud` y `Usuario` tienen historial con Hibernate Envers; `Operacion`, `Movimiento` y `Lote` son inmutables (`@Immutable`, y triggers en la base). El stock no es un atributo: se calcula con vistas.
+Todas las entidades de negocio heredan de `BaseEntity` (`id`, `createdAt`, `updatedAt`). `Evento` es una agenda compartida de los bodegueros, sin historial ni triggers. Solo `Solicitud` y `Usuario` tienen historial con Hibernate Envers; `Operacion`, `Movimiento` y `Lote` son inmutables (`@Immutable`, y triggers en la base). El stock no es un atributo: se calcula con vistas.
 
 ```mermaid
 classDiagram
@@ -139,6 +143,12 @@ classDiagram
     class DetalleSolicitud {
         -int cantidadSolicitada
     }
+    class Evento {
+        -String titulo
+        -LocalDate fecha
+        -LocalTime hora
+        -String descripcion
+    }
 
 
     Rol "1" <-- "*" Usuario : tiene
@@ -157,6 +167,7 @@ classDiagram
     Solicitud "0..1" <-- "*" Solicitud : devolución de
     Solicitud "1" *-- "1..*" DetalleSolicitud : contiene
     Producto "1" <-- "*" DetalleSolicitud : se pide en
+    Usuario "1" <-- "*" Evento : crea
 ```
 
 ## 4. Diagrama de secuencia: aprobar un pedido
@@ -201,7 +212,7 @@ sequenceDiagram
 
 ## 5. Diagrama de secuencia: pedido del empleado
 
-El empleado no inicia sesión. Elige su nombre en una lista, escribe su contraseña y envía el pedido. El sistema verifica su identidad en cada acción y limita los intentos fallidos: tras cinco intentos incorrectos el empleado queda bloqueado cinco minutos.
+El empleado no inicia sesión. Elige su nombre en una lista, ve solo los productos con stock y cuánto hay disponible de cada uno, escribe su contraseña y envía el pedido. El sistema verifica su identidad en cada acción y limita los intentos fallidos: tras cinco intentos incorrectos el empleado queda bloqueado cinco minutos. Antes de guardar el pedido comprueba que cada cantidad no supere el stock disponible; el stock no se reserva.
 
 ```mermaid
 sequenceDiagram
@@ -215,7 +226,7 @@ sequenceDiagram
 
     E->>UI: Abre la vista pública del empleado
     UI->>P: GET /api/publico/empleados y /api/publico/productos
-    P-->>UI: Nombres de empleados activos y productos
+    P-->>UI: Nombres de empleados activos y productos con stock (con su disponible)
     E->>UI: Elige su nombre, agrega productos y escribe su contraseña
     UI->>P: POST /api/publico/solicitudes (empleadoId, password, items)
     P->>V: verificar(empleadoId, password)
@@ -229,16 +240,23 @@ sequenceDiagram
         V-->>P: Empleado verificado y contador de fallos en cero
         P->>P: Fija el correo del empleado como autor de la auditoría
         P->>S: crearPedido(empleadoId, items)
-        S->>DB: Guarda la Solicitud PENDIENTE y sus detalles
-        S-->>P: SolicitudResponse
-        P-->>UI: 201 Created
-        UI-->>E: Confirma que el pedido quedó pendiente
+        S->>DB: Lee el stock disponible de cada producto (vista stock_producto)
+        alt Algún producto sin stock o con cantidad mayor que el disponible
+            S-->>P: BusinessException "Solo hay N de producto"
+            P-->>UI: 422 con el mensaje
+            UI-->>E: Muestra el error
+        else Hay stock para todos los productos
+            S->>DB: Guarda la Solicitud PENDIENTE y sus detalles
+            S-->>P: SolicitudResponse
+            P-->>UI: 201 Created
+            UI-->>E: Confirma que el pedido quedó pendiente
+        end
     end
 ```
 
 ## 6. Diagrama de arquitectura y despliegue
 
-La arquitectura es **cliente-servidor**: una aplicación de una sola página (SPA) en Angular consume una API REST de Spring Boot, que persiste en PostgreSQL. El backend es un **monolito modular en capas** (controlador, servicio, repositorio) con un paquete por dominio: `producto`, `movimiento`, `solicitud`, `usuario`, `catalogo`, `analitica`, `auditoria`, `publico`. La seguridad es sin estado: el cliente envía un token JWT en cada petición y un filtro valida el rol antes de llegar al controlador.
+La arquitectura es **cliente-servidor**: una aplicación de una sola página (SPA) en Angular consume una API REST de Spring Boot, que persiste en PostgreSQL. El backend es un **monolito modular en capas** (controlador, servicio, repositorio) con un paquete por dominio: `producto`, `movimiento`, `solicitud`, `usuario`, `catalogo`, `analitica`, `auditoria`, `evento`, `publico`. La seguridad es sin estado: el cliente envía un token JWT en cada petición y un filtro valida el rol antes de llegar al controlador.
 
 ```mermaid
 flowchart LR
@@ -248,7 +266,7 @@ flowchart LR
 
     subgraph SRV["Servidor local o red LAN: Spring Boot 4, Java 21"]
         SEC["Seguridad<br/>JwtAuthenticationFilter y SecurityConfig<br/>(roles Administrador, Bodeguero, Empleado)"]
-        CTL["Capa web: controladores REST<br/>/api/auth, /api/productos, /api/movimientos,<br/>/api/solicitudes, /api/analitica,<br/>/api/usuarios, /api/publico"]
+        CTL["Capa web: controladores REST<br/>/api/auth, /api/productos, /api/movimientos,<br/>/api/solicitudes, /api/analitica,<br/>/api/usuarios, /api/publico,<br/>/api/eventos"]
         SVC["Capa de servicios<br/>reglas de negocio, FEFO y transacciones"]
         REP["Capa de persistencia<br/>Spring Data JPA, Hibernate y Envers"]
         SEC --> CTL --> SVC --> REP

@@ -7,9 +7,9 @@
 
 Este documento describe el modelo de datos relacional de Smart RDP: el diagrama entidad-relación, el diccionario de datos de cada tabla y las reglas de integridad.
 
-**Fuente.** El esquema se define en `backend/src/main/resources/db/migration/` (migraciones de Flyway: `V1__esquema.sql` y `V2__blindaje_libro_y_catalogos.sql`) y se contrastó con la base de desarrollo (PostgreSQL 18, base `smartrdp`) y con las entidades JPA del backend (`backend/src/main/java/com/smartrdp/backend`). Hibernate solo **valida** que las entidades coincidan con ese esquema (`spring.jpa.hibernate.ddl-auto=validate`); no crea ni modifica tablas. Las reglas de integridad que cruzan tablas las garantizan triggers de PostgreSQL definidos en la misma migración.
+**Fuente.** El esquema se define en `backend/src/main/resources/db/migration/` (migraciones de Flyway: `V1__esquema.sql`, `V2__blindaje_libro_y_catalogos.sql` y `V3__eventos.sql`) y se contrastó con la base de desarrollo (PostgreSQL 18, base `smartrdp`) y con las entidades JPA del backend (`backend/src/main/java/com/smartrdp/backend`). Hibernate solo **valida** que las entidades coincidan con ese esquema (`spring.jpa.hibernate.ddl-auto=validate`); no crea ni modifica tablas. Las reglas de integridad que cruzan tablas las garantizan triggers de PostgreSQL definidos en la misma migración. La tabla `eventos` (V3) es una agenda y no lleva triggers ni auditoría.
 
-**Cómo leer el diagrama.** La notación es de pata de gallo (crow's foot): `||` exactamente uno, `|o` cero o uno, `o{` cero o muchos, `|{` uno o muchos. Para no recargar el diagrama se omiten las columnas comunes `created_at` y `updated_at` (ver sección 3). El stock no es una columna de ninguna tabla: se calcula con vistas a partir del libro de operaciones y movimientos (ver 3.14).
+**Cómo leer el diagrama.** La notación es de pata de gallo (crow's foot): `||` exactamente uno, `|o` cero o uno, `o{` cero o muchos, `|{` uno o muchos. Para no recargar el diagrama se omiten las columnas comunes `created_at` y `updated_at` (ver sección 3). El stock no es una columna de ninguna tabla: se calcula con vistas a partir del libro de operaciones y movimientos (ver 3.15).
 
 ## 2. Diagrama entidad-relación
 
@@ -23,6 +23,7 @@ erDiagram
     USUARIOS ||--o{ SOLICITUDES : solicita
     USUARIOS |o--o{ SOLICITUDES : resuelve
     USUARIOS ||--o{ OPERACIONES : registra
+    USUARIOS ||--o{ EVENTOS : crea
 
     ESTADOS_SOLICITUD ||--o{ SOLICITUDES : "estado de"
     SOLICITUDES |o--o{ SOLICITUDES : "es devolucion de"
@@ -113,6 +114,14 @@ erDiagram
         int stock_minimo
         int stock_critico
         boolean activo
+    }
+    EVENTOS {
+        bigint id PK
+        bigint creado_por FK
+        varchar titulo
+        date fecha
+        time hora "nulo = todo el dia"
+        varchar descripcion "opcional"
     }
     CATEGORIAS {
         bigint id PK
@@ -283,7 +292,19 @@ Todas las tablas de negocio (no las de auditoría) heredan de `BaseEntity` estas
 | `lote_id` | bigint | No | Lote afectado. Clave foránea a `lotes.id`. |
 | `cantidad` | integer | No | Cantidad siempre positiva; suma o resta según el sentido del tipo de la operación. |
 
-### 3.14 Vistas de inventario
+### 3.14 `eventos`
+
+Agenda compartida del calendario de los bodegueros (migración `V3`). Es una agenda, no un registro histórico: no tiene Envers ni triggers, y cualquier bodeguero puede ver, crear, editar y borrar cualquier evento (el acceso se restringe por rol en la API, no por fila). Tiene un índice por `fecha` (`ix_eventos_fecha`) para filtrar por día.
+
+| Columna | Tipo | ¿Nulo? | Descripción |
+|---|---|---|---|
+| `titulo` | character varying(120) | No | Título del evento; no puede quedar vacío ni solo con espacios (`ck_eventos_titulo`). |
+| `fecha` | date | No | Día del evento. |
+| `hora` | time | Sí | Hora del evento; nula significa que dura todo el día. |
+| `descripcion` | character varying(500) | Sí | Detalle opcional. |
+| `creado_por` | bigint | No | Bodeguero que agendó el evento. Clave foránea a `usuarios.id`; solo lo identifica, no limita quién puede editarlo. |
+
+### 3.15 Vistas de inventario
 
 El stock **no se guarda**: se calcula con estas vistas, que son la única fuente de verdad.
 
@@ -292,7 +313,7 @@ El stock **no se guarda**: se calcula con estas vistas, que son la única fuente
 - **`solicitado_vs_entregado`** — Por solicitud y producto: lo solicitado, lo entregado y si es un agregado (entregado sin haber sido pedido). Columnas: `solicitud_id`, `producto_id`, `cantidad_solicitada`, `cantidad_entregada`, `agregado`.
 - **`devolvible_lote`** — Por pedido y lote: cuánto se entregó, cuánto se devolvió y cuánto aún se puede devolver. Columnas: `pedido_id`, `lote_id`, `producto_id`, `movimiento_id`, `entregado`, `devuelto`, `devolvible`.
 
-### 3.15 Tablas de auditoría (Envers)
+### 3.16 Tablas de auditoría (Envers)
 
 `revinfo` guarda una fila por revisión (marca de tiempo y correo de quien la hizo); `solicitudes_aud` y `usuarios_aud` copian las columnas auditadas de la tabla de negocio más `rev` y `revtype` (0 alta, 1 modificación, 2 baja).
 
