@@ -79,6 +79,16 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Flyway — migraciones versionadas del esquema (tablas, vistas y triggers) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
 		<!-- Hibernate Envers — historial auditable (HU-17) -->
 		<dependency>
 			<groupId>org.hibernate.orm</groupId>
