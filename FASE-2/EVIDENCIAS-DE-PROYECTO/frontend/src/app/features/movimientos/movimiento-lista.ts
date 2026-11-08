@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { filter, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { traducirError } from '../../core/errores/traducir-error';
@@ -38,7 +39,7 @@ const EXTRACTORES_MOVIMIENTO: Extractores<Movimiento, ColumnaOrdenMovimiento> = 
 
 @Component({
   selector: 'app-movimiento-lista',
-  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, ThOrden, MovimientoCalendario, Modal, MovimientoFormularioEntrada, MovimientoFormularioSalida],
+  imports: [DatePipe, RouterLink, EstadoVista, EstadoBadge, Paginacion, ThOrden, MovimientoCalendario, Modal, MovimientoFormularioEntrada, MovimientoFormularioSalida],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimiento-lista.html',
 })

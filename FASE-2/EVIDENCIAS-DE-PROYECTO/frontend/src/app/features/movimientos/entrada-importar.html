@@ -1,0 +1,252 @@
+<p>
+  <a routerLink="/movimientos" class="w3-button w3-white w3-border w3-round w3-margin-left">
+    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a movimientos
+  </a>
+</p>
+
+<div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
+  <h2 class="w3-large"><b>Importar entradas desde Excel</b></h2>
+  <p>
+    Descarga la plantilla, complétala con una fila por lote y súbela. Todas las filas se cargan juntas como una sola
+    entrada: si alguna tiene un error, no se carga ninguna.
+  </p>
+
+  <p>
+    <button
+      type="button"
+      class="w3-button w3-white w3-border w3-round"
+      [attr.aria-disabled]="descargandoPlantilla()"
+      (click)="descargarPlantilla()"
+    >
+      <i class="fa fa-download" aria-hidden="true"></i> Descargar plantilla
+    </button>
+  </p>
+
+  <div class="w3-row">
+    <div class="w3-col s12 m4 w3-padding-small">
+      <label for="importar-tipo"><b>Tipo de entrada</b></label>
+      <select
+        #selectTipo
+        id="importar-tipo"
+        class="w3-select"
+        required
+        [attr.aria-invalid]="tipo() === '' ? 'true' : null"
+        (change)="tipo.set(selectTipo.value)"
+      >
+        <option value="" disabled [selected]="tipo() === ''">Elige un tipo</option>
+        @for (t of opcionesTipo(); track t.id) {
+          <option [value]="t.codigo" [selected]="tipo() === t.codigo">{{ t.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m8 w3-padding-small">
+      <label for="importar-nota"><b>Nota (opcional)</b></label>
+      <input
+        #campoNota
+        id="importar-nota"
+        class="w3-input"
+        type="text"
+        [attr.maxlength]="maxNota"
+        [value]="nota()"
+        (input)="nota.set(campoNota.value)"
+      />
+    </div>
+  </div>
+
+  <div class="w3-row">
+    <div class="w3-col s12 m8 w3-padding-small">
+      <label for="importar-archivo"><b>Archivo Excel (.xlsx)</b></label>
+      <input
+        #campoArchivo
+        id="importar-archivo"
+        class="w3-input"
+        type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        [attr.aria-invalid]="intentoLeerSinArchivo() ? 'true' : null"
+        [attr.aria-describedby]="intentoLeerSinArchivo() ? 'error-importar-archivo' : null"
+        (change)="elegirArchivo(campoArchivo)"
+      />
+      @if (intentoLeerSinArchivo()) {
+        <p class="texto-error" id="error-importar-archivo">
+          <i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige el archivo Excel que quieres leer.
+        </p>
+      }
+    </div>
+    <div class="w3-col s12 m4 w3-padding-small w3-padding-24">
+      <button type="button" class="w3-button w3-info w3-round" [attr.aria-disabled]="leyendo()" (click)="leerArchivo()">
+        <i class="fa-solid fa-file-excel" aria-hidden="true"></i> {{ leyendo() ? 'Leyendo archivo…' : 'Leer archivo' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+@if (filas(); as lista) {
+  <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
+    <p class="w3-margin-0" aria-live="polite">
+      <b>{{ total() }}</b> {{ total() === 1 ? 'fila' : 'filas' }} ·
+      <span class="w3-tag w3-round w3-emerald">{{ validas() }} {{ validas() === 1 ? 'válida' : 'válidas' }}</span>
+      <span class="w3-tag w3-round" [class.w3-crimson]="conErrores() > 0" [class.w3-light-grey]="conErrores() === 0">
+        {{ conErrores() }} con error
+      </span>
+      @if (validando()) {
+        <span class="w3-small"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Validando…</span>
+      }
+    </p>
+
+    @if (lista.length === 0) {
+      <p>El archivo no tiene filas para cargar.</p>
+    } @else {
+      <div class="w3-responsive w3-margin-top">
+        <table class="w3-table-all importacion-tabla">
+          <caption class="visualmente-oculto">
+            Entradas detectadas en el archivo, editables
+          </caption>
+          <thead>
+            <tr class="w3-light-grey">
+              <th scope="col">Fila</th>
+              <th scope="col">Código</th>
+              <th scope="col">Producto</th>
+              <th scope="col">N° lote</th>
+              <th scope="col">Vencimiento</th>
+              <th scope="col">Cantidad</th>
+              <th scope="col">Costo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of lista; track f.datos.fila) {
+              <tr [class.fila-con-error]="cantidadErrores(f) > 0">
+                <td>
+                  {{ f.datos.fila }}
+                  @if (cantidadErrores(f) > 0) {
+                    <span class="w3-tag w3-round w3-crimson">
+                      <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                      {{ cantidadErrores(f) }} {{ cantidadErrores(f) === 1 ? 'error' : 'errores' }}
+                    </span>
+                  }
+                </td>
+                <td>
+                  <label class="visualmente-oculto" [for]="'imp-codigo-' + f.datos.fila">Código, fila {{ f.datos.fila }}</label>
+                  <input
+                    [id]="'imp-codigo-' + f.datos.fila"
+                    class="w3-input"
+                    style="min-width: 7em"
+                    type="text"
+                    maxlength="20"
+                    [value]="f.datos.codigo ?? ''"
+                    [attr.aria-invalid]="errorDe(f, 'codigo') ? 'true' : null"
+                    [attr.aria-describedby]="errorDe(f, 'codigo') ? 'imp-codigo-error-' + f.datos.fila : null"
+                    (change)="editarTexto(f.datos.fila ?? 0, 'codigo', $any($event.target).value)"
+                  />
+                  @if (errorDe(f, 'codigo'); as mensaje) {
+                    <small class="texto-error" [id]="'imp-codigo-error-' + f.datos.fila">{{ mensaje }}</small>
+                  }
+                </td>
+                <td>{{ f.datos.productoNombre ?? '—' }}</td>
+                <td>
+                  <label class="visualmente-oculto" [for]="'imp-lote-' + f.datos.fila">N° de lote, fila {{ f.datos.fila }}</label>
+                  <input
+                    [id]="'imp-lote-' + f.datos.fila"
+                    class="w3-input"
+                    style="min-width: 7em"
+                    type="text"
+                    maxlength="50"
+                    [value]="f.datos.numeroLote ?? ''"
+                    [attr.aria-invalid]="errorDe(f, 'numeroLote') ? 'true' : null"
+                    [attr.aria-describedby]="errorDe(f, 'numeroLote') ? 'imp-lote-error-' + f.datos.fila : null"
+                    (change)="editarTexto(f.datos.fila ?? 0, 'numeroLote', $any($event.target).value)"
+                  />
+                  @if (errorDe(f, 'numeroLote'); as mensaje) {
+                    <small class="texto-error" [id]="'imp-lote-error-' + f.datos.fila">{{ mensaje }}</small>
+                  }
+                </td>
+                <td>
+                  <label class="visualmente-oculto" [for]="'imp-vencimiento-' + f.datos.fila">Fecha de vencimiento, fila {{ f.datos.fila }}</label>
+                  <input
+                    [id]="'imp-vencimiento-' + f.datos.fila"
+                    class="w3-input"
+                    style="min-width: 9em"
+                    type="date"
+                    [value]="f.datos.fechaVencimiento ?? ''"
+                    [attr.aria-invalid]="errorDe(f, 'fechaVencimiento') ? 'true' : null"
+                    [attr.aria-describedby]="errorDe(f, 'fechaVencimiento') ? 'imp-vencimiento-error-' + f.datos.fila : null"
+                    (change)="editarTexto(f.datos.fila ?? 0, 'fechaVencimiento', $any($event.target).value)"
+                  />
+                  @if (errorDe(f, 'fechaVencimiento'); as mensaje) {
+                    <small class="texto-error" [id]="'imp-vencimiento-error-' + f.datos.fila">{{ mensaje }}</small>
+                  }
+                </td>
+                <td>
+                  <label class="visualmente-oculto" [for]="'imp-cantidad-' + f.datos.fila">Cantidad, fila {{ f.datos.fila }}</label>
+                  <input
+                    [id]="'imp-cantidad-' + f.datos.fila"
+                    class="w3-input"
+                    style="width: 6.5em"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    [value]="f.datos.cantidad ?? ''"
+                    [attr.aria-invalid]="errorDe(f, 'cantidad') ? 'true' : null"
+                    [attr.aria-describedby]="errorDe(f, 'cantidad') ? 'imp-cantidad-error-' + f.datos.fila : null"
+                    (change)="editarNumero(f.datos.fila ?? 0, 'cantidad', $any($event.target).value)"
+                  />
+                  @if (errorDe(f, 'cantidad'); as mensaje) {
+                    <small class="texto-error" [id]="'imp-cantidad-error-' + f.datos.fila">{{ mensaje }}</small>
+                  }
+                </td>
+                <td>
+                  <label class="visualmente-oculto" [for]="'imp-costo-' + f.datos.fila">Costo unitario, fila {{ f.datos.fila }}</label>
+                  <input
+                    [id]="'imp-costo-' + f.datos.fila"
+                    class="w3-input"
+                    style="width: 6.5em"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    [value]="f.datos.costoUnitario ?? ''"
+                    [attr.aria-invalid]="errorDe(f, 'costoUnitario') ? 'true' : null"
+                    [attr.aria-describedby]="errorDe(f, 'costoUnitario') ? 'imp-costo-error-' + f.datos.fila : null"
+                    (change)="editarNumero(f.datos.fila ?? 0, 'costoUnitario', $any($event.target).value)"
+                  />
+                  @if (errorDe(f, 'costoUnitario'); as mensaje) {
+                    <small class="texto-error" [id]="'imp-costo-error-' + f.datos.fila">{{ mensaje }}</small>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="importacion-controles">
+        <button type="button" class="w3-button w3-border w3-round" [attr.aria-disabled]="validando()" (click)="revalidar()">
+          <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Revalidar
+        </button>
+        <span class="importacion-espacio"></span>
+        <button
+          type="button"
+          class="w3-button w3-emerald w3-round"
+          [attr.aria-disabled]="!puedeCargar()"
+          [attr.aria-describedby]="!puedeCargar() ? 'importar-ayuda' : null"
+          (click)="cargar()"
+        >
+          {{ cargando() ? 'Cargando…' : 'Cargar entradas' }}
+        </button>
+      </div>
+      @if (!puedeCargar() && !cargando()) {
+        <p class="w3-small w3-margin-0" id="importar-ayuda">
+          @if (conErrores() > 0) {
+            Corrige las filas con error para poder cargar las entradas.
+          } @else if (tipo() === '') {
+            Elige el tipo de entrada para poder cargar las entradas.
+          } @else if (nota().length > maxNota) {
+            La nota no puede superar los {{ maxNota }} caracteres.
+          } @else if (validando()) {
+            Espera a que termine la validación.
+          }
+        </p>
+      }
+    }
+  </div>
+}

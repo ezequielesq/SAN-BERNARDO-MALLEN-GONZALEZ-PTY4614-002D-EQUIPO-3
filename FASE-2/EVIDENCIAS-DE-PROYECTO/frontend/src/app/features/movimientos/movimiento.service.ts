@@ -5,6 +5,9 @@ import { environment } from '../../../environments/environment';
 import {
   AlertaVencimiento,
   EntradaRequest,
+  FilaEntrada,
+  FilaEntradaValidada,
+  ImportacionEntradaRequest,
   Movimiento,
   OperacionResponse,
   SalidaRequest,
@@ -55,6 +58,27 @@ export class MovimientoService {
 
   registrarEntrada(request: EntradaRequest): Observable<OperacionResponse> {
     return this.http.post<OperacionResponse>(`${this.url}/entradas`, request);
+  }
+
+  descargarPlantillaEntradas(): Observable<Blob> {
+    return this.http.get(`${this.url}/entradas/plantilla/xlsx`, { responseType: 'blob' });
+  }
+
+  /** Lee el Excel y devuelve las filas validadas; no guarda nada. */
+  leerEntradas(archivo: File): Observable<FilaEntradaValidada[]> {
+    const cuerpo = new FormData();
+    cuerpo.append('archivo', archivo);
+    return this.http.post<FilaEntradaValidada[]>(`${this.url}/entradas/importar/leer`, cuerpo);
+  }
+
+  /** Revalida filas ya editadas; no guarda nada. */
+  validarEntradas(request: ImportacionEntradaRequest): Observable<FilaEntradaValidada[]> {
+    return this.http.post<FilaEntradaValidada[]>(`${this.url}/entradas/importar/validar`, request);
+  }
+
+  /** Registra todas las filas como una sola operación de entrada (todo o nada). */
+  importarEntradas(request: ImportacionEntradaRequest): Observable<OperacionResponse> {
+    return this.http.post<OperacionResponse>(`${this.url}/entradas/importar`, request);
   }
 
   registrarSalida(request: SalidaRequest): Observable<OperacionResponse> {

@@ -90,3 +90,28 @@ export interface StockStatus {
   costoUnitario: number | null;
   valorTotal: number | null;
 }
+
+/** Una fila de la importación de entradas; `productoId` y `productoNombre` los resuelve el servidor a partir del código. */
+export interface FilaEntrada {
+  fila: number | null;
+  codigo: string | null;
+  productoId: number | null;
+  productoNombre: string | null;
+  numeroLote: string | null;
+  /** ISO `yyyy-MM-dd`. */
+  fechaVencimiento: string | null;
+  cantidad: number | null;
+  costoUnitario: number | null;
+}
+
+/** `errores` va por campo (`codigo`, `numeroLote`, `fechaVencimiento`, `cantidad`, `costoUnitario`); vacío = la fila se puede cargar. */
+export interface FilaEntradaValidada {
+  datos: FilaEntrada;
+  errores: Record<string, string>;
+}
+
+export interface ImportacionEntradaRequest {
+  tipo: string;
+  nota: string | null;
+  filas: FilaEntrada[];
+}
