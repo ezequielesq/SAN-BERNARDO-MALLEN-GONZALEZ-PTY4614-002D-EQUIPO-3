@@ -7,6 +7,7 @@ export interface ProductoOpcion {
   id: number;
   nombre: string;
   unidadMedida: string;
+  stock: number;
 }
 
 export interface CredencialesEmpleado {

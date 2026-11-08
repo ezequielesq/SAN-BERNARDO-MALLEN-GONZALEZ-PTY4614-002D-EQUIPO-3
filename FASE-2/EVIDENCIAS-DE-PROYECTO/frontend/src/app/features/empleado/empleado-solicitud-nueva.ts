@@ -8,8 +8,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { EmpleadoService } from './empleado.service';
@@ -47,10 +53,26 @@ export class EmpleadoSolicitudNueva {
     password: ['', Validators.required],
   });
 
+  protected readonly sinProductos = computed(
+    () => this.productos.hasValue() && this.productos.value().length === 0,
+  );
+
   protected readonly formItem = this.fb.group({
     productoId: this.fb.control<number | null>(null, Validators.required),
-    cantidad: this.fb.control<number | null>(null, [Validators.required, Validators.min(1), Validators.pattern(/^\d+$/)]),
+    cantidad: this.fb.control<number | null>(null, [
+      Validators.required,
+      Validators.min(1),
+      Validators.pattern(/^\d+$/),
+      (control: AbstractControl): ValidationErrors | null => this.validarMaximo(control),
+    ]),
   });
+
+  private readonly productoElegidoId = toSignal(this.formItem.controls.productoId.valueChanges, {
+    initialValue: null,
+  });
+  protected readonly productoElegido = computed(
+    () => this.opcionesProducto().find((p) => p.id === this.productoElegidoId()) ?? null,
+  );
 
   protected readonly items = signal<ItemCarrito[]>([]);
   protected readonly intentoAgregar = signal(false);
@@ -58,6 +80,12 @@ export class EmpleadoSolicitudNueva {
   protected readonly intentoEnviar = signal(false);
   protected readonly guardando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
+
+  constructor() {
+    this.formItem.controls.productoId.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.formItem.controls.cantidad.updateValueAndValidity());
+  }
 
   protected errorIdentidad(campo: 'empleadoId' | 'password'): boolean {
     const control = this.formIdentidad.controls[campo];
@@ -124,11 +152,19 @@ export class EmpleadoSolicitudNueva {
         error: (err: unknown) => {
           this.guardando.set(false);
           this.errorGeneral.set(traducirError(err).mensaje);
+          this.productos.reload();
           this.formIdentidad.controls.password.reset('');
           this.intentoEnviar.set(false);
           this.enfocar('nueva-error');
         },
       });
+  }
+
+  private validarMaximo(control: AbstractControl): ValidationErrors | null {
+    const productoId = control.parent?.get('productoId')?.value as number | null | undefined;
+    const producto = this.opcionesProducto().find((p) => p.id === productoId);
+    if (!producto || control.value === null || control.value === '') return null;
+    return Number(control.value) > producto.stock ? { maxStock: { stock: producto.stock } } : null;
   }
 
   private enfocar(id: string): void {
