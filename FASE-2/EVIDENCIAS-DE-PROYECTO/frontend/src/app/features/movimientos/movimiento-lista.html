@@ -3,9 +3,32 @@
     <button type="button" class="w3-button w3-emerald w3-round w3-margin-left" (click)="mostrarEntrada.set(true)">
       <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar entrada
     </button>
-    <a routerLink="/movimientos/importar-entradas" class="w3-button w3-emerald w3-round w3-margin-left">
-      <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Importar desde Excel
-    </a>
+    <button
+      type="button"
+      class="w3-button w3-emerald w3-round w3-margin-left"
+      [attr.aria-disabled]="leyendoArchivo()"
+      (click)="archivoExcel.click()"
+    >
+      <i class="fa-solid fa-file-excel" aria-hidden="true"></i>
+      {{ leyendoArchivo() ? 'Leyendo archivo…' : 'Importar Excel' }}
+    </button>
+    <button
+      type="button"
+      class="w3-button w3-white w3-border w3-round w3-margin-left"
+      [attr.aria-disabled]="descargandoPlantilla()"
+      (click)="descargarPlantilla()"
+    >
+      <i class="fa fa-download" aria-hidden="true"></i> Descargar plantilla
+    </button>
+    <input
+      #archivoExcel
+      type="file"
+      class="visualmente-oculto"
+      tabindex="-1"
+      aria-hidden="true"
+      accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      (change)="leerArchivo(archivoExcel)"
+    />
     <button type="button" class="w3-button w3-crimson w3-round w3-margin-left" (click)="mostrarSalida.set(true)">
       <i class="fa-solid fa-plus" aria-hidden="true"></i> Registrar salida
     </button>
@@ -17,6 +40,17 @@
     <app-movimiento-formulario-entrada
       (guardado)="alGuardarMovimiento(); mostrarEntrada.set(false)"
       (cancelar)="mostrarEntrada.set(false)"
+    />
+  </app-modal>
+}
+
+@if (filasImportacion() !== null) {
+  <app-modal titulo="Importar entradas desde Excel" [amplio]="true" (cerrar)="importacion.solicitarCierre()">
+    <app-entrada-importar
+      #importacion
+      [filasIniciales]="filasImportacion()!"
+      (importado)="alImportar($event)"
+      (cerrarSolicitado)="filasImportacion.set(null)"
     />
   </app-modal>
 }

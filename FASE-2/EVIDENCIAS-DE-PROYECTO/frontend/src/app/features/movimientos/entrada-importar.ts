@@ -1,17 +1,41 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
 import { EMPTY, Subject, catchError, debounceTime, filter, switchMap } from 'rxjs';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
-import { descargarArchivo } from '../../shared/utils/descargar-archivo';
+import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
+import { ThOrden } from '../../shared/ordenamiento/th-orden';
+import { Paginacion } from '../../shared/paginacion/paginacion';
 import { FilaEntrada, FilaEntradaValidada, ImportacionEntradaRequest } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
+
+type Columna =
+  | 'fila'
+  | 'estado'
+  | 'codigo'
+  | 'producto'
+  | 'numeroLote'
+  | 'fechaVencimiento'
+  | 'cantidad'
+  | 'costoUnitario';
 
 type CampoTexto = 'codigo' | 'numeroLote' | 'fechaVencimiento';
 type CampoNumero = 'cantidad' | 'costoUnitario';
 type Campo = CampoTexto | CampoNumero;
+type Vista = 'todas' | 'errores';
 
 /**
  * Una fila de la vista previa. `lectura` guarda los problemas detectados al leer el Excel (por ejemplo una
@@ -34,46 +58,52 @@ const RANGO_NUMERO: Record<CampoNumero, { min: number; max: number; mensaje: str
 };
 
 /**
- * Importación de entradas desde Excel: un archivo es una sola operación (todo o nada). Se lee el archivo,
- * se corrige en una vista previa editable que se revalida en el servidor, y recién entonces se cargan.
+ * Vista previa editable de la importación de entradas: un archivo es una sola operación (todo o nada). Valida
+ * en el servidor cada vez que se edita una fila; el orden y el filtro se recalculan solo al pedirlo
+ * (encabezado, filtro o «Actualizar orden») para que una fila no salte de lugar mientras se corrige.
  */
 @Component({
   selector: 'app-entrada-importar',
-  imports: [RouterLink],
+  imports: [ThOrden, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './entrada-importar.html',
 })
-export class EntradaImportar {
+export class EntradaImportar implements OnInit {
+  readonly filasIniciales = input.required<FilaEntradaValidada[]>();
+  readonly importado = output<number>();
+  readonly cerrarSolicitado = output<void>();
+
   private readonly movimientoService = inject(MovimientoService);
   private readonly confirmacion = inject(ConfirmacionService);
   private readonly notificaciones = inject(NotificacionService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly maxNota = MAX_NOTA;
+  protected readonly opcionesTamano = [10, 25, 50, 100] as const;
 
   protected readonly tipos = this.movimientoService.listarTipos(1);
   protected readonly opcionesTipo = computed(() => (this.tipos.hasValue() ? this.tipos.value() : []));
 
   protected readonly tipo = signal('');
   protected readonly nota = signal('');
-  protected readonly archivo = signal<File | null>(null);
 
-  protected readonly descargandoPlantilla = signal(false);
-  protected readonly leyendo = signal(false);
+  protected readonly filas = signal<FilaVista[]>([]);
   protected readonly validando = signal(false);
   protected readonly cargando = signal(false);
-  protected readonly intentoLeerSinArchivo = signal(false);
 
-  /** `null` mientras no se ha leído ningún archivo. */
-  protected readonly filas = signal<FilaVista[] | null>(null);
+  protected readonly vista = signal<Vista>('todas');
+  protected readonly pagina = signal(1);
+  protected readonly tamanoPagina = signal(25);
+  protected readonly orden = new Orden<Columna>({ columna: 'estado', direccion: 'desc' }, () => this.reordenar());
 
-  protected readonly total = computed(() => this.filas()?.length ?? 0);
-  protected readonly conErrores = computed(() => (this.filas() ?? []).filter((f) => this.cantidadErrores(f) > 0).length);
-  protected readonly validas = computed(() => this.total() - this.conErrores());
+  /** Las filas en el orden en que se muestran, fijado al pedir un reordenamiento. */
+  private readonly idsMostrados = signal<number[]>([]);
+
+  protected readonly conErrores = computed(() => this.filas().filter((f) => this.cantidadErrores(f) > 0).length);
+  protected readonly validas = computed(() => this.filas().length - this.conErrores());
   protected readonly puedeCargar = computed(
     () =>
-      this.total() > 0 &&
+      this.filas().length > 0 &&
       this.conErrores() === 0 &&
       this.tipo() !== '' &&
       this.nota().length <= MAX_NOTA &&
@@ -81,7 +111,41 @@ export class EntradaImportar {
       !this.cargando(),
   );
 
+  /** El orden que resultaría ahora mismo; si difiere del mostrado, se ofrece actualizarlo. */
+  private readonly idsIdeales = computed(() => {
+    const lista = this.vista() === 'errores' ? this.filas().filter((f) => this.cantidadErrores(f) > 0) : this.filas();
+    return ordenar(lista, this.orden, this.extractores).map((f) => f.datos.fila ?? 0);
+  });
+  protected readonly ordenDesactualizado = computed(
+    () => this.idsIdeales().join(',') !== this.idsMostrados().join(','),
+  );
+
+  protected readonly mostradas = computed(() => {
+    const porId = new Map(this.filas().map((f) => [f.datos.fila ?? 0, f]));
+    return this.idsMostrados()
+      .map((id) => porId.get(id))
+      .filter((f): f is FilaVista => f !== undefined);
+  });
+  protected readonly paginaActual = computed(() =>
+    Math.min(this.pagina(), Math.max(1, Math.ceil(this.mostradas().length / this.tamanoPagina()))),
+  );
+  protected readonly paginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
+    return this.mostradas().slice(inicio, inicio + this.tamanoPagina());
+  });
+
   private readonly revalidar$ = new Subject<void>();
+
+  private readonly extractores: Extractores<FilaVista, Columna> = {
+    fila: (f) => f.datos.fila,
+    estado: (f) => this.cantidadErrores(f),
+    codigo: (f) => f.datos.codigo,
+    producto: (f) => f.datos.productoNombre,
+    numeroLote: (f) => f.datos.numeroLote,
+    fechaVencimiento: (f) => f.datos.fechaVencimiento,
+    cantidad: (f) => f.datos.cantidad,
+    costoUnitario: (f) => f.datos.costoUnitario,
+  };
 
   constructor() {
     // Misma preselección que el formulario de una entrada: «Compra» si existe, si no el primer tipo.
@@ -96,7 +160,7 @@ export class EntradaImportar {
       .pipe(
         debounceTime(300),
         switchMap(() => {
-          const datos = (this.filas() ?? []).map((f) => f.datos);
+          const datos = this.filas().map((f) => f.datos);
           if (datos.length === 0) {
             this.validando.set(false);
             return EMPTY;
@@ -117,50 +181,11 @@ export class EntradaImportar {
       });
   }
 
-  protected descargarPlantilla(): void {
-    if (this.descargandoPlantilla()) return;
-    this.descargandoPlantilla.set(true);
-    this.movimientoService
-      .descargarPlantillaEntradas()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (blob) => {
-          this.descargandoPlantilla.set(false);
-          descargarArchivo(blob, 'plantilla-entradas.xlsx');
-        },
-        error: () => {
-          this.descargandoPlantilla.set(false);
-          this.notificaciones.error('No se pudo descargar la plantilla. Inténtalo de nuevo.');
-        },
-      });
-  }
-
-  protected elegirArchivo(campo: HTMLInputElement): void {
-    this.archivo.set(campo.files?.item(0) ?? null);
-    this.intentoLeerSinArchivo.set(false);
-  }
-
-  protected leerArchivo(): void {
-    if (this.leyendo()) return;
-    const archivo = this.archivo();
-    if (!archivo) {
-      this.intentoLeerSinArchivo.set(true);
-      return;
-    }
-    this.leyendo.set(true);
-    this.movimientoService
-      .leerEntradas(archivo)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultado) => {
-          this.leyendo.set(false);
-          this.filas.set(resultado.map((r) => ({ datos: r.datos, servidor: r.errores, lectura: { ...r.errores } })));
-        },
-        error: (err: unknown) => {
-          this.leyendo.set(false);
-          this.notificaciones.error(traducirError(err).mensaje);
-        },
-      });
+  ngOnInit(): void {
+    this.filas.set(
+      this.filasIniciales().map((r) => ({ datos: r.datos, servidor: r.errores, lectura: { ...r.errores } })),
+    );
+    this.reordenar();
   }
 
   protected errorDe(f: FilaVista, campo: Campo): string | null {
@@ -169,6 +194,31 @@ export class EntradaImportar {
 
   protected cantidadErrores(f: FilaVista): number {
     return Object.keys(this.errores(f)).length;
+  }
+
+  protected claseErrorFila(f: FilaVista): string {
+    return this.cantidadErrores(f) > 0 ? 'fila-con-error' : '';
+  }
+
+  protected reordenar(): void {
+    untracked(() => {
+      this.idsMostrados.set(this.idsIdeales());
+      this.pagina.set(1);
+    });
+  }
+
+  protected cambiarVista(valor: string): void {
+    this.vista.set(valor === 'errores' ? 'errores' : 'todas');
+    this.reordenar();
+  }
+
+  protected cambiarPagina(pagina: number): void {
+    this.pagina.set(pagina);
+  }
+
+  protected cambiarTamanoPagina(tamano: number): void {
+    this.tamanoPagina.set(tamano);
+    this.pagina.set(1);
   }
 
   protected editarTexto(fila: number, campo: CampoTexto, valor: string): void {
@@ -190,14 +240,33 @@ export class EntradaImportar {
     this.actualizar(fila, campo, numero);
   }
 
-  protected revalidar(): void {
-    this.validando.set(true);
-    this.revalidar$.next();
+  protected quitar(fila: number): void {
+    this.filas.update((lista) => lista.filter((f) => f.datos.fila !== fila));
+    this.revalidar();
+  }
+
+  solicitarCierre(): void {
+    if (this.cargando()) return;
+    if (this.filas().length === 0) {
+      this.cerrarSolicitado.emit();
+      return;
+    }
+    this.confirmacion
+      .confirmar({
+        titulo: '¿Descartar la importación?',
+        descripcion: 'No se cargará ninguna entrada y se perderán las correcciones hechas.',
+        textoConfirmar: 'Descartar',
+      })
+      .pipe(
+        filter((confirmado) => confirmado),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => this.cerrarSolicitado.emit());
   }
 
   protected cargar(): void {
     if (!this.puedeCargar()) return;
-    const datos = (this.filas() ?? []).map((f) => f.datos);
+    const datos = this.filas().map((f) => f.datos);
     const total = datos.length;
     this.confirmacion
       .confirmar({
@@ -216,9 +285,7 @@ export class EntradaImportar {
       .subscribe({
         next: (operacion) => {
           this.cargando.set(false);
-          const lotes = operacion.lineas.length;
-          this.notificaciones.exito(`Se cargaron ${lotes} ${lotes === 1 ? 'lote' : 'lotes'}.`);
-          void this.router.navigateByUrl('/movimientos');
+          this.importado.emit(operacion.lineas.length);
         },
         error: (err: unknown) => {
           this.cargando.set(false);
@@ -226,6 +293,11 @@ export class EntradaImportar {
           this.revalidar();
         },
       });
+  }
+
+  private revalidar(): void {
+    this.validando.set(true);
+    this.revalidar$.next();
   }
 
   private errores(f: FilaVista): Record<string, string> {
@@ -248,7 +320,7 @@ export class EntradaImportar {
 
   private actualizar(fila: number, campo: Campo, valor: string | number | null, errorLectura?: string): void {
     this.filas.update((lista) =>
-      (lista ?? []).map((f) => {
+      lista.map((f) => {
         if (f.datos.fila !== fila) return f;
         const { [campo]: _descartado, ...lectura } = f.lectura;
         if (errorLectura) lectura[campo] = errorLectura;
@@ -265,7 +337,7 @@ export class EntradaImportar {
   private aplicarValidacion(resultado: FilaEntradaValidada[]): void {
     const porFila = new Map(resultado.map((r) => [r.datos.fila, r]));
     this.filas.update((lista) =>
-      (lista ?? []).map((f) => {
+      lista.map((f) => {
         const r = porFila.get(f.datos.fila);
         if (!r) return f;
         return {

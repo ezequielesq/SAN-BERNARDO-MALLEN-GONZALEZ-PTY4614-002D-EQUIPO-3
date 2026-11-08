@@ -7,11 +7,6 @@ export const MOVIMIENTOS_ROUTES: Routes = [
     loadComponent: () => import('./movimiento-lista').then((m) => m.MovimientoLista),
   },
   {
-    path: 'importar-entradas',
-    title: 'Importar entradas · Smart RDP',
-    loadComponent: () => import('./entrada-importar').then((m) => m.EntradaImportar),
-  },
-  {
     path: 'stock',
     title: 'Estado de stock · Smart RDP',
     loadComponent: () => import('./stock-lista').then((m) => m.StockLista),

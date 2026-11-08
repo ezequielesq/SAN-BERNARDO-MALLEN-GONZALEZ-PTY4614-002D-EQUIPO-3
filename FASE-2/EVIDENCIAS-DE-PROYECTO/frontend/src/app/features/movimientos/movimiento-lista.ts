@@ -8,7 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { filter, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { traducirError } from '../../core/errores/traducir-error';
@@ -21,10 +20,12 @@ import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
 import { ProductoService } from '../productos/producto.service';
+import { EntradaImportar } from './entrada-importar';
 import { MovimientoCalendario } from './movimiento-calendario';
 import { MovimientoFormularioEntrada } from './movimiento-formulario-entrada';
 import { MovimientoFormularioSalida } from './movimiento-formulario-salida';
-import { Movimiento } from './movimiento.modelo';
+import { descargarArchivo } from '../../shared/utils/descargar-archivo';
+import { FilaEntradaValidada, Movimiento } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
 type ColumnaOrdenMovimiento = 'fecha' | 'productoNombre' | 'tipo' | 'cantidad' | 'usuarioEmail';
@@ -39,7 +40,7 @@ const EXTRACTORES_MOVIMIENTO: Extractores<Movimiento, ColumnaOrdenMovimiento> = 
 
 @Component({
   selector: 'app-movimiento-lista',
-  imports: [DatePipe, RouterLink, EstadoVista, EstadoBadge, Paginacion, ThOrden, MovimientoCalendario, Modal, MovimientoFormularioEntrada, MovimientoFormularioSalida],
+  imports: [DatePipe, EstadoVista, EstadoBadge, Paginacion, ThOrden, MovimientoCalendario, Modal, EntradaImportar, MovimientoFormularioEntrada, MovimientoFormularioSalida],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimiento-lista.html',
 })
@@ -54,8 +55,57 @@ export class MovimientoLista {
   protected readonly mostrarEntrada = signal(false);
   protected readonly mostrarSalida = signal(false);
 
+  protected readonly leyendoArchivo = signal(false);
+  protected readonly descargandoPlantilla = signal(false);
+  /** Filas leídas del Excel que se están revisando en la modal; `null` = modal cerrada. */
+  protected readonly filasImportacion = signal<FilaEntradaValidada[] | null>(null);
+
   protected alGuardarMovimiento(): void {
     this.movimientos.reload();
+  }
+
+  protected descargarPlantilla(): void {
+    if (this.descargandoPlantilla()) return;
+    this.descargandoPlantilla.set(true);
+    this.movimientoService
+      .descargarPlantillaEntradas()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob) => {
+          this.descargandoPlantilla.set(false);
+          descargarArchivo(blob, 'plantilla-entradas.xlsx');
+        },
+        error: () => {
+          this.descargandoPlantilla.set(false);
+          this.notificaciones.error('No se pudo descargar la plantilla. Inténtalo de nuevo.');
+        },
+      });
+  }
+
+  protected leerArchivo(campo: HTMLInputElement): void {
+    const archivo = campo.files?.item(0);
+    campo.value = '';
+    if (!archivo || this.leyendoArchivo()) return;
+    this.leyendoArchivo.set(true);
+    this.movimientoService
+      .leerEntradas(archivo)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (filas) => {
+          this.leyendoArchivo.set(false);
+          this.filasImportacion.set(filas);
+        },
+        error: (err: unknown) => {
+          this.leyendoArchivo.set(false);
+          this.notificaciones.error(traducirError(err).mensaje);
+        },
+      });
+  }
+
+  protected alImportar(lotes: number): void {
+    this.filasImportacion.set(null);
+    this.alGuardarMovimiento();
+    this.notificaciones.exito(`Se cargaron ${lotes} ${lotes === 1 ? 'lote' : 'lotes'}.`);
   }
 
   protected readonly puedeGestionar = computed(() => {
