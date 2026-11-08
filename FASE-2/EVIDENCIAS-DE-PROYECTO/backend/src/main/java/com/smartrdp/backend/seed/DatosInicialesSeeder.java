@@ -5,6 +5,7 @@ import com.smartrdp.backend.catalogo.CategoriaRepository;
 import com.smartrdp.backend.catalogo.UnidadMedida;
 import com.smartrdp.backend.catalogo.UnidadMedidaRepository;
 import com.smartrdp.backend.usuario.Rol;
+import com.smartrdp.backend.usuario.RolRepository;
 import com.smartrdp.backend.usuario.Usuario;
 import com.smartrdp.backend.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class DatosInicialesSeeder implements CommandLineRunner {
     private final CategoriaRepository categoriaRepository;
     private final UnidadMedidaRepository unidadMedidaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${app.seed.admin-email:}")
@@ -71,7 +73,8 @@ public class DatosInicialesSeeder implements CommandLineRunner {
         admin.setNombre("Administrador");
         admin.setEmail(adminEmail);
         admin.setPassword(passwordEncoder.encode(adminPassword));
-        admin.setRol(Rol.ADMIN);
+        admin.setRol(rolRepository.findByCodigo(Rol.ADMIN)
+                .orElseThrow(() -> new IllegalStateException("Falta el rol ADMIN en el catálogo.")));
         usuarioRepository.save(admin);
         log.info("ADMIN inicial creado: {}", adminEmail);
     }

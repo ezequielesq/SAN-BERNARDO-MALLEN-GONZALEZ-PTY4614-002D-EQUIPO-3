@@ -16,6 +16,6 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     Optional<Solicitud> findByIdForUpdate(@Param("id") Long id);
 
     List<Solicitud> findBySolicitanteIdOrderByCreatedAtDesc(Long solicitanteId);
-    List<Solicitud> findByEstadoOrderByCreatedAtDesc(EstadoSolicitud estado);
+    List<Solicitud> findByEstadoCodigoOrderByCreatedAtDesc(String codigoEstado);
     List<Solicitud> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime desde, LocalDateTime hasta);
 }

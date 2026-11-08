@@ -33,7 +33,7 @@ public class VerificadorIdentidad {
         Instant ahora = Instant.now();
 
         Usuario usuario = usuarioRepository.findById(empleadoId)
-                .filter(u -> u.isActivo() && u.getRol() == Rol.EMPLEADO)
+                .filter(u -> u.isActivo() && Rol.EMPLEADO.equals(u.getRol().getCodigo()))
                 .orElseThrow(() -> new BusinessException(MENSAJE_INVALIDO));
 
         // Se reserva el intento de forma atómica ANTES de comparar la contraseña, así las

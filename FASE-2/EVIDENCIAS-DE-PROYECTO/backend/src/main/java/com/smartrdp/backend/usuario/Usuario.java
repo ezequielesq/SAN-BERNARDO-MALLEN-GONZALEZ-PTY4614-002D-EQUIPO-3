@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @Getter
 @Setter
@@ -26,8 +27,10 @@ public class Usuario extends BaseEntity {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "rol", nullable = false, length = 20)
+    // EAGER: es un catálogo de 3 filas y open-in-view está desactivado.
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "rol_id", nullable = false)
     private Rol rol;
 
     @Column(name = "activo", nullable = false)

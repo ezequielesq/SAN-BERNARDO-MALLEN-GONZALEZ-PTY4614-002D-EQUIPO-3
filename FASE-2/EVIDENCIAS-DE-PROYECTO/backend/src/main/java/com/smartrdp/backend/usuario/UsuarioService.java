@@ -21,7 +21,7 @@ public class UsuarioService {
         // Se resuelve el rol antes de autenticar: un empleado recibe siempre el mismo 422,
         // sin mirar la contraseña, para que el login no sirva de oráculo de contraseñas.
         var existente = usuarioRepository.findByEmailAndActivoTrue(request.email());
-        if (existente.isPresent() && existente.get().getRol() == Rol.EMPLEADO) {
+        if (existente.isPresent() && Rol.EMPLEADO.equals(existente.get().getRol().getCodigo())) {
             throw new BusinessException(
                     "Los empleados no inician sesión. Usa la vista pública de solicitudes.");
         }
@@ -30,6 +30,6 @@ public class UsuarioService {
         var usuario = usuarioRepository.findByEmailAndActivoTrue(request.email()).orElseThrow();
         var userDetails = userDetailsService.loadUserByUsername(request.email());
         var token = jwtTokenProvider.generateToken(userDetails);
-        return new LoginResponse(token, usuario.getEmail(), usuario.getNombre(), usuario.getRol());
+        return new LoginResponse(token, usuario.getEmail(), usuario.getNombre(), usuario.getRol().getCodigo());
     }
 }

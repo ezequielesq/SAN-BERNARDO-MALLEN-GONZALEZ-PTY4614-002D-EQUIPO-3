@@ -1,11 +1,11 @@
 package com.smartrdp.backend.solicitud;
 
-import com.smartrdp.backend.movimiento.Movimiento;
 import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.shared.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/** Línea pedida (o a devolver). Lo entregado/aceptado no se guarda aquí: sale de las vistas del libro. */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,22 +24,4 @@ public class DetalleSolicitud extends BaseEntity {
 
     @Column(name = "cantidad_solicitada", nullable = false)
     private Integer cantidadSolicitada;
-
-    // Bodeguero puede modificar antes de aprobar (HU-16)
-    @Column(name = "cantidad_entregada")
-    private Integer cantidadEntregada;
-
-    /** Línea que el bodeguero entregó sin que el empleado la pidiera (cantidadSolicitada = 0). */
-    @Column(name = "agregado", nullable = false, columnDefinition = "boolean not null default false")
-    private boolean agregado;
-
-    /** Solo en devoluciones: el detalle del pedido original que se está devolviendo. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "detalle_origen_id")
-    private DetalleSolicitud detalleOrigen;
-
-    /** Movimiento SOLICITADO (pedido) o DEVOLUCION que generó la aprobación de este detalle. */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "movimiento_id")
-    private Movimiento movimiento;
 }

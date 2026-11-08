@@ -9,14 +9,14 @@ import java.util.Optional;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmailAndActivoTrue(String email);
     boolean existsByEmail(String email);
-    List<Usuario> findByRolAndActivoTrueOrderByNombreAsc(Rol rol);
+    List<Usuario> findByRolCodigoAndActivoTrueOrderByNombreAsc(String codigoRol);
 
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
-    boolean existsByNombreIgnoreCaseAndRolAndActivoTrue(String nombre, Rol rol);
-    boolean existsByNombreIgnoreCaseAndRolAndActivoTrueAndIdNot(String nombre, Rol rol, Long id);
+    boolean existsByNombreIgnoreCaseAndRolCodigoAndActivoTrue(String nombre, String codigoRol);
+    boolean existsByNombreIgnoreCaseAndRolCodigoAndActivoTrueAndIdNot(String nombre, String codigoRol, Long id);
 
-    List<Usuario> findByRolInOrderByNombreAsc(Collection<Rol> roles);
-    List<Usuario> findByRolInAndActivoTrueOrderByNombreAsc(Collection<Rol> roles);
-    Optional<Usuario> findByIdAndRolIn(Long id, Collection<Rol> roles);
+    List<Usuario> findByRolCodigoInOrderByNombreAsc(Collection<String> codigosRol);
+    List<Usuario> findByRolCodigoInAndActivoTrueOrderByNombreAsc(Collection<String> codigosRol);
+    Optional<Usuario> findByIdAndRolCodigoIn(Long id, Collection<String> codigosRol);
 }

@@ -1,36 +1,32 @@
 package com.smartrdp.backend.movimiento;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 public interface LoteRepository extends JpaRepository<Lote, Long> {
 
-    // FEFO: lotes con stock disponible, ordenados por fecha de vencimiento más próxima
-    List<Lote> findByProductoIdAndCantidadDisponibleGreaterThanOrderByFechaVencimientoAsc(
-            Long productoId, Integer cantidadMin);
+    /** Bloquea (FOR UPDATE) todos los lotes del producto, siempre en orden de id, para serializar las salidas. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT l FROM Lote l WHERE l.producto.id = :productoId ORDER BY l.id")
+    List<Lote> bloquearDelProducto(@Param("productoId") Long productoId);
 
-    List<Lote> findByProductoIdOrderByFechaVencimientoAsc(Long productoId);
+    /**
+     * Bloquea (FOR UPDATE) en UNA sola consulta todos los lotes de varios productos, en orden global de id.
+     * Toda operación que mueve stock bloquea así sus lotes antes de leer saldos: con un orden único no hay
+     * interbloqueos entre operaciones concurrentes.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT l FROM Lote l WHERE l.producto.id IN :productoIds ORDER BY l.id")
+    List<Lote> bloquearDeProductos(@Param("productoIds") Collection<Long> productoIds);
 
-    // Para alertas de vencimiento (HU-06)
-    List<Lote> findByFechaVencimientoBeforeAndCantidadDisponibleGreaterThan(
-            LocalDate fecha, Integer cantidadMin);
-
-    @Query("""
-        SELECT l FROM Lote l
-        WHERE l.fechaVencimiento < :umbral
-        AND l.cantidadDisponible > 0
-        AND (:categoriaId IS NULL OR l.producto.categoria.id = :categoriaId)
-        """)
-    List<Lote> findVencimientosPorUmbral(LocalDate umbral, Long categoriaId);
-
-    @Query("""
-        SELECT l FROM Lote l
-        WHERE l.fechaVencimiento BETWEEN :desde AND :hasta
-        AND l.cantidadDisponible > 0
-        AND (:categoriaId IS NULL OR l.producto.categoria.id = :categoriaId)
-        """)
-    List<Lote> findVencimientosPorRango(LocalDate desde, LocalDate hasta, Long categoriaId);
+    /** Igual, para un conjunto de lotes (correcciones, devoluciones). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT l FROM Lote l WHERE l.id IN :ids ORDER BY l.id")
+    List<Lote> bloquearPorIds(@Param("ids") Collection<Long> ids);
 }

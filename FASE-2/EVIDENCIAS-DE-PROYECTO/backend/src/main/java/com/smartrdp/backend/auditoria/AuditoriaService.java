@@ -46,8 +46,8 @@ public class AuditoriaService {
                     fecha,
                     rev.getUsuarioEmail(),
                     tipo.name(),
-                    solicitud.getEstado() != null ? solicitud.getEstado().name() : null,
-                    solicitud.getTipo() != null ? solicitud.getTipo().name() : null
+                    solicitud.getEstado() != null ? solicitud.getEstado().getCodigo() : null,
+                    solicitud.tipoCodigo()
             );
         }).toList();
     }

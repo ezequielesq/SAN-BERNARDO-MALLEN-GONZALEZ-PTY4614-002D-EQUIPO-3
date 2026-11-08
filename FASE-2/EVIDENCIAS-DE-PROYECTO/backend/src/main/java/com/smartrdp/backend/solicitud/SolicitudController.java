@@ -1,6 +1,7 @@
 package com.smartrdp.backend.solicitud;
 
 import com.smartrdp.backend.solicitud.dto.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
@@ -30,7 +31,7 @@ public class SolicitudController {
 
     @PutMapping("/{id}/aprobar")
     public SolicitudResponse aprobar(@PathVariable Long id,
-                                      @RequestBody AprobarSolicitudRequest request) {
+                                      @RequestBody(required = false) @Valid AprobarSolicitudRequest request) {
         return solicitudService.aprobar(id, request);
     }
 

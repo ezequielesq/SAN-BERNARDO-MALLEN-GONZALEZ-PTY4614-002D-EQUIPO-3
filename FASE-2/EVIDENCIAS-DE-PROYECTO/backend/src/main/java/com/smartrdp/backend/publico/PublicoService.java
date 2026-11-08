@@ -22,7 +22,7 @@ public class PublicoService {
 
     @Transactional(readOnly = true)
     public List<EmpleadoDto> listarEmpleados() {
-        return usuarioRepository.findByRolAndActivoTrueOrderByNombreAsc(Rol.EMPLEADO).stream()
+        return usuarioRepository.findByRolCodigoAndActivoTrueOrderByNombreAsc(Rol.EMPLEADO).stream()
                 .map(u -> new EmpleadoDto(u.getId(), u.getNombre()))
                 .toList();
     }

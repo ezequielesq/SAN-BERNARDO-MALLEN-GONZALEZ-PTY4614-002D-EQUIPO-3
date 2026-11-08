@@ -11,6 +11,7 @@ import org.hibernate.envers.RelationTargetAuditMode;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Pedido (solicitudOrigen nulo) o devolución (solicitudOrigen = el pedido del que se devuelve). */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,33 +21,42 @@ import java.util.List;
 @Table(name = "solicitudes")
 public class Solicitud extends BaseEntity {
 
+    public static final String PEDIDO = "PEDIDO";
+    public static final String DEVOLUCION = "DEVOLUCION";
+
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "solicitante_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "estado_id", nullable = false)
+    private EstadoSolicitud estado;
+
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "solicitante_id", nullable = false)
     private Usuario solicitante;
 
+    /** Quien la resolvió (aprobó o rechazó). Nulo mientras está pendiente. */
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bodeguero_id")
     private Usuario bodeguero;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 15)
-    private EstadoSolicitud estado = EstadoSolicitud.PENDIENTE;
-
-    @Column(name = "observacion", length = 300)
-    private String observacion;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false, length = 10, columnDefinition = "varchar(10) default 'PEDIDO'")
-    private TipoSolicitud tipo = TipoSolicitud.PEDIDO;
 
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "solicitud_origen_id")
     private Solicitud solicitudOrigen;
 
+    @Column(name = "observacion", length = 300)
+    private String observacion;
+
     @NotAudited
     @OneToMany(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetalleSolicitud> detalles = new ArrayList<>();
+
+    public boolean esDevolucion() {
+        return solicitudOrigen != null;
+    }
+
+    public String tipoCodigo() {
+        return esDevolucion() ? DEVOLUCION : PEDIDO;
+    }
 }

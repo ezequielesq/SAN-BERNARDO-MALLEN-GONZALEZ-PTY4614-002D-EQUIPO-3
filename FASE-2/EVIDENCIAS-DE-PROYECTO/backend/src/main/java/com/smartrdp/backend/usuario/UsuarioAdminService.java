@@ -18,18 +18,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UsuarioAdminService {
 
-    private static final List<Rol> ROLES_ADMINISTRABLES = List.of(Rol.BODEGUERO, Rol.EMPLEADO);
+    private static final List<String> ROLES_ADMINISTRABLES = List.of(Rol.BODEGUERO, Rol.EMPLEADO);
     private static final int LARGO_MINIMO_PASSWORD = 6;
     private static final int LARGO_MAXIMO_PASSWORD_BYTES = 72;
 
     private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listar(boolean soloActivos) {
         List<Usuario> usuarios = soloActivos
-                ? usuarioRepository.findByRolInAndActivoTrueOrderByNombreAsc(ROLES_ADMINISTRABLES)
-                : usuarioRepository.findByRolInOrderByNombreAsc(ROLES_ADMINISTRABLES);
+                ? usuarioRepository.findByRolCodigoInAndActivoTrueOrderByNombreAsc(ROLES_ADMINISTRABLES)
+                : usuarioRepository.findByRolCodigoInOrderByNombreAsc(ROLES_ADMINISTRABLES);
         return usuarios.stream().map(UsuarioResponse::from).toList();
     }
 
@@ -39,7 +40,7 @@ public class UsuarioAdminService {
         String nombre = request.nombre().trim();
         String email = request.email().trim();
         validarCorreo(email, null);
-        if (rol == Rol.EMPLEADO) validarNombreEmpleado(nombre, null);
+        if (Rol.EMPLEADO.equals(rol.getCodigo())) validarNombreEmpleado(nombre, null);
 
         Usuario usuario = new Usuario();
         usuario.setNombre(nombre);
@@ -57,7 +58,7 @@ public class UsuarioAdminService {
         String nombre = request.nombre().trim();
         String email = request.email().trim();
         validarCorreo(email, id);
-        if (rol == Rol.EMPLEADO && usuario.isActivo()) validarNombreEmpleado(nombre, id);
+        if (Rol.EMPLEADO.equals(rol.getCodigo()) && usuario.isActivo()) validarNombreEmpleado(nombre, id);
 
         String password = request.password();
         if (password != null && !password.isEmpty()) {
@@ -84,12 +85,12 @@ public class UsuarioAdminService {
     @Transactional
     public void reactivar(Long id) {
         Usuario usuario = buscar(id);
-        if (usuario.getRol() == Rol.EMPLEADO) validarNombreEmpleado(usuario.getNombre(), id);
+        if (Rol.EMPLEADO.equals(usuario.getRol().getCodigo())) validarNombreEmpleado(usuario.getNombre(), id);
         usuario.setActivo(true);
     }
 
     private Usuario buscar(Long id) {
-        return usuarioRepository.findByIdAndRolIn(id, ROLES_ADMINISTRABLES)
+        return usuarioRepository.findByIdAndRolCodigoIn(id, ROLES_ADMINISTRABLES)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", id));
     }
 
@@ -100,11 +101,12 @@ public class UsuarioAdminService {
         }
     }
 
-    private Rol validarRol(Rol rol) {
-        if (rol == null || !ROLES_ADMINISTRABLES.contains(rol)) {
+    private Rol validarRol(String codigo) {
+        if (codigo == null || !ROLES_ADMINISTRABLES.contains(codigo)) {
             throw new BusinessException("El rol debe ser Bodeguero o Empleado.", "rol");
         }
-        return rol;
+        return rolRepository.findByCodigo(codigo)
+                .orElseThrow(() -> new ResourceNotFoundException("Rol", codigo));
     }
 
     private void validarCorreo(String email, Long idActual) {
@@ -118,8 +120,8 @@ public class UsuarioAdminService {
 
     private void validarNombreEmpleado(String nombre, Long idActual) {
         boolean repetido = idActual == null
-                ? usuarioRepository.existsByNombreIgnoreCaseAndRolAndActivoTrue(nombre, Rol.EMPLEADO)
-                : usuarioRepository.existsByNombreIgnoreCaseAndRolAndActivoTrueAndIdNot(
+                ? usuarioRepository.existsByNombreIgnoreCaseAndRolCodigoAndActivoTrue(nombre, Rol.EMPLEADO)
+                : usuarioRepository.existsByNombreIgnoreCaseAndRolCodigoAndActivoTrueAndIdNot(
                         nombre, Rol.EMPLEADO, idActual);
         if (repetido) {
             throw new BusinessException("Ya hay un empleado activo con el nombre " + nombre + ".", "nombre");
