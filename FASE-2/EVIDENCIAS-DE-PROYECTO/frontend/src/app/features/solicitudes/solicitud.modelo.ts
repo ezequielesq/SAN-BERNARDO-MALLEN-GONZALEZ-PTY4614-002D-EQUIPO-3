@@ -9,6 +9,7 @@ export interface DetalleSolicitud {
   cantidadEntregada: number | null;
   cantidadDevuelta: number | null;
   devolvible: number | null;
+  agregado: boolean;
 }
 
 export interface Solicitud {
@@ -26,6 +27,12 @@ export interface ItemEntregado {
   cantidadEntregada: number;
 }
 
+export interface ItemAgregado {
+  productoId: number;
+  cantidad: number;
+}
+
 export interface AprobarSolicitudRequest {
   items: ItemEntregado[];
+  agregados: ItemAgregado[];
 }

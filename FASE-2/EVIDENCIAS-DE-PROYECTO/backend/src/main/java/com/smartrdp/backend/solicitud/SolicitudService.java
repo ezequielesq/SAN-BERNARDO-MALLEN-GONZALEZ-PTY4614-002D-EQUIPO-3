@@ -4,6 +4,7 @@ import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.exception.ResourceNotFoundException;
 import com.smartrdp.backend.movimiento.Movimiento;
 import com.smartrdp.backend.movimiento.MovimientoService;
+import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.producto.ProductoRepository;
 import com.smartrdp.backend.solicitud.dto.*;
 import com.smartrdp.backend.usuario.Usuario;
@@ -107,6 +108,8 @@ public class SolicitudService {
             solicitudRepository.findByIdForUpdate(solicitud.getSolicitudOrigen().getId());
         }
 
+        Map<Producto, Integer> agregados = validarAgregados(solicitud, request);
+
         Map<Long, Integer> cantidadesEntregadas = new HashMap<>();
         if (request.items() != null) {
             request.items().stream()
@@ -143,9 +146,47 @@ public class SolicitudService {
                 detalle.setMovimiento(movimiento);
             }
         }
+        for (var agregado : agregados.entrySet()) {
+            var detalle = new DetalleSolicitud();
+            detalle.setSolicitud(solicitud);
+            detalle.setProducto(agregado.getKey());
+            detalle.setCantidadSolicitada(0);
+            detalle.setAgregado(true);
+            detalle.setCantidadEntregada(agregado.getValue());
+            detalle.setMovimiento(movimientoService.registrarSolicitado(
+                    agregado.getKey().getId(), agregado.getValue(), "Solicitud #" + id + " de " + solicitante));
+            solicitud.getDetalles().add(detalle);
+        }
         solicitud.setEstado(EstadoSolicitud.APROBADA);
         getCurrentUsuario().ifPresent(solicitud::setBodeguero);
         return toResponse(solicitudRepository.save(solicitud), false);
+    }
+
+    /** Valida los productos que el bodeguero entrega sin que se hayan pedido y suma los repetidos. */
+    private Map<Producto, Integer> validarAgregados(Solicitud solicitud, AprobarSolicitudRequest request) {
+        Map<Producto, Integer> agregados = new LinkedHashMap<>();
+        if (request.agregados() == null || request.agregados().isEmpty()) return agregados;
+        if (solicitud.getTipo() != TipoSolicitud.PEDIDO) {
+            throw new BusinessException("Solo se pueden agregar productos a un pedido.");
+        }
+        Set<Long> pedidos = new HashSet<>();
+        solicitud.getDetalles().forEach(d -> pedidos.add(d.getProducto().getId()));
+        for (var item : request.agregados()) {
+            if (item.productoId() == null || item.cantidad() == null || item.cantidad() < 1) {
+                throw new BusinessException("Cada producto agregado necesita una cantidad de al menos 1.");
+            }
+            var producto = productoRepository.findById(item.productoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Producto", item.productoId()));
+            if (!producto.isActivo()) {
+                throw new BusinessException("El producto '" + producto.getNombre() + "' está deshabilitado.");
+            }
+            if (pedidos.contains(producto.getId())) {
+                throw new BusinessException("'" + producto.getNombre()
+                        + "' ya está en el pedido: edita su cantidad en lugar de agregarlo.");
+            }
+            agregados.merge(producto, item.cantidad(), Integer::sum);
+        }
+        return agregados;
     }
 
     @Transactional
@@ -199,7 +240,8 @@ public class SolicitudService {
                         d.getCantidadSolicitada(),
                         d.getCantidadEntregada(),
                         calcular ? detalleSolicitudRepository.sumDevueltoAprobado(d.getId()).intValue() : null,
-                        calcular ? (s.getEstado() == EstadoSolicitud.APROBADA ? devolvible(d) : 0) : null))
+                        calcular ? (s.getEstado() == EstadoSolicitud.APROBADA ? devolvible(d) : 0) : null,
+                        d.isAgregado()))
                 .toList();
         return new SolicitudResponse(
                 s.getId(),

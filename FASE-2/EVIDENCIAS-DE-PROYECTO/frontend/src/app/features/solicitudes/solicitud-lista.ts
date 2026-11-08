@@ -12,10 +12,21 @@ import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
-import { AprobarSolicitudRequest, DetalleSolicitud, EstadoSolicitud, Solicitud } from './solicitud.modelo';
+import { ProductoService } from '../productos/producto.service';
+import {
+  AprobarSolicitudRequest,
+  DetalleSolicitud,
+  EstadoSolicitud,
+  ItemAgregado,
+  Solicitud,
+} from './solicitud.modelo';
 import { SolicitudService } from './solicitud.service';
 
 type Vista = 'pendientes' | 'todas';
+
+interface ProductoAgregado extends ItemAgregado {
+  productoNombre: string;
+}
 type ColumnaOrdenSolicitud = 'id' | 'fecha' | 'solicitanteNombre' | 'tipo' | 'estado' | 'items';
 
 const EXTRACTORES_SOLICITUD: Extractores<Solicitud, ColumnaOrdenSolicitud> = {
@@ -41,6 +52,7 @@ const OPCIONES_PENDIENTES: readonly OpcionOrden[] = [
 })
 export class SolicitudLista {
   private readonly solicitudService = inject(SolicitudService);
+  private readonly productoService = inject(ProductoService);
   private readonly confirmacion = inject(ConfirmacionService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly destroyRef = inject(DestroyRef);
@@ -56,6 +68,16 @@ export class SolicitudLista {
   protected readonly expandidoId = signal<number | null>(null);
   protected readonly cantidadesEditadas = signal(new Map<number, number>());
   protected readonly guardandoId = signal<number | null>(null);
+  /** Productos que el bodeguero entregará además de lo pedido, por solicitud (solo estado local hasta aprobar). */
+  protected readonly agregadosPorSolicitud = signal(new Map<number, ProductoAgregado[]>());
+  protected readonly errorAgregar = signal<{ solicitudId: number; mensaje: string } | null>(null);
+
+  private readonly productos = this.productoService.listar(signal(true));
+  protected readonly opcionesProducto = computed(() =>
+    (this.productos.hasValue() ? this.productos.value() : [])
+      .map((p) => ({ id: p.id, nombre: p.nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
+  );
 
   private readonly filtro = computed(() => ({ desde: this.desdeFiltro(), hasta: this.hastaFiltro() }));
 
@@ -146,6 +168,45 @@ export class SolicitudLista {
     this.cantidadesEditadas.set(mapa);
   }
 
+  protected agregadosDe(s: Solicitud): ProductoAgregado[] {
+    return this.agregadosPorSolicitud().get(s.id) ?? [];
+  }
+
+  /** Productos que aún se pueden agregar: ni ya pedidos ni ya agregados en esta solicitud. */
+  protected productosDisponibles(s: Solicitud) {
+    const usados = new Set([...s.detalles.map((d) => d.productoId), ...this.agregadosDe(s).map((a) => a.productoId)]);
+    return this.opcionesProducto().filter((p) => !usados.has(p.id));
+  }
+
+  protected agregarProducto(s: Solicitud, campoProducto: HTMLSelectElement, campoCantidad: HTMLInputElement): void {
+    const id = Number(campoProducto.value);
+    const unidades = Number(campoCantidad.value);
+    const producto = this.opcionesProducto().find((p) => p.id === id);
+    if (!producto) {
+      this.errorAgregar.set({ solicitudId: s.id, mensaje: 'Elige un producto.' });
+      return;
+    }
+    if (!Number.isInteger(unidades) || unidades < 1) {
+      this.errorAgregar.set({ solicitudId: s.id, mensaje: 'Indica una cantidad de al menos 1.' });
+      return;
+    }
+    this.errorAgregar.set(null);
+    const mapa = new Map(this.agregadosPorSolicitud());
+    mapa.set(s.id, [...this.agregadosDe(s), { productoId: id, productoNombre: producto.nombre, cantidad: unidades }]);
+    this.agregadosPorSolicitud.set(mapa);
+    campoProducto.value = '';
+    campoCantidad.value = '';
+  }
+
+  protected quitarAgregado(s: Solicitud, productoId: number): void {
+    const mapa = new Map(this.agregadosPorSolicitud());
+    mapa.set(
+      s.id,
+      this.agregadosDe(s).filter((a) => a.productoId !== productoId),
+    );
+    this.agregadosPorSolicitud.set(mapa);
+  }
+
   protected aprobar(s: Solicitud): void {
     if (this.guardandoId() !== null) return;
     this.confirmacion
@@ -166,6 +227,7 @@ export class SolicitudLista {
               detalleId: d.detalleId,
               cantidadEntregada: this.cantidadEditada(d),
             })),
+            agregados: this.agregadosDe(s).map((a) => ({ productoId: a.productoId, cantidad: a.cantidad })),
           };
           return this.solicitudService.aprobar(s.id, request);
         }),
@@ -175,7 +237,13 @@ export class SolicitudLista {
         next: () => {
           this.guardandoId.set(null);
           this.notificaciones.exito(`Solicitud #${s.id} aprobada.`);
+          this.agregadosPorSolicitud.update((m) => {
+            const copia = new Map(m);
+            copia.delete(s.id);
+            return copia;
+          });
           this.pendientes.reload();
+          this.todasLista.reload();
         },
         error: (err: unknown) => {
           this.guardandoId.set(null);
@@ -205,6 +273,7 @@ export class SolicitudLista {
           this.guardandoId.set(null);
           this.notificaciones.exito(`Solicitud #${s.id} rechazada.`);
           this.pendientes.reload();
+          this.todasLista.reload();
         },
         error: (err: unknown) => {
           this.guardandoId.set(null);

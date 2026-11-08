@@ -18,5 +18,5 @@ public record SolicitudResponse(
     /** `cantidadDevuelta` y `devolvible` solo se calculan para el propio empleado (null en el resto). */
     public record DetalleDto(Long detalleId, Long productoId, String productoNombre,
                               Integer cantidadSolicitada, Integer cantidadEntregada,
-                              Integer cantidadDevuelta, Integer devolvible) {}
+                              Integer cantidadDevuelta, Integer devolvible, boolean agregado) {}
 }

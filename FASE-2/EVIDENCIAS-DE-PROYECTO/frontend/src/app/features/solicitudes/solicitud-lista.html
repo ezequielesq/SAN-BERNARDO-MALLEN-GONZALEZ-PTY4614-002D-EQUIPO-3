@@ -78,9 +78,42 @@
                       </td>
                     </tr>
                   }
+                  @for (a of agregadosDe(s); track a.productoId) {
+                    <tr>
+                      <td>{{ a.productoNombre }} <span class="w3-tag w3-small w3-round">Agregado</span></td>
+                      <td>—</td>
+                      <td>
+                        {{ a.cantidad }}
+                        <button type="button" class="w3-button w3-small w3-crimson w3-round w3-margin-left" (click)="quitarAgregado(s, a.productoId)">
+                          Quitar <span class="visualmente-oculto">{{ a.productoNombre }}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  }
                 </tbody>
               </table>
             </div>
+            @if (s.tipo === 'PEDIDO') {
+              <div class="w3-margin-top">
+                <label [for]="'agregar-producto-' + s.id"><b>Entregar otro producto</b></label>
+                <div class="agregar-producto">
+                  <select #producto [id]="'agregar-producto-' + s.id" class="w3-select w3-border">
+                    <option value="" selected>Elige un producto</option>
+                    @for (p of productosDisponibles(s); track p.id) {
+                      <option [value]="p.id">{{ p.nombre }}</option>
+                    }
+                  </select>
+                  <label class="visualmente-oculto" [for]="'agregar-cantidad-' + s.id">Cantidad a entregar</label>
+                  <input #cantidad [id]="'agregar-cantidad-' + s.id" class="w3-input w3-border" type="number" min="1" step="1" inputmode="numeric" placeholder="Cant." />
+                  <button type="button" class="w3-button w3-border w3-round" (click)="agregarProducto(s, producto, cantidad)">
+                    Agregar
+                  </button>
+                </div>
+                @if (errorAgregar()?.solicitudId === s.id) {
+                  <p class="texto-error" role="alert"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ errorAgregar()?.mensaje }}</p>
+                }
+              </div>
+            }
             <div class="acciones-tarjeta">
               <button
                 type="button"
@@ -200,8 +233,11 @@
                     <tbody>
                       @for (d of s.detalles; track d.detalleId) {
                         <tr>
-                          <td>{{ d.productoNombre }}</td>
-                          <td>{{ d.cantidadSolicitada }}</td>
+                          <td>
+                            {{ d.productoNombre }}
+                            @if (d.agregado) { <span class="w3-tag w3-small w3-round">Agregado por bodega</span> }
+                          </td>
+                          <td>{{ d.agregado ? '—' : d.cantidadSolicitada }}</td>
                           <td>{{ d.cantidadEntregada ?? '—' }}</td>
                         </tr>
                       }

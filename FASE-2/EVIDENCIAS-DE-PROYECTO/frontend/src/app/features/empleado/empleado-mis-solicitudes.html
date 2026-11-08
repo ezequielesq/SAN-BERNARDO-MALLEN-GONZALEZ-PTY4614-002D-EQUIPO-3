@@ -85,8 +85,11 @@
                   <tbody>
                     @for (d of s.detalles; track d.detalleId) {
                       <tr>
-                        <td>{{ d.productoNombre }}</td>
-                        <td>{{ d.cantidadSolicitada }}</td>
+                        <td>
+                          {{ d.productoNombre }}
+                          @if (d.agregado) { <span class="w3-tag w3-small w3-round">Agregado por bodega</span> }
+                        </td>
+                        <td>{{ d.agregado ? '—' : d.cantidadSolicitada }}</td>
                         <td>{{ d.cantidadEntregada ?? '—' }}</td>
                         @if (s.tipo === 'PEDIDO') {
                           <td>{{ d.cantidadDevuelta ?? 0 }}</td>

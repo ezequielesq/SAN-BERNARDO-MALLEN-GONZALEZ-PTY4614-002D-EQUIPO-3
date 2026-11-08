@@ -29,6 +29,10 @@ public class DetalleSolicitud extends BaseEntity {
     @Column(name = "cantidad_entregada")
     private Integer cantidadEntregada;
 
+    /** Línea que el bodeguero entregó sin que el empleado la pidiera (cantidadSolicitada = 0). */
+    @Column(name = "agregado", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean agregado;
+
     /** Solo en devoluciones: el detalle del pedido original que se está devolviendo. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "detalle_origen_id")
