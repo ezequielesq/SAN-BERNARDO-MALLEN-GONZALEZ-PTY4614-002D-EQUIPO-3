@@ -30,14 +30,25 @@
         id="importar-tipo"
         class="w3-select"
         required
+        [disabled]="!!tipos.error()"
         [attr.aria-invalid]="tipo() === '' ? 'true' : null"
         (change)="tipo.set(selectTipo.value)"
       >
-        <option value="" disabled [selected]="tipo() === ''">Elige un tipo</option>
+        <option value="" disabled [selected]="tipo() === ''">
+          {{ tipos.error() ? 'No se pudieron cargar los tipos' : 'Elige un tipo' }}
+        </option>
         @for (t of opcionesTipo(); track t.id) {
           <option [value]="t.codigo" [selected]="tipo() === t.codigo">{{ t.nombre }}</option>
         }
       </select>
+      @if (tipos.error()) {
+        <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+          <p>No se pudieron cargar los tipos de entrada. Revisa tu conexión e inténtalo de nuevo.</p>
+          <p>
+            <button type="button" class="w3-button w3-white w3-border" (click)="tipos.reload()">Reintentar</button>
+          </p>
+        </div>
+      }
     </div>
     <div class="w3-col s12 m8 w3-padding-small">
       <label for="importar-nota"><b>Nota (opcional)</b></label>

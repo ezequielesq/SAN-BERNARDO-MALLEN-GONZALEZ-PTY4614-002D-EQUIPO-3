@@ -95,7 +95,7 @@
             <p id="item-cantidad-error" class="texto-error">
               <i class="fa-solid fa-exclamation" aria-hidden="true"></i>
               @if (formItem.controls.cantidad.errors?.['maxStock']; as max) {
-                Solo hay {{ max.stock }} disponibles.
+                Solo hay {{ max.stock }} {{ max.stock === 1 ? 'disponible' : 'disponibles' }}.
               } @else {
                 Ingresa una cantidad entera de al menos 1.
               }

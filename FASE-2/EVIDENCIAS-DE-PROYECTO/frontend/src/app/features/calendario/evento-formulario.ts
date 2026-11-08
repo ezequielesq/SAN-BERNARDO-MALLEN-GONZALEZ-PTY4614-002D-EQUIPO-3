@@ -116,6 +116,7 @@ export class EventoFormulario implements ConCambiosPendientes {
   }
 
   solicitarCierre(): void {
+    if (this.guardando()) return;
     if (!this.tieneCambiosPendientes()) {
       this.cerrarSolicitado.emit();
       return;

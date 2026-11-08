@@ -27,6 +27,12 @@ interface FilaVista {
 const TIPO_POR_DEFECTO = 'COMPRA';
 const MAX_NOTA = 300;
 
+/** Rangos que acepta el servidor (enteros de Java); fuera de ellos ni se envía el valor. */
+const RANGO_NUMERO: Record<CampoNumero, { min: number; max: number; mensaje: string }> = {
+  cantidad: { min: 1, max: 1_000_000, mensaje: 'Debe ser un número entero entre 1 y 1.000.000.' },
+  costoUnitario: { min: 0, max: 1_000_000_000, mensaje: 'Debe ser un número entero entre 0 y 1.000.000.000.' },
+};
+
 /**
  * Importación de entradas desde Excel: un archivo es una sola operación (todo o nada). Se lee el archivo,
  * se corrige en una vista previa editable que se revalida en el servidor, y recién entonces se cargan.
@@ -46,7 +52,7 @@ export class EntradaImportar {
 
   protected readonly maxNota = MAX_NOTA;
 
-  private readonly tipos = this.movimientoService.listarTipos(1);
+  protected readonly tipos = this.movimientoService.listarTipos(1);
   protected readonly opcionesTipo = computed(() => (this.tipos.hasValue() ? this.tipos.value() : []));
 
   protected readonly tipo = signal('');
@@ -170,8 +176,18 @@ export class EntradaImportar {
   }
 
   protected editarNumero(fila: number, campo: CampoNumero, valor: string): void {
-    const numero = valor.trim() === '' ? null : Math.round(Number(valor));
-    this.actualizar(fila, campo, numero === null || Number.isNaN(numero) ? null : numero);
+    if (valor.trim() === '') {
+      this.actualizar(fila, campo, null);
+      return;
+    }
+    const numero = Number(valor);
+    const { min, max, mensaje } = RANGO_NUMERO[campo];
+    if (!Number.isInteger(numero) || numero < min || numero > max) {
+      // No se envía al servidor: la celda queda vacía en el modelo y marcada con el motivo.
+      this.actualizar(fila, campo, null, mensaje);
+      return;
+    }
+    this.actualizar(fila, campo, numero);
   }
 
   protected revalidar(): void {
@@ -213,7 +229,8 @@ export class EntradaImportar {
   }
 
   private errores(f: FilaVista): Record<string, string> {
-    return { ...f.lectura, ...f.servidor };
+    // El problema de lectura (más específico) prevalece sobre el «obligatorio» que el servidor da a una celda vacía.
+    return { ...f.servidor, ...f.lectura };
   }
 
   /**
@@ -229,11 +246,12 @@ export class EntradaImportar {
     };
   }
 
-  private actualizar(fila: number, campo: Campo, valor: string | number | null): void {
+  private actualizar(fila: number, campo: Campo, valor: string | number | null, errorLectura?: string): void {
     this.filas.update((lista) =>
       (lista ?? []).map((f) => {
         if (f.datos.fila !== fila) return f;
         const { [campo]: _descartado, ...lectura } = f.lectura;
+        if (errorLectura) lectura[campo] = errorLectura;
         return { ...f, datos: { ...f.datos, [campo]: valor }, lectura };
       }),
     );
