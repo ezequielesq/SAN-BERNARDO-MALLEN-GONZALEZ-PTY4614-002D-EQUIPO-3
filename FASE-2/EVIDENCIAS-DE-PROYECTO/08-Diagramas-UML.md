@@ -3,8 +3,6 @@
 > Proyecto de Título PTY4614-002D · Equipo 3 · Duoc UC, Sede San Bernardo
 > Versión: borrador para revisión · 08-11-2026
 
-> **Nota.** Las imágenes `.png` de esta carpeta (entidad-relación, clases, secuencia y tablas de auditoría) corresponden al modelo anterior y están desactualizadas; los diagramas vigentes son los bloques Mermaid de este documento. Hay que regenerar los PNG a partir de ellos antes de entregarlos.
-
 ## 1. Alcance
 
 El proyecto documenta cinco diagramas UML, suficientes para describir qué hace el sistema, cómo se estructura y cómo se ejecutan sus dos flujos principales. Cubren cuatro de los 14 tipos de diagrama de UML 2.5.1 (casos de uso, clases, secuencia y despliegue) y se complementan con el [modelo de datos](07-Modelo-de-Datos.md).

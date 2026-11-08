@@ -3,13 +3,11 @@
 > Proyecto de Título PTY4614-002D · Equipo 3 · Duoc UC, Sede San Bernardo
 > Versión: modelo vigente: libro de operaciones y movimientos · 08-11-2026
 
-> **Nota.** Las imágenes `.png` de esta carpeta (entidad-relación, clases, secuencia y tablas de auditoría) corresponden al modelo anterior y están desactualizadas; los diagramas vigentes son los bloques Mermaid de este documento. Hay que regenerar los PNG a partir de ellos antes de entregarlos.
-
 ## 1. Propósito y fuente
 
 Este documento describe el modelo de datos relacional de Smart RDP: el diagrama entidad-relación, el diccionario de datos de cada tabla y las reglas de integridad.
 
-**Fuente.** El esquema se define en `backend/src/main/resources/db/migration/V1__esquema.sql` (migración de Flyway) y se contrastó con la base de desarrollo (PostgreSQL 18, base `smartrdp`) y con las entidades JPA del backend (`backend/src/main/java/com/smartrdp/backend`). Hibernate solo **valida** que las entidades coincidan con ese esquema (`spring.jpa.hibernate.ddl-auto=validate`); no crea ni modifica tablas. Las reglas de integridad que cruzan tablas las garantizan triggers de PostgreSQL definidos en la misma migración.
+**Fuente.** El esquema se define en `backend/src/main/resources/db/migration/` (migraciones de Flyway: `V1__esquema.sql` y `V2__blindaje_libro_y_catalogos.sql`) y se contrastó con la base de desarrollo (PostgreSQL 18, base `smartrdp`) y con las entidades JPA del backend (`backend/src/main/java/com/smartrdp/backend`). Hibernate solo **valida** que las entidades coincidan con ese esquema (`spring.jpa.hibernate.ddl-auto=validate`); no crea ni modifica tablas. Las reglas de integridad que cruzan tablas las garantizan triggers de PostgreSQL definidos en la misma migración.
 
 **Cómo leer el diagrama.** La notación es de pata de gallo (crow's foot): `||` exactamente uno, `|o` cero o uno, `o{` cero o muchos, `|{` uno o muchos. Para no recargar el diagrama se omiten las columnas comunes `created_at` y `updated_at` (ver sección 3). El stock no es una columna de ninguna tabla: se calcula con vistas a partir del libro de operaciones y movimientos (ver 3.14).
 
@@ -322,6 +320,8 @@ Criterio: lo que cabe en una fila lo garantiza la base con `CHECK`, `UNIQUE` o c
 | Una solicitud está `APROBADA` si y solo si tiene su operación; no se aprueba dos veces. | Triggers T5a/T5b (diferidos) y `uq_operaciones_solicitud`. |
 | Toda operación tiene al menos un movimiento, y todo lote nace con una entrada. | Triggers T6 y T7 (diferidos). |
 | Una solicitud resuelta y su detalle no se modifican. | Trigger `INM`. |
+| El significado de los tipos de operación no cambia (`codigo`, `sentido`, `solicitud_requerida`): reescribiría el stock pasado. | Trigger de `tipos_operacion` (V2). |
+| El libro y los catálogos no se vacían con `TRUNCATE`; solo el repoblado de desarrollo lo habilita (`SET smartrdp.permitir_truncate = 'on'`). | Triggers `BEFORE TRUNCATE` (V2). |
 | Las salidas descuentan por FEFO: primero el lote que vence antes. | Backend (`MovimientoService`). |
 | En un pedido el bodeguero entrega, de cada producto solicitado, hasta lo que se pidió (o menos), y puede sumar otros productos que no se pidieron: esos son los «agregados». | Backend y vista `solicitado_vs_entregado`. |
 | «Productos más usados» (Analítica) cuenta las salidas netas de devoluciones: por producto, lo que sale (sentido −1) menos lo devuelto (`DEVOLUCION`), sin correcciones ni operaciones corregidas; los productos con neto 0 no aparecen. | Backend (`AnaliticaService`). |
