@@ -52,6 +52,11 @@ export class MovimientoCalendario {
     return mapa;
   });
 
+  /** Vuelve a pedir los movimientos del mes (por ejemplo tras registrar o importar entradas). */
+  recargar(): void {
+    this.movimientos.reload();
+  }
+
   protected alCambiarRango(nuevo: { desde: string; hasta: string }): void {
     const actual = this.rango();
     if (actual.desde !== nuevo.desde || actual.hasta !== nuevo.hasta) this.rango.set(nuevo);

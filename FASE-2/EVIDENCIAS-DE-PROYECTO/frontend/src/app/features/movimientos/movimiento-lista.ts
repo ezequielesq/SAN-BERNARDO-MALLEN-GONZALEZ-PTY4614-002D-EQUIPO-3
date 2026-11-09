@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, switchMap } from 'rxjs';
@@ -60,8 +61,11 @@ export class MovimientoLista {
   /** Filas leídas del Excel que se están revisando en la modal; `null` = modal cerrada. */
   protected readonly filasImportacion = signal<FilaEntradaValidada[] | null>(null);
 
+  private readonly calendario = viewChild(MovimientoCalendario);
+
   protected alGuardarMovimiento(): void {
     this.movimientos.reload();
+    this.calendario()?.recargar();
   }
 
   protected descargarPlantilla(): void {

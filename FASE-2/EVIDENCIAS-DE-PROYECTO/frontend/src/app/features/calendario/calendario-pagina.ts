@@ -35,7 +35,10 @@ const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
 function aTiempoUtc(fecha: string): number {
   const [a, m, d] = fecha.split('-').map(Number);
-  return Date.UTC(a, m - 1, d);
+  // setUTCFullYear evita que Date.UTC interprete los años 0-99 como 1900-1999.
+  const f = new Date(0);
+  f.setUTCFullYear(a, m - 1, d);
+  return f.getTime();
 }
 
 /** Minúsculas y sin tildes, para buscar sin distinguir mayúsculas ni acentos. */
@@ -70,9 +73,9 @@ export class CalendarioPagina {
   protected readonly desdeFiltro = signal(this.rangoMes().desde);
   protected readonly hastaFiltro = signal(this.rangoMes().hasta);
   protected readonly busqueda = signal('');
-  protected readonly paginaActual = signal(1);
+  protected readonly pagina = signal(1);
   protected readonly tamanoPagina = signal(10);
-  protected readonly orden = new Orden<ColumnaOrdenEvento>(null, () => this.paginaActual.set(1));
+  protected readonly orden = new Orden<ColumnaOrdenEvento>(null, () => this.pagina.set(1));
 
   protected readonly modalEvento = signal<'nuevo' | Evento | null>(null);
   protected readonly procesandoId = signal<number | null>(null);
@@ -118,6 +121,11 @@ export class CalendarioPagina {
 
   protected readonly ordenados = computed(() => ordenar(this.filtrados(), this.orden, EXTRACTORES_EVENTO));
 
+  /** La página mostrada nunca pasa de la última: al borrar o editar eventos la lista puede encogerse. */
+  protected readonly paginaActual = computed(() =>
+    Math.min(this.pagina(), Math.max(1, Math.ceil(this.ordenados().length / this.tamanoPagina()))),
+  );
+
   protected readonly paginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
     return this.ordenados().slice(inicio, inicio + this.tamanoPagina());
@@ -137,43 +145,43 @@ export class CalendarioPagina {
     if (actual.desde !== nuevo.desde || actual.hasta !== nuevo.hasta) this.rangoMes.set(nuevo);
     this.desdeFiltro.set(nuevo.desde);
     this.hastaFiltro.set(nuevo.hasta);
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected alSeleccionarDiaCalendario(fecha: string | null): void {
     const { desde, hasta } = fecha === null ? this.rangoMes() : { desde: fecha, hasta: fecha };
     this.desdeFiltro.set(desde);
     this.hastaFiltro.set(hasta);
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected cambiarDesde(valor: string): void {
     this.desdeFiltro.set(valor);
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected cambiarHasta(valor: string): void {
     this.hastaFiltro.set(valor);
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected cambiarBusqueda(valor: string): void {
     this.busqueda.set(valor);
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected limpiarFiltrosCliente(): void {
     this.busqueda.set('');
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected cambiarPagina(pagina: number): void {
-    this.paginaActual.set(pagina);
+    this.pagina.set(pagina);
   }
 
   protected cambiarTamanoPagina(tamano: number): void {
     this.tamanoPagina.set(tamano);
-    this.paginaActual.set(1);
+    this.pagina.set(1);
   }
 
   protected horaCorta(e: Evento): string {
