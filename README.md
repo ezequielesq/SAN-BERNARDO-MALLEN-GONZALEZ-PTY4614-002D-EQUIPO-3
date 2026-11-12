@@ -66,24 +66,29 @@ flowchart LR
     API -- "JDBC" --> DB[("PostgreSQL")]
 ```
 
-El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) está en [Diagramas UML](FASE-2/EVIDENCIAS-DE-PROYECTO/08-Diagramas-UML.md), y el esquema de la base en el [Modelo de datos](FASE-2/EVIDENCIAS-DE-PROYECTO/07-Modelo-de-Datos.md).
+El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) está en [Diagramas UML](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/08-Diagramas-UML.md), y el esquema de la base en el [Modelo de datos](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-Modelo-de-Datos.md).
 
 ## Estructura del repositorio
 
 ```text
 .
-├── FASE-1/                          Definición del proyecto (documento APT, historias de usuario, plan de trabajo)
-├── FASE-2/
-│   └── EVIDENCIAS-DE-PROYECTO/
-│       ├── backend/                 API REST (Spring Boot)
-│       ├── frontend/                Aplicación web (Angular)
-│       ├── Evidencias-RPD/          Planillas Excel reales del cliente
-│       ├── Minutas de Reuniones- Fase 2/
-│       └── *.docx, *.xlsx, *.md     Documentos de metodología, modelo de datos y diagramas
+├── FASE 1/                          Definición del proyecto
+│   ├── EVIDENCIAS INDIVIDUALES/     Autoevaluaciones y diarios de reflexión
+│   └── EVIDENCIAS GRUPALES/         Formativa, definición del proyecto APT y planilla de evaluación
+├── FASE 2/                          Desarrollo del proyecto
+│   ├── EVIDENCIAS INDIVIDUALES/     Diarios de reflexión y autoevaluaciones
+│   └── EVIDENCIAS GRUPALES/
+│       ├── Guías 2.4 y 2.6, planillas de evaluación y presentación del proyecto
+│       ├── EVIDENCIAS DE DOCUMENTACIÓN/   Metodología, planes, minutas, diagramas y planillas del cliente
+│       └── EVIDENCIAS DE SISTEMA/
+│           ├── APLICACIÓN/
+│           │   ├── backend/         API REST (Spring Boot)
+│           │   └── frontend/        Aplicación web (Angular)
+│           └── BASE DE DATOS/       Modelo de datos y diagramas de la base
 └── FASE-3/                          Cierre y presentación final
 ```
 
-Dentro de `backend/src/main/java/com/smartrdp/backend` hay un paquete por dominio: `producto`, `movimiento`, `solicitud`, `usuario`, `catalogo`, `analitica`, `auditoria`, `publico`, además de `config`, `security`, `exception` y `seed`.
+Dentro de `FASE 2/EVIDENCIAS GRUPALES/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend/src/main/java/com/smartrdp/backend` hay un paquete por dominio: `producto`, `movimiento`, `solicitud`, `usuario`, `catalogo`, `analitica`, `auditoria`, `publico`, además de `config`, `security`, `exception` y `seed`.
 
 ## Ejecución local
 
@@ -107,7 +112,7 @@ El proyecto se desarrolla con **Extreme Programming (XP)**, adaptada con prácti
 - TDD y revisión de código cruzada en lugar de programación en parejas, por la disponibilidad asimétrica del equipo.
 - Rol de Tracker para calidad y auditoría de cumplimiento.
 
-El detalle está en [Metodología XP](FASE-2/EVIDENCIAS-DE-PROYECTO/01-Metodologia-XP.docx).
+El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-Metodologia-XP.docx).
 
 ## Integrantes y roles
 
