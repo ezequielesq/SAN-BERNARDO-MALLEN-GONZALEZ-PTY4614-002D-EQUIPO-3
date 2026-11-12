@@ -66,7 +66,7 @@ flowchart LR
     API -- "JDBC" --> DB[("PostgreSQL")]
 ```
 
-El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) está en [Diagramas UML](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/08-DIAGRAMAS-UML.md), y el esquema de la base en el [Modelo de datos](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-MODELO-DE-DATOS.md).
+El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) está en [Diagramas UML](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/08-DIAGRAMAS-UML.md), y el esquema de la base en el [Modelo de datos](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-MODELO-DE-DATOS.md).
 
 ## Estructura del repositorio
 
@@ -77,8 +77,9 @@ El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) 
 │   └── EVIDENCIAS GRUPALES/         Formativa, definición del proyecto APT y planilla de evaluación
 ├── FASE 2/                          Desarrollo del proyecto
 │   ├── EVIDENCIAS INDIVIDUALES/     Diarios de reflexión y autoevaluaciones
-│   └── EVIDENCIAS GRUPALES/
-│       ├── Guías 2.4 y 2.6, planillas de evaluación y presentación del proyecto
+│   ├── EVIDENCIAS GRUPALES/         Guías 2.4 y 2.6 y planillas de evaluación
+│   └── EVIDENCIAS PROYECTO/
+│       ├── PRESENTACIÓN PROYECTO.pptx
 │       ├── EVIDENCIAS DE DOCUMENTACIÓN/   Metodología, planes, minutas, diagramas y planillas del cliente
 │       └── EVIDENCIAS DE SISTEMA/
 │           ├── APLICACIÓN/
@@ -88,7 +89,7 @@ El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) 
 └── FASE-3/                          Cierre y presentación final
 ```
 
-Dentro de `FASE 2/EVIDENCIAS GRUPALES/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend/src/main/java/com/smartrdp/backend` hay un paquete por dominio: `producto`, `movimiento`, `solicitud`, `usuario`, `catalogo`, `analitica`, `auditoria`, `publico`, además de `config`, `security`, `exception` y `seed`.
+Dentro de `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend/src/main/java/com/smartrdp/backend` hay un paquete por dominio: `producto`, `movimiento`, `solicitud`, `usuario`, `catalogo`, `analitica`, `auditoria`, `publico`, además de `config`, `security`, `exception` y `seed`.
 
 ## Ejecución local
 
@@ -112,7 +113,7 @@ El proyecto se desarrolla con **Extreme Programming (XP)**, adaptada con prácti
 - TDD y revisión de código cruzada en lugar de programación en parejas, por la disponibilidad asimétrica del equipo.
 - Rol de Tracker para calidad y auditoría de cumplimiento.
 
-El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-METODOLOGIA-XP.docx).
+El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-METODOLOGIA-XP.docx).
 
 ## Integrantes y roles
 

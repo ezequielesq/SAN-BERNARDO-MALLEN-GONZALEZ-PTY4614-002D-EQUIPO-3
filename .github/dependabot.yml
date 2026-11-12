@@ -2,13 +2,13 @@
 version: 2
 updates:
   - package-ecosystem: "maven"
-    directory: "/FASE 2/EVIDENCIAS GRUPALES/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend"
+    directory: "/FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
     target-branch: "develop"
   - package-ecosystem: "npm"
-    directory: "/FASE 2/EVIDENCIAS GRUPALES/EVIDENCIAS DE SISTEMA/APLICACIÓN/frontend"
+    directory: "/FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/frontend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
