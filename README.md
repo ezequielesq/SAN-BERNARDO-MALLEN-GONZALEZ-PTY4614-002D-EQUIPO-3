@@ -66,7 +66,7 @@ flowchart LR
     API -- "JDBC" --> DB[("PostgreSQL")]
 ```
 
-El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) está en [Diagramas UML](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/08-Diagramas-UML.md), y el esquema de la base en el [Modelo de datos](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-Modelo-de-Datos.md).
+El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) está en [Diagramas UML](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/08-DIAGRAMAS-UML.md), y el esquema de la base en el [Modelo de datos](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-MODELO-DE-DATOS.md).
 
 ## Estructura del repositorio
 
@@ -112,7 +112,7 @@ El proyecto se desarrolla con **Extreme Programming (XP)**, adaptada con prácti
 - TDD y revisión de código cruzada en lugar de programación en parejas, por la disponibilidad asimétrica del equipo.
 - Rol de Tracker para calidad y auditoría de cumplimiento.
 
-El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-Metodologia-XP.docx).
+El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20GRUPALES/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-METODOLOGIA-XP.docx).
 
 ## Integrantes y roles
 

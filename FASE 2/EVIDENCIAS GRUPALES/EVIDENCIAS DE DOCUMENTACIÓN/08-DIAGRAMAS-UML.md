@@ -5,7 +5,7 @@
 
 ## 1. Alcance
 
-El proyecto documenta cinco diagramas UML, suficientes para describir qué hace el sistema, cómo se estructura y cómo se ejecutan sus dos flujos principales. Cubren cuatro de los 14 tipos de diagrama de UML 2.5.1 (casos de uso, clases, secuencia y despliegue) y se complementan con el [modelo de datos](../EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-Modelo-de-Datos.md).
+El proyecto documenta cinco diagramas UML, suficientes para describir qué hace el sistema, cómo se estructura y cómo se ejecutan sus dos flujos principales. Cubren cuatro de los 14 tipos de diagrama de UML 2.5.1 (casos de uso, clases, secuencia y despliegue) y se complementan con el [modelo de datos](../EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-MODELO-DE-DATOS.md).
 
 | N.º | Diagrama | Tipo UML | Qué muestra |
 |---|---|---|---|
