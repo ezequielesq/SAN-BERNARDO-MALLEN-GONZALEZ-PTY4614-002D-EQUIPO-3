@@ -1,6 +1,5 @@
 package com.smartrdp.backend.flujos;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -215,9 +214,6 @@ class EntradasSalidasFlujoTest extends FlujoBase {
     }
 
     @Test
-    @Disabled("BUG: el borde exacto no alerta. MovimientoService.getAlertasVencimiento pide lotes con vencimiento "
-            + "< hoy+N (VistasInventario.lotesConVencimiento usa 'fecha_vencimiento < :hasta'); un lote que vence "
-            + "exactamente en N días queda fuera, contra HU-70 'faltan 7 días o menos'")
     @DisplayName("HU-70 / CP-08 Alerta en el borde exacto: un lote que vence en N días entra con umbral N")
     void alertaEnElBordeExactoDeNDias() {
         var producto = crearProducto(true);

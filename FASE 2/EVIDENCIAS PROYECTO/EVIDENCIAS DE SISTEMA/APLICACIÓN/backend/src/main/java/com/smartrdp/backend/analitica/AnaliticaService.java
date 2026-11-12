@@ -45,8 +45,9 @@ public class AnaliticaService {
 
     @Transactional(readOnly = true)
     public List<VencimientoDto> getVencimientos(int diasUmbral, Long categoriaId) {
-        LocalDate umbral = LocalDate.now().plusDays(diasUmbral);
-        return vistas.lotesConVencimiento(null, umbral, categoriaId).stream()
+        // El límite de la consulta es exclusivo: se suma un día para que el lote que vence justo en N días entre.
+        LocalDate limiteExclusivo = LocalDate.now().plusDays(diasUmbral + 1L);
+        return vistas.lotesConVencimiento(null, limiteExclusivo, categoriaId).stream()
                 .map(this::aVencimiento)
                 .toList();
     }

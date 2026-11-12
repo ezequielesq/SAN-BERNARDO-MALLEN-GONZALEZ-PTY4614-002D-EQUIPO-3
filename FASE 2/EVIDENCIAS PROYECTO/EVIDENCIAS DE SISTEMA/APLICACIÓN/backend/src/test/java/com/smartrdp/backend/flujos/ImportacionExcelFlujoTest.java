@@ -2,7 +2,6 @@ package com.smartrdp.backend.flujos;
 
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -303,8 +302,6 @@ class ImportacionExcelFlujoTest extends FlujoBase {
     }
 
     @Test
-    @Disabled("BUG: misma causa que el 500 por método no soportado: GlobalExceptionHandler.handleGeneric(Exception) "
-            + "convierte MissingServletRequestPartException (falta la parte multipart 'archivo') en 500")
     @DisplayName("HU-200 Subir el Excel sin la parte «archivo» responde un error del cliente, no del servidor")
     void subirSinLaParteArchivoRespondeErrorDelCliente() {
         byte[] archivo = productosXlsx(List.of(fila(null, siguienteCodigo(), "No importa", "x", "y", "No", 5, 2, 1)));

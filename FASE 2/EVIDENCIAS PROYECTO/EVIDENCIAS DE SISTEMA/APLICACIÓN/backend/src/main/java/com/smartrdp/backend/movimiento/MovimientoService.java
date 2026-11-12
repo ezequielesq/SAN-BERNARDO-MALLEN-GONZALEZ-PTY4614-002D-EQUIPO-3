@@ -204,7 +204,8 @@ public class MovimientoService {
     @Transactional(readOnly = true)
     public List<AlertaVencimientoResponse> getAlertasVencimiento(int diasUmbral) {
         LocalDate hoy = LocalDate.now();
-        return vistas.lotesConVencimiento(null, hoy.plusDays(diasUmbral), null).stream()
+        // El límite de la consulta es exclusivo: se suma un día para que el lote que vence justo en N días alerte.
+        return vistas.lotesConVencimiento(null, hoy.plusDays(diasUmbral + 1L), null).stream()
                 .map(l -> new AlertaVencimientoResponse(l.loteId(), l.productoId(), l.productoNombre(),
                         l.numeroLote(), l.saldo(), l.fechaVencimiento(), l.fechaVencimiento().isBefore(hoy)))
                 .toList();

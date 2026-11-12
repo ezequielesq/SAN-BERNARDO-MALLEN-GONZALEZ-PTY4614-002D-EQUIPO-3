@@ -8,6 +8,8 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -68,11 +71,27 @@ public class GlobalExceptionHandler {
 
     /** Parámetro faltante o de tipo equivocado, o cuerpo JSON ilegible: error del cliente, no del servidor. */
     @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class,
-            HttpMessageNotReadableException.class})
+            HttpMessageNotReadableException.class, MissingServletRequestPartException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleSolicitudInvalida(Exception ex) {
         log.debug("Solicitud inválida: {}", ex.getMessage());
         return new ErrorResponse(400, "Bad Request", "Solicitud inválida: revisa los datos enviados.", null,
+                LocalDateTime.now());
+    }
+
+    /** Método HTTP que la ruta no admite: error del cliente (405), no del servidor. */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ErrorResponse handleMetodoNoPermitido(HttpRequestMethodNotSupportedException ex) {
+        return new ErrorResponse(405, "Method Not Allowed", "Esta ruta no admite ese método.", null,
+                LocalDateTime.now());
+    }
+
+    /** Tipo de contenido que la ruta no admite: error del cliente (415), no del servidor. */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    @ResponseStatus(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+    public ErrorResponse handleTipoNoSoportado(HttpMediaTypeNotSupportedException ex) {
+        return new ErrorResponse(415, "Unsupported Media Type", "Esta ruta no admite ese tipo de contenido.", null,
                 LocalDateTime.now());
     }
 

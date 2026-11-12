@@ -1,6 +1,5 @@
 package com.smartrdp.backend.flujos;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -124,8 +123,6 @@ class AccesoYRolesFlujoTest extends FlujoBase {
     }
 
     @Test
-    @Disabled("BUG: POST /api/solicitudes (ruta que no existe para crear) responde 500 en lugar de 4xx; "
-            + "GlobalExceptionHandler.handleGeneric(Exception) captura HttpRequestMethodNotSupportedException")
     @DisplayName("HU-270 Intentar crear un pedido por la API como Bodeguero responde un error del cliente, no del servidor")
     void crearPedidoComoBodegueroPorApiResponde4xx() {
         Cuenta bodeguero = crearBodeguero();

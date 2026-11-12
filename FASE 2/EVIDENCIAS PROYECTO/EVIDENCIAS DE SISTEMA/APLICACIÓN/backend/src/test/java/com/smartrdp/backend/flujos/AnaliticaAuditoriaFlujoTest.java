@@ -2,7 +2,6 @@ package com.smartrdp.backend.flujos;
 
 import com.lowagie.text.pdf.PdfReader;
 import com.lowagie.text.pdf.parser.PdfTextExtractor;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
@@ -177,10 +176,6 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
     }
 
     @Test
-    @Disabled("BUG: el reporte de vencimientos tiene el mismo borde que las alertas: AnaliticaService.getVencimientos "
-            + "pasa hoy+N a VistasInventario.lotesConVencimiento, que filtra 'fecha_vencimiento < :hasta' "
-            + "(exclusivo); un lote que vence exactamente en N días no sale con dias=N, aunque el filtro por rango "
-            + "(hasta inclusive) sí lo incluye")
     @DisplayName("HU-130 Vencimientos: un lote que vence exactamente en N días aparece con dias=N")
     void vencimientosIncluyeElBordeExactoDeNDias() {
         Catalogo categoria = crearCategoriaPropia(false);
@@ -314,44 +309,61 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
     }
 
     @Test
-    @DisplayName("HU-180 El historial de entregas se descarga como archivo")
+    @DisplayName("HU-180 El historial de entregas se descarga como archivo y solo con sesión")
     void historialDeEntregasSeDescarga() {
         Cuenta bodeguero = crearBodeguero();
         Cuenta empleado = crearEmpleado();
         var producto = productoConStock(6);
         aprobar(bodeguero, pedirOk(empleado, producto.id(), 2)).esperando(200);
 
-        var descarga = descargar("/api/auditoria/historial/pdf?desde=" + hoy().minusDays(1) + "&hasta="
+        var descarga = descargar("/api/auditoria/historial/xlsx?desde=" + hoy().minusDays(1) + "&hasta="
                 + hoy().plusDays(1), bodeguero.token()).esperando(200);
 
         assertThat(descarga.bytes()).isNotEmpty();
         assertThat(descarga.disposicion()).contains("attachment");
         // El administrador también lo descarga; sin sesión no.
-        descargar("/api/auditoria/historial/pdf?desde=" + hoy() + "&hasta=" + hoy(), tokenAdmin()).esperando(200);
-        assertThat(descargar("/api/auditoria/historial/pdf?desde=" + hoy() + "&hasta=" + hoy(), null).estado())
+        descargar("/api/auditoria/historial/xlsx?desde=" + hoy() + "&hasta=" + hoy(), tokenAdmin()).esperando(200);
+        assertThat(descargar("/api/auditoria/historial/xlsx?desde=" + hoy() + "&hasta=" + hoy(), null).estado())
                 .isEqualTo(401);
     }
 
     @Test
-    @Disabled("BUG: GET /api/auditoria/historial/pdf no entrega un PDF: AuditoriaController.exportarPdf arma un "
-            + "Excel (XSSFWorkbook), lo sirve como application/vnd.openxmlformats...sheet con nombre "
-            + "historial-auditoria.xlsx, y sus columnas son solicitud, fecha, usuario, tipo de revisión, estado y "
-            + "tipo: no incluye producto, cantidad solicitada ni cantidad entregada, que pide HU-180")
-    @DisplayName("HU-180 El historial de entregas se descarga como PDF con fecha, producto, cantidad solicitada, entregada y responsable")
-    void historialDeEntregasSeDescargaComoPdfConSusColumnas() {
+    @DisplayName("HU-180 El historial de entregas se descarga como Excel con fecha, producto, cantidad solicitada, entregada y responsable")
+    void historialDeEntregasSeDescargaConSusColumnas() throws Exception {
         Cuenta bodeguero = crearBodeguero();
         Cuenta empleado = crearEmpleado();
         var producto = productoConStock(6);
         aprobar(bodeguero, pedirOk(empleado, producto.id(), 5), item(producto.id(), 4)).esperando(200);
 
-        var descarga = descargar("/api/auditoria/historial/pdf?desde=" + hoy().minusDays(1) + "&hasta="
+        var descarga = descargar("/api/auditoria/historial/xlsx?desde=" + hoy().minusDays(1) + "&hasta="
                 + hoy().plusDays(1), bodeguero.token()).esperando(200);
 
-        assertThat(descarga.tipoContenido()).contains("application/pdf");
-        assertThat(new String(descarga.bytes(), 0, 5, java.nio.charset.StandardCharsets.ISO_8859_1)).isEqualTo("%PDF-");
-        String texto = textoDelPdf(descarga.bytes());
-        assertThat(texto).contains(producto.nombre()).contains(bodeguero.email());
-        assertThat(texto).contains(hoy().toString());
+        assertThat(descarga.tipoContenido()).contains("spreadsheetml.sheet");
+        assertThat(descarga.disposicion()).contains("historial-de-entregas.xlsx");
+        try (var libro = new org.apache.poi.xssf.usermodel.XSSFWorkbook(
+                new java.io.ByteArrayInputStream(descarga.bytes()))) {
+            var hoja = libro.getSheetAt(0);
+            var encabezado = hoja.getRow(0);
+            assertThat(encabezado.getCell(1).getStringCellValue()).isEqualTo("Fecha");
+            assertThat(encabezado.getCell(2).getStringCellValue()).isEqualTo("Responsable");
+            assertThat(encabezado.getCell(6).getStringCellValue()).isEqualTo("Producto");
+            assertThat(encabezado.getCell(7).getStringCellValue()).isEqualTo("Cantidad solicitada");
+            assertThat(encabezado.getCell(8).getStringCellValue()).isEqualTo("Cantidad entregada");
+            // La fila de la aprobación de este producto: pidieron 5, se entregaron 4, la aprobó el bodeguero.
+            boolean encontrada = false;
+            for (int r = 1; r <= hoja.getLastRowNum(); r++) {
+                var fila = hoja.getRow(r);
+                if (fila.getCell(6) != null && producto.nombre().equals(fila.getCell(6).getStringCellValue())
+                        && "APROBADA".equals(fila.getCell(4).getStringCellValue())) {
+                    assertThat(fila.getCell(8).getNumericCellValue()).isEqualTo(4);
+                    assertThat(fila.getCell(7).getNumericCellValue()).isEqualTo(5);
+                    assertThat(fila.getCell(2).getStringCellValue()).isEqualTo(bodeguero.email());
+                    assertThat(fila.getCell(1).getStringCellValue()).startsWith(hoy().toString());
+                    encontrada = true;
+                }
+            }
+            assertThat(encontrada).as("fila de la aprobación con producto, solicitado y entregado").isTrue();
+        }
     }
 
     // ================================================================== auditoría (HU-260)
@@ -450,19 +462,4 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
         throw new AssertionError("La revisión no tiene línea del producto " + productoId + ": " + revision);
     }
 
-    private static String textoDelPdf(byte[] pdf) {
-        try {
-            PdfReader lector = new PdfReader(pdf);
-            PdfTextExtractor extractor = new PdfTextExtractor(lector);
-            StringBuilder texto = new StringBuilder();
-            for (int pagina = 1; pagina <= lector.getNumberOfPages(); pagina++) {
-                texto.append(extractor.getTextFromPage(pagina)).append('\n');
-            }
-            lector.close();
-            // El PDF parte las celdas largas en varias líneas: se normalizan los espacios y saltos.
-            return texto.toString().replaceAll("\\s+", " ");
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("No se pudo leer el PDF descargado", e);
-        }
-    }
 }
