@@ -7,9 +7,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.MissingNode;
@@ -82,6 +84,18 @@ abstract class FlujoBase {
 
     protected record Stock(int cantidad, String estado, LocalDate proximoVencimiento) {}
 
+    /** Categoría o unidad de medida creada por la prueba. */
+    protected record Catalogo(long id, String nombre) {}
+
+    /** Archivo descargado: código HTTP, bytes y las cabeceras que importan para una descarga. */
+    protected record Descarga(int estado, byte[] bytes, String tipoContenido, String disposicion) {
+
+        public Descarga esperando(int esperado) {
+            assertThat(estado).as("código HTTP de la descarga").isEqualTo(esperado);
+            return this;
+        }
+    }
+
     // ------------------------------------------------------------------ llamadas HTTP
 
     protected Respuesta llamar(HttpMethod metodo, String url, String token, Object cuerpo) {
@@ -100,6 +114,36 @@ abstract class FlujoBase {
             throw e;
         } catch (Exception e) {
             throw new IllegalStateException("No se pudo llamar a " + metodo + " " + url, e);
+        }
+    }
+
+    /** Descarga un archivo (GET) sin intentar leerlo como JSON. */
+    protected Descarga descargar(String url, String token) {
+        try {
+            MockHttpServletRequestBuilder peticion = MockMvcRequestBuilders.get(url);
+            if (token != null) peticion.header("Authorization", "Bearer " + token);
+            var respuesta = mvc.perform(peticion).andReturn().getResponse();
+            return new Descarga(respuesta.getStatus(), respuesta.getContentAsByteArray(),
+                    respuesta.getContentType(), respuesta.getHeader("Content-Disposition"));
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo descargar " + url, e);
+        }
+    }
+
+    /** Sube un archivo como multipart con el nombre de parte que espera el controlador. */
+    protected Respuesta subirArchivo(String url, String token, String parte, String nombreArchivo, byte[] contenido) {
+        try {
+            var peticion = MockMvcRequestBuilders.multipart(url)
+                    .file(new MockMultipartFile(parte, nombreArchivo, "application/octet-stream", contenido));
+            if (token != null) peticion.header("Authorization", "Bearer " + token);
+            var resultado = mvc.perform(peticion).andReturn().getResponse();
+            String texto = resultado.getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+            JsonNode json = texto.isBlank() ? MissingNode.getInstance() : JSON.readTree(texto);
+            return new Respuesta(resultado.getStatus(), json);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo subir el archivo a " + url, e);
         }
     }
 
@@ -202,14 +246,47 @@ abstract class FlujoBase {
 
     /** Crea un producto único (nombre y código numérico propios) con los umbrales indicados. */
     protected Prod crearProducto(boolean perecible, int stockMinimo, int stockCritico) {
+        return crearProductoEn(categoriaComun(), perecible, stockMinimo, stockCritico);
+    }
+
+    /** Producto único dentro de la categoría indicada (no requiere PTV), con umbrales 5 y 2. */
+    protected Prod crearProductoEn(long categoriaId, boolean perecible) {
+        return crearProductoEn(categoriaId, perecible, 5, 2);
+    }
+
+    protected Prod crearProductoEn(long categoriaId, boolean perecible, int stockMinimo, int stockCritico) {
         String nombre = "Producto " + unico();
-        String codigo = Long.toString(CODIGOS.incrementAndGet());
+        String codigo = siguienteCodigo();
         var r = post("/api/productos", bodeguero().token(), objeto(
                 "codigo", codigo, "nombre", nombre,
-                "categoriaId", categoriaComun(), "unidadMedidaId", unidadComun(),
+                "categoriaId", categoriaId, "unidadMedidaId", unidadComun(),
                 "esPerecible", perecible, "stockMinimo", stockMinimo, "stockCritico", stockCritico,
                 "costoUnitario", 1000)).esperando(201);
         return new Prod(r.json().path("id").asLong(), nombre, codigo);
+    }
+
+    /** Código numérico que ningún otro producto de la corrida usa. */
+    protected static String siguienteCodigo() {
+        return Long.toString(CODIGOS.incrementAndGet());
+    }
+
+    /** Categoría propia de la prueba (nombre único); con {@code requierePtv} sus productos usan código PTV. */
+    protected Catalogo crearCategoriaPropia(boolean requierePtv) {
+        String nombre = "Cat " + unico();
+        var r = post("/api/categorias", bodeguero().token(), objeto("nombre", nombre)).esperando(201);
+        long id = r.json().path("id").asLong();
+        if (requierePtv) {
+            put("/api/categorias/" + id + "/requiere-ptv", bodeguero().token(), objeto("requierePtv", true))
+                    .esperando(200);
+        }
+        return new Catalogo(id, nombre);
+    }
+
+    /** Unidad de medida propia de la prueba (nombre único). */
+    protected Catalogo crearUnidadPropia() {
+        String nombre = "Uni " + unico();
+        var r = post("/api/unidades-medida", bodeguero().token(), objeto("nombre", nombre)).esperando(201);
+        return new Catalogo(r.json().path("id").asLong(), nombre);
     }
 
     /** Producto no perecible con una entrada de la cantidad indicada. */
