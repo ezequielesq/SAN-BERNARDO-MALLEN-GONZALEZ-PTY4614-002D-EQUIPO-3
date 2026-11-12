@@ -12,11 +12,12 @@ Sistema web de gestión de bodega para el restaurante **Doña Paula** (Viña San
 4. [Arquitectura](#arquitectura)
 5. [Estructura del repositorio](#estructura-del-repositorio)
 6. [Ejecución local](#ejecución-local)
-7. [Roles y accesos](#roles-y-accesos)
-8. [Metodología](#metodología)
-9. [Integrantes y roles](#integrantes-y-roles)
-10. [Documentación](#documentación)
-11. [Estado del proyecto](#estado-del-proyecto)
+7. [Pruebas](#pruebas)
+8. [Roles y accesos](#roles-y-accesos)
+9. [Metodología](#metodología)
+10. [Integrantes y roles](#integrantes-y-roles)
+11. [Documentación](#documentación)
+12. [Estado del proyecto](#estado-del-proyecto)
 
 ## Descripción
 
@@ -95,6 +96,22 @@ Dentro de `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend/
 
 POR HACER...
 
+## Pruebas
+
+El backend tiene **63 pruebas de flujo** que recorren el sistema a través de su API (iniciar sesión, crear productos, registrar entradas y salidas, pedir, aprobar, devolver, importar desde Excel, analítica). Cada una indica en su nombre la historia de usuario que cubre. Se ejecutan contra una base PostgreSQL real, porque las reglas principales (stock que no queda negativo, operaciones inmutables, lotes por vencimiento) viven en la base como restricciones y triggers.
+
+Requisitos: Java 21 y un PostgreSQL 18 local con un usuario `postgres` y una base vacía llamada `smartrdp_test`. Las pruebas recrean el esquema con Flyway en cada corrida, así que esa base no debe contener datos que importen.
+
+Desde la carpeta `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend`:
+
+```bash
+SMARTRDP_DB_PASSWORD=<clave-de-postgres> ./mvnw test
+```
+
+La clave de la base se entrega solo por la variable de entorno `SMARTRDP_DB_PASSWORD`; no está en el repositorio. El informe de cobertura (JaCoCo) queda en `target/site/jacoco/index.html`.
+
+Resultado de la última corrida (12-11-2026): 63 de 63 aprobadas y 92,9 % de cobertura de líneas. El detalle está en `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE DOCUMENTACIÓN`: [INFORME DE PRUEBAS](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/INFORME%20DE%20PRUEBAS.docx), [MATRIZ DE TRAZABILIDAD](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/MATRIZ%20DE%20TRAZABILIDAD.xlsx) (historia ↔ prueba) y [CASOS DE PRUEBA SMARTRDP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/CASOS%20DE%20PRUEBA%20SMARTRDP.docx) (casos manuales).
+
 ## Roles y accesos
 
 | Rol | Acceso |
@@ -110,7 +127,8 @@ El proyecto se desarrolla con **Extreme Programming (XP)**, adaptada con prácti
 - Iteraciones semanales con reunión de planificación y de aceptación con el cliente (Planning Game).
 - Entregas pequeñas agrupadas en releases.
 - Historias de usuario con criterios de aceptación Given-When-Then.
-- TDD y revisión de código cruzada en lugar de programación en parejas, por la disponibilidad asimétrica del equipo.
+- Revisión de código cruzada en lugar de programación en parejas, por la disponibilidad asimétrica del equipo.
+- Pruebas de aceptación por historia. El TDD se declaró en la Fase 1 pero no avanzó a la par del desarrollo; las pruebas se automatizaron al cierre de la Fase 2 (ver [Pruebas](#pruebas)).
 - Rol de Tracker para calidad y auditoría de cumplimiento.
 
 El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-METODOLOGIA-XP.docx).
