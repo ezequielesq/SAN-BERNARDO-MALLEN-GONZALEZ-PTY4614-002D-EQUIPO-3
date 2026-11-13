@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: smartrdp-db
     environment:
       POSTGRES_DB: smartrdp
@@ -9,7 +9,35 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - smartrdp_data:/var/lib/postgresql/data
+      - smartrdp_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d smartrdp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    container_name: smartrdp-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/smartrdp
+      SMARTRDP_DB_PASSWORD: ${SMARTRDP_DB_PASSWORD}
+      SMARTRDP_JWT_SECRET: ${SMARTRDP_JWT_SECRET:?Define la variable SMARTRDP_JWT_SECRET}
+      SMARTRDP_ADMIN_EMAIL: ${SMARTRDP_ADMIN_EMAIL:-}
+      SMARTRDP_ADMIN_PASSWORD: ${SMARTRDP_ADMIN_PASSWORD:-}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ../frontend
+    container_name: smartrdp-frontend
+    depends_on:
+      - backend
+    ports:
+      - "4200:80"
 
 volumes:
   smartrdp_data:

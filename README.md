@@ -23,6 +23,8 @@ Sistema web de gestión de bodega para el restaurante **Doña Paula** (Viña San
 
 La bodega del restaurante se gestiona con notas en papel y planillas Excel. Eso provoca pérdida de trazabilidad de los insumos, mermas de entre 60.000 y 80.000 pesos al mes y 17 a 18 horas mensuales de conteos manuales para reportar al sistema SAP.
 
+**Dirigido a:** el personal del restaurante: el administrador (gestiona usuarios y revisa la analítica), el encargado de bodega (registra entradas y salidas y aprueba solicitudes) y los empleados que piden o devuelven insumos (ver [Roles y accesos](#roles-y-accesos)).
+
 Smart RDP digitaliza ese flujo:
 
 - Registra productos, lotes con fecha de vencimiento y cada movimiento de stock.
@@ -36,9 +38,9 @@ Smart RDP digitaliza ese flujo:
 
 | Módulo | Qué permite |
 |---|---|
-| **Productos** | Alta, edición, deshabilitación y reactivación (borrado lógico); código PTV (vinos y licores) o código numérico según la categoría; exportación a Excel y PDF. |
+| **Productos** | Alta, edición, deshabilitación y reactivación (borrado lógico); código PTV (vinos y licores) o código numérico según la categoría; importación desde Excel con validación previa; exportación a Excel y PDF. |
 | **Catálogos** | Categorías (con la marca «Requiere código PTV») y unidades de medida. |
-| **Movimientos** | Entradas con lote y vencimiento, salidas por FEFO, historial con filtros y calendario mensual. |
+| **Movimientos** | Entradas con lote y vencimiento (también por importación desde Excel), salidas por FEFO, historial con filtros y calendario mensual. |
 | **Stock y alertas** | Estado de stock (normal, bajo, crítico, agotado) y alertas de productos próximos a vencer. |
 | **Solicitudes** | El empleado crea pedidos y devoluciones; el bodeguero los aprueba o rechaza ajustando la cantidad realmente entregada. Cada aprobación genera el movimiento correspondiente. |
 | **Analítica** | Consumo por periodo, productos más usados, vencimientos y exportación de movimientos, con filtros por fechas y categoría. |
@@ -53,9 +55,9 @@ Smart RDP digitaliza ese flujo:
 | Reportes | Apache POI (Excel) · OpenPDF (PDF) |
 | Frontend | Angular 22 · TypeScript · RxJS · W3.CSS · Font Awesome · alertifyjs · ngx-spinner |
 | Base de datos | PostgreSQL |
-| Herramientas | Maven Wrapper · npm · Docker Compose (solo para PostgreSQL) · Git y GitHub |
+| Herramientas | Maven Wrapper · npm · Flyway (migraciones de la base) · Docker (opcional) · Git y GitHub |
 
-Todo el software es de código abierto y no requiere licencias.
+Todo el software es de código abierto y no requiere licencias. El sistema no usa servicios en la nube: corre en un servidor propio o en un equipo local del restaurante (la decisión de infraestructura de despliegue sigue pendiente, ver [Estado del proyecto](#estado-del-proyecto)).
 
 ## Arquitectura
 
@@ -80,6 +82,7 @@ El detalle completo (diagramas de casos de uso, clases, secuencia y despliegue) 
 │   ├── EVIDENCIAS INDIVIDUALES/     Diarios de reflexión y autoevaluaciones
 │   ├── EVIDENCIAS GRUPALES/         Guías 2.4 y 2.6 y planillas de evaluación
 │   └── EVIDENCIAS PROYECTO/
+│       ├── INFORME FINAL FASE 2.docx
 │       ├── PRESENTACIÓN PROYECTO.pptx
 │       ├── EVIDENCIAS DE DOCUMENTACIÓN/   Metodología, planes, minutas, diagramas y planillas del cliente
 │       └── EVIDENCIAS DE SISTEMA/
@@ -94,7 +97,42 @@ Dentro de `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/backend/
 
 ## Ejecución local
 
-POR HACER...
+**Requisitos:** Java 21, Node.js con npm y un PostgreSQL local (se desarrolló y probó con la versión 18). El frontend y el backend se levantan por separado.
+
+Todas las rutas parten de `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN`.
+
+**1. Base de datos.** Crea una base vacía llamada `smartrdp` con el usuario `postgres` (`CREATE DATABASE smartrdp;`). Flyway crea las tablas, restricciones y triggers al arrancar el backend; no hay que cargar ningún script a mano.
+
+**2. Variables de entorno.** El backend las lee del entorno del proceso (no carga un archivo `.env`). `backend/.env.example` lista cuáles son:
+
+| Variable | Para qué sirve |
+|---|---|
+| `SMARTRDP_DB_PASSWORD` | Clave del usuario `postgres`. |
+| `SMARTRDP_JWT_SECRET` | Secreto para firmar los tokens JWT, en Base64 y de al menos 32 bytes (`openssl rand -base64 48`). |
+| `SMARTRDP_ADMIN_EMAIL` y `SMARTRDP_ADMIN_PASSWORD` | Administrador inicial; solo se crea en el primer arranque si ambas están definidas. |
+
+**3. Backend** (API en `http://localhost:8080`):
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+**4. Frontend** (aplicación en `http://localhost:4200`), en otra terminal:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+El frontend apunta a `http://localhost:8080/api` (`src/environments`) y el backend acepta peticiones desde `http://localhost:4200`. Para entrar, usa el administrador que definiste en el paso 2; desde Usuarios puede crear bodegueros y empleados.
+
+**Alternativa con Docker.** `backend/docker-compose.yml` levanta PostgreSQL, el backend y el frontend (este último servido con nginx) con las mismas direcciones de arriba. Define antes las variables del paso 2 (`SMARTRDP_DB_PASSWORD` y `SMARTRDP_JWT_SECRET` son obligatorias) y ejecuta, desde `backend`:
+
+```bash
+docker compose up --build
+```
 
 ## Pruebas
 
@@ -145,7 +183,18 @@ El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%
 
 ## Documentación
 
-POR HACER...
+Todo está en `FASE 2/EVIDENCIAS PROYECTO`.
+
+| Tema | Documentos |
+|---|---|
+| **Informe y presentación** | [Informe final de la Fase 2](FASE%202/EVIDENCIAS%20PROYECTO/INFORME%20FINAL%20FASE%202.docx) · [Presentación del proyecto](FASE%202/EVIDENCIAS%20PROYECTO/PRESENTACI%C3%93N%20PROYECTO.pptx) |
+| **Metodología y planificación** | [Metodología XP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/01-METODOLOGIA-XP.docx) · [Plan de release](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/02-PLAN-DE-RELEASE.docx) · [Plan de iteración](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/03-PLAN-DE-ITERACION.docx) · [Velocidad](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/04-VELOCIDAD-DEL-PROYECTO.xlsx) · [Retrospectivas](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/05-RETROSPECTIVAS.docx) · [Plan de trabajo con avance](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/09-PLAN-DE-TRABAJO-CON-AVANCE.xlsx) · carta Gantt, EDT, actas de cierre y minutas (en la misma carpeta) |
+| **Requisitos** | Historias de usuario (Product Backlog), definición de hecho (DoD), matriz de riesgos y política de seguridad con matriz de roles (en la misma carpeta) |
+| **Diseño** | [Diagramas UML](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/08-DIAGRAMAS-UML.md) · [Modelo de datos](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20SISTEMA/BASE%20DE%20DATOS/07-MODELO-DE-DATOS.md) · diagramas en PNG (casos de uso, clases, secuencia, arquitectura, entidad-relación y auditoría) |
+| **Pruebas** | [Informe de pruebas](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/INFORME%20DE%20PRUEBAS.docx) · [Matriz de trazabilidad](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/MATRIZ%20DE%20TRAZABILIDAD.xlsx) · [Casos de prueba](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/CASOS%20DE%20PRUEBA%20SMARTRDP.docx) |
+| **Cliente** | Planillas de inventario del restaurante en `EVIDENCIAS DE DOCUMENTACIÓN/EVIDENCIAS-RPD` y el video del 16-10-2026 |
+
+Las evidencias individuales y grupales de cada fase están en las carpetas `EVIDENCIAS INDIVIDUALES` y `EVIDENCIAS GRUPALES` de `FASE 1` y `FASE 2`.
 
 ## Estado del proyecto
 
