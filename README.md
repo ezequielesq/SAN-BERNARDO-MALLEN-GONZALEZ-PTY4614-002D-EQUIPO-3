@@ -148,6 +148,8 @@ SMARTRDP_DB_PASSWORD=<clave-de-postgres> ./mvnw test
 
 La clave de la base se entrega solo por la variable de entorno `SMARTRDP_DB_PASSWORD`; no está en el repositorio. El informe de cobertura (JaCoCo) queda en `target/site/jacoco/index.html`.
 
+**Integración continua.** El flujo [`.github/workflows/ci.yml`](.github/workflows/ci.yml) de GitHub Actions corre las mismas pruebas contra un PostgreSQL 18 efímero y compila el frontend en cada subida o pull request a `main` y `develop`. El informe de cobertura queda como artefacto de cada corrida.
+
 Resultado de la última corrida (12-11-2026): 63 de 63 aprobadas y 92,9 % de cobertura de líneas. El detalle está en `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE DOCUMENTACIÓN`: [INFORME DE PRUEBAS](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/INFORME%20DE%20PRUEBAS.docx), [MATRIZ DE TRAZABILIDAD](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/MATRIZ%20DE%20TRAZABILIDAD.xlsx) (historia ↔ prueba) y [CASOS DE PRUEBA SMARTRDP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20DOCUMENTACI%C3%93N/CASOS%20DE%20PRUEBA%20SMARTRDP.docx) (casos manuales).
 
 ## Roles y accesos
