@@ -2,7 +2,7 @@
 
 Sistema web de gestión de bodega para el restaurante **Doña Paula** (Viña Santa Rita, Buin). Reemplaza el registro manual en papel y planillas Excel por un sistema que controla productos, lotes, entradas, salidas y solicitudes de insumos con trazabilidad por usuario.
 
-> Proyecto de Título **PTY4614-002D · Equipo 3** · Duoc UC, Sede San Bernardo · Docente: Eliana Mallén González
+> Proyecto de Título **PTY4614-002D · Equipo 3** · Duoc UC, Sede San Bernardo · Docente: Mallén González González
 
 ## Contenido
 
@@ -140,7 +140,7 @@ El detalle está en [Metodología XP](FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%
 | Ezequiel Suárez | Programador (backend y frontend) |
 | Lucas Villanueva | Programador (desarrollo y pruebas) |
 | Carolina Pandorfa | Tracker (calidad y GRC), documentación y seguimiento |
-| Eliana Mallén González | Coach (docente) |
+| Mallén González González | Coach (docente) |
 | Administración y encargado de bodega del restaurante | Usuarios clave: priorizan y aceptan las historias |
 
 ## Documentación
