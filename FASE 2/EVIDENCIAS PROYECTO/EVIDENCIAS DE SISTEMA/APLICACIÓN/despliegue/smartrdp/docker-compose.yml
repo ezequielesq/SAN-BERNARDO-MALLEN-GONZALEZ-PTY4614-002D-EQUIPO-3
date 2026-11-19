@@ -1,11 +1,13 @@
 # Stack "smartrdp": backend (Spring Boot) y frontend (Angular servido por nginx).
-# Se construye desde el código del repositorio (Portainer > Stacks > Repository).
+# Usa imágenes ya construidas (ARM64) que se cargan en la Raspberry con "docker load"; no se compila allí
+# porque la Raspberry tiene poca memoria. Ver despliegue/README.md, sección "Construir las imágenes".
 # Requiere que existan las redes red_bodega y red_web y que el stack "db" esté levantado.
 # Variables: ver .env.example (los valores reales se cargan en Portainer, nunca en el repositorio).
 
 services:
   smartrdp-backend:
-    build: ../../backend
+    image: smartrdp-backend:latest
+    pull_policy: never   # imagen local: no intentes descargarla de internet
     container_name: smartrdp-backend
     restart: unless-stopped
     environment:
@@ -23,7 +25,8 @@ services:
       - red_bodega
 
   smartrdp-frontend:
-    build: ../../frontend
+    image: smartrdp-frontend:latest
+    pull_policy: never
     container_name: smartrdp-frontend
     restart: unless-stopped
     depends_on:

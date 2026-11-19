@@ -1,4 +1,6 @@
-FROM eclipse-temurin:21-jdk-alpine AS build
+# La compilación corre en la arquitectura de quien construye (el .jar no depende del procesador);
+# solo la imagen final se arma para la plataforma de destino (p. ej. linux/arm64 para la Raspberry).
+FROM --platform=$BUILDPLATFORM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 COPY . .
 RUN chmod +x ./mvnw

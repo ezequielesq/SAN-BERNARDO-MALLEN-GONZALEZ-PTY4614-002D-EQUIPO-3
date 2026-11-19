@@ -70,12 +70,40 @@ sh nueva-base.sh smartrdp smartrdp_app
 
 Pide la contraseña por teclado: escribe la de `SMARTRDP_DB_PASSWORD`. Sirve igual para cada aplicación nueva (`sh nueva-base.sh <base> <usuario>`).
 
-### 4. Stack `smartrdp`
-Igual que el anterior, con Compose path `.../despliegue/smartrdp/docker-compose.yml` y las variables de `smartrdp/.env.example`. Portainer construye las imágenes desde el código; en la Raspberry la primera construcción tarda varios minutos.
+### 4. Construir las imágenes (en tu PC) y cargarlas en la Raspberry
+La Raspberry tiene poca memoria (≈1 GB) y compilar Maven y Angular allí es lento y falla. Por eso las imágenes se construyen en un PC con Docker y se llevan ya hechas. La compilación corre en la arquitectura del PC y solo la imagen final se arma para ARM64, así que no hay emulación lenta.
+
+**Con el script (recomendado).** En el PC, con Docker Desktop abierto, desde PowerShell:
+
+```powershell
+.\despliegue\publicar-imagenes.ps1
+```
+
+Construye las dos imágenes, las envía por SSH a la Raspberry y las carga en Docker. SSH pide la contraseña una vez. Si la Raspberry tiene otro usuario o dirección: `-Destino usuario@direccion`. Con `-SoloConstruir` solo construye.
+
+**A mano**, si prefieres ver cada paso. En el PC, desde la carpeta `APLICACIÓN`:
+
+```bash
+docker buildx build --platform linux/arm64 --provenance=false --load -t smartrdp-backend:latest ./backend
+docker buildx build --platform linux/arm64 --provenance=false --load -t smartrdp-frontend:latest ./frontend
+docker save -o smartrdp-imagenes-arm64.tar smartrdp-backend:latest smartrdp-frontend:latest
+```
+
+Copia el archivo a la Raspberry y cárgalo:
+
+```bash
+scp smartrdp-imagenes-arm64.tar USUARIO@IP_DE_LA_RASPBERRY:~/
+docker load -i ~/smartrdp-imagenes-arm64.tar
+```
+
+El stack usa `pull_policy: never`, así que toma esas imágenes locales y no intenta descargarlas.
+
+### 5. Stack `smartrdp`
+Igual que el anterior, con Compose path `.../despliegue/smartrdp/docker-compose.yml` y las variables de `smartrdp/.env.example`. Las imágenes deben estar cargadas antes (paso 4).
 
 El backend crea las tablas solo (Flyway) y, si definiste `SMARTRDP_ADMIN_EMAIL` y `SMARTRDP_ADMIN_PASSWORD`, el administrador inicial.
 
-### 5. Ruta del túnel de Cloudflare
+### 6. Ruta del túnel de Cloudflare
 En Cloudflare: **Zero Trust > Networks > Tunnels > (tu túnel) > Public hostname > Add**.
 - Hostname: el dominio elegido para la aplicación.
 - Service: `HTTP` y la URL según dónde corre `cloudflared`:
@@ -84,7 +112,7 @@ En Cloudflare: **Zero Trust > Networks > Tunnels > (tu túnel) > Public hostname
 
 Solo se expone el frontend. El backend y la base de datos no se publican: nginx reenvía `/api` por la red interna.
 
-### 6. Comprobar
+### 7. Comprobar
 Abre el dominio, inicia sesión con el administrador y crea un producto. Si falla, revisa los registros de `smartrdp-backend` en Portainer (Containers > Logs).
 
 ## Respaldo
@@ -98,7 +126,9 @@ docker exec -i pg-central pg_restore -U postgres -d smartrdp --clean --if-exists
 Copia esa carpeta también a otro equipo o disco: un respaldo en la misma tarjeta de la Raspberry no protege si la tarjeta falla.
 
 ## Actualizar la aplicación
-En Portainer, abre el stack `smartrdp` > **Pull and redeploy** (con la opción de reconstruir las imágenes).
+1. En el PC, vuelve a construir las imágenes y genera el `.tar` (paso 4).
+2. Cópialo a la Raspberry y ejecuta `docker load -i smartrdp-imagenes-arm64.tar`.
+3. En Portainer, abre el stack `smartrdp` > **Update the stack** (o recrea los contenedores) para que usen la imagen nueva.
 
 ## Seguridad
 - La vista pública del empleado pide nombre y contraseña sin límite de intentos: protege el dominio con **Cloudflare Access** o limita quién puede entrar.

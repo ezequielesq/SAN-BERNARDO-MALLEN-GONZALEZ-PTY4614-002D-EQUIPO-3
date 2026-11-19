@@ -1,4 +1,6 @@
-FROM node:24-alpine AS build
+# La compilación corre en la arquitectura de quien construye (los archivos de Angular no dependen del procesador);
+# solo la imagen final se arma para la plataforma de destino (p. ej. linux/arm64 para la Raspberry).
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 # Con "npm ci" falla: el package-lock.json se generó en Windows y no trae los binarios de Linux.
