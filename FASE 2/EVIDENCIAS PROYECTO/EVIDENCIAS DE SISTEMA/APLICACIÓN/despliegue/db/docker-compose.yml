@@ -1,0 +1,55 @@
+# Stack "db": PostgreSQL compartido por las aplicaciones de la Raspberry + respaldo diario.
+# Las aplicaciones se conectan por la red interna red_bodega; el puerto 5432 NO se publica en la Raspberry.
+# Variables: ver .env.example (los valores reales se cargan en Portainer, nunca en el repositorio).
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: pg-central
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${PG_SUPERUSER_PASSWORD:?Define PG_SUPERUSER_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    networks:
+      - red_bodega
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Respaldo: un volcado (pg_dump) de cada base, al arrancar y luego cada 24 horas; conserva 14 días.
+  # Usa la misma imagen que el servidor para que pg_dump sea de la misma versión.
+  backup:
+    image: postgres:18-alpine
+    container_name: pg-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${PG_SUPERUSER_PASSWORD}
+      PGHOST: pg-central
+      PGUSER: postgres
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          for db in $$(psql -d postgres -Atc "select datname from pg_database where not datistemplate and datname <> 'postgres'"); do
+            pg_dump -Fc -d "$$db" -f "/backups/$${db}_$$(date +%Y-%m-%d_%H%M).dump" && echo "respaldo de $$db listo"
+          done
+          find /backups -name '*.dump' -mtime +14 -delete
+          sleep 86400
+        done
+    volumes:
+      - ${BACKUP_DIR:-/srv/backups/postgres}:/backups
+    networks:
+      - red_bodega
+
+volumes:
+  pgdata:
+
+networks:
+  red_bodega:
+    external: true

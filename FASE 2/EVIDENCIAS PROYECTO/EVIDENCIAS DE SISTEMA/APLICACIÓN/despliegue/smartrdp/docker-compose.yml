@@ -1,0 +1,46 @@
+# Stack "smartrdp": backend (Spring Boot) y frontend (Angular servido por nginx).
+# Se construye desde el código del repositorio (Portainer > Stacks > Repository).
+# Requiere que existan las redes red_bodega y red_web y que el stack "db" esté levantado.
+# Variables: ver .env.example (los valores reales se cargan en Portainer, nunca en el repositorio).
+
+services:
+  smartrdp-backend:
+    build: ../../backend
+    container_name: smartrdp-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pg-central:5432/${SMARTRDP_DB_NAME:-smartrdp}
+      SMARTRDP_DB_USER: ${SMARTRDP_DB_USER:-smartrdp_app}
+      SMARTRDP_DB_PASSWORD: ${SMARTRDP_DB_PASSWORD:?Define SMARTRDP_DB_PASSWORD}
+      SMARTRDP_JWT_SECRET: ${SMARTRDP_JWT_SECRET:?Define SMARTRDP_JWT_SECRET}
+      SMARTRDP_ADMIN_EMAIL: ${SMARTRDP_ADMIN_EMAIL:-}
+      SMARTRDP_ADMIN_PASSWORD: ${SMARTRDP_ADMIN_PASSWORD:-}
+      # Con el proxy de nginx el navegador llama siempre al mismo origen, así que CORS no interviene;
+      # se deja alineado con la dirección pública por si se usa la API desde otro origen.
+      APP_CORS_ALLOWED_ORIGINS: ${APP_URL:-http://localhost:4200}
+    networks:
+      - interna
+      - red_bodega
+
+  smartrdp-frontend:
+    build: ../../frontend
+    container_name: smartrdp-frontend
+    restart: unless-stopped
+    depends_on:
+      - smartrdp-backend
+    environment:
+      BACKEND_URL: http://smartrdp-backend:8080
+    ports:
+      # Solo en el loopback de la Raspberry: si cloudflared corre en el host, la ruta del túnel es http://localhost:8081.
+      # No es accesible desde la red local. Si cloudflared corre en Docker, usa http://smartrdp-frontend:80.
+      - "127.0.0.1:${FRONTEND_PORT:-8081}:80"
+    networks:
+      - interna
+      - red_web
+
+networks:
+  interna:
+  red_bodega:
+    external: true
+  red_web:
+    external: true

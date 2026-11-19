@@ -1,0 +1,18 @@
+# Stack "edge" (opcional): cloudflared dentro de Docker. Úsalo solo si el túnel NO corre ya como servicio en la Raspberry.
+# Con este stack, la ruta del túnel (Public hostname) apunta a  http://smartrdp-frontend:80
+# Variables: ver .env.example (el token del túnel se carga en Portainer, nunca en el repositorio).
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Define CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - red_web
+
+networks:
+  red_web:
+    external: true

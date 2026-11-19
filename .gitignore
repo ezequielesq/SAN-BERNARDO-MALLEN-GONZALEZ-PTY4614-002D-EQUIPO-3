@@ -13,6 +13,10 @@
 **/frontend/.angular/
 **/frontend/.vscode/
 
+# Secretos: las variables reales (.env) nunca se suben; solo los .env.example
+.env
+**/.env
+
 # OS
 .DS_Store
 Thumbs.db
