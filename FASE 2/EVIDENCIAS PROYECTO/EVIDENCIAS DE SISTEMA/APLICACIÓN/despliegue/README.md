@@ -79,7 +79,7 @@ La Raspberry tiene poca memoria (≈1 GB) y compilar Maven y Angular allí es le
 .\despliegue\publicar-imagenes.ps1
 ```
 
-Construye las dos imágenes, las envía por SSH a la Raspberry y las carga en Docker. SSH pide la contraseña una vez. Si la Raspberry tiene otro usuario o dirección: `-Destino usuario@direccion`. Con `-SoloConstruir` solo construye.
+Construye las dos imágenes, las copia por SCP a la Raspberry (con barra de progreso) y las carga en Docker. SSH pide la contraseña dos veces, o ninguna si configuraste una llave. Si la Raspberry tiene otro usuario o dirección: `-Destino usuario@direccion`. Con `-SoloConstruir` solo construye.
 
 **A mano**, si prefieres ver cada paso. En el PC, desde la carpeta `APLICACIÓN`:
 
