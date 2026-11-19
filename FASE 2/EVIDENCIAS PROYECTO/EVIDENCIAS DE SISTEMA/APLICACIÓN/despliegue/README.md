@@ -1,6 +1,6 @@
 # Despliegue en la Raspberry con Portainer
 
-Smart RDP corre en la Raspberry como tres stacks de Portainer. El tráfico llega por un túnel de Cloudflare, así que no se abre ningún puerto del router.
+Smart RDP corre en la Raspberry como dos stacks de Portainer (`db` y `smartrdp`; un tercero, `edge`, es opcional y hoy no se usa). El tráfico llega por un túnel de Cloudflare, así que no se abre ningún puerto del router. En producción la aplicación está en `https://bodega.ezsuarez.org`.
 
 ```
 Internet ─► Cloudflare Tunnel ─► smartrdp-frontend (nginx) ─► /api ─► smartrdp-backend ─► pg-central (PostgreSQL 18)
@@ -57,14 +57,17 @@ sudo mkdir -p /srv/backups/postgres
 ### 2. Stack `db`
 Portainer > **Stacks > Add stack > Repository**:
 - Repository URL: la de este repositorio en GitHub.
-- Repository reference: `refs/heads/main`.
+- Repository reference: `refs/heads/main` (mientras el despliegue solo esté en `develop`, usa `refs/heads/develop`).
+- Authentication: desactivada (el repositorio es público).
 - Compose path: `FASE 2/EVIDENCIAS PROYECTO/EVIDENCIAS DE SISTEMA/APLICACIÓN/despliegue/db/docker-compose.yml`
 - Environment variables: `PG_SUPERUSER_PASSWORD` y `BACKUP_DIR`.
 
 ### 3. Crear la base de Smart RDP
-En la Raspberry, desde una copia del repositorio (o pegando el contenido de `db/nueva-base.sh`):
+En la Raspberry, descarga el script (no hace falta clonar el repositorio; ajusta `develop` por `main` si corresponde), revísalo y ejecútalo:
 
 ```bash
+curl -fsSL "https://raw.githubusercontent.com/ezequielesq/SAN-BERNARDO-MALLEN-GONZALEZ-PTY4614-002D-EQUIPO-3/develop/FASE%202/EVIDENCIAS%20PROYECTO/EVIDENCIAS%20DE%20SISTEMA/APLICACI%C3%93N/despliegue/db/nueva-base.sh" -o nueva-base.sh
+cat nueva-base.sh
 sh nueva-base.sh smartrdp smartrdp_app
 ```
 
@@ -99,14 +102,14 @@ docker load -i ~/smartrdp-imagenes-arm64.tar
 El stack usa `pull_policy: never`, así que toma esas imágenes locales y no intenta descargarlas.
 
 ### 5. Stack `smartrdp`
-Igual que el anterior, con Compose path `.../despliegue/smartrdp/docker-compose.yml` y las variables de `smartrdp/.env.example`. Las imágenes deben estar cargadas antes (paso 4).
+Igual que el anterior, con Compose path `.../despliegue/smartrdp/docker-compose.yml` y las variables de `smartrdp/.env.example` (`APP_URL` con la dirección pública, por ejemplo `https://bodega.ezsuarez.org`). Las imágenes deben estar cargadas antes (paso 4). `SMARTRDP_DB_PASSWORD` debe ser exactamente la que escribiste en `nueva-base.sh`.
 
-El backend crea las tablas solo (Flyway) y, si definiste `SMARTRDP_ADMIN_EMAIL` y `SMARTRDP_ADMIN_PASSWORD`, el administrador inicial.
+El backend crea las tablas solo (Flyway) y, si definiste `SMARTRDP_ADMIN_EMAIL` y `SMARTRDP_ADMIN_PASSWORD`, el administrador inicial. En la Raspberry el arranque tarda cerca de 90 segundos; mientras tanto nginx responde `502` en `/api`.
 
 ### 6. Ruta del túnel de Cloudflare
-En Cloudflare: **Zero Trust > Networks > Tunnels > (tu túnel) > Public hostname > Add**.
-- Hostname: el dominio elegido para la aplicación.
-- Service: `HTTP` y la URL según dónde corre `cloudflared`:
+En Cloudflare: **Zero Trust > Networks > Connectors (Tunnels) > (tu túnel) > Published application routes > Add a published application route** (aplicación pública, no «nombre de host privado»). El dominio debe estar en la misma cuenta de Cloudflare que el túnel.
+- Subdominio y dominio: por ejemplo `bodega` y `ezsuarez.org`. Ruta: vacía.
+- Tipo de servicio `HTTP` y URL (el campo exige el protocolo) según dónde corre `cloudflared`:
   - Como servicio en la Raspberry (nuestro caso): `http://localhost:8081`
   - Dentro de Docker (stack `edge`, no se usa en esta instalación): `http://smartrdp-frontend:80`
 
@@ -126,11 +129,31 @@ docker exec -i pg-central pg_restore -U postgres -d smartrdp --clean --if-exists
 Copia esa carpeta también a otro equipo o disco: un respaldo en la misma tarjeta de la Raspberry no protege si la tarjeta falla.
 
 ## Actualizar la aplicación
-1. En el PC, vuelve a construir las imágenes y genera el `.tar` (paso 4).
-2. Cópialo a la Raspberry y ejecuta `docker load -i smartrdp-imagenes-arm64.tar`.
-3. En Portainer, abre el stack `smartrdp` > **Update the stack** (o recrea los contenedores) para que usen la imagen nueva.
+
+| Qué cambió | Qué hacer |
+|---|---|
+| Código del backend o del frontend (incluye las migraciones de la base) | Ejecutar `publicar-imagenes.ps1` y luego, en Portainer, **Pull and redeploy** del stack `smartrdp` |
+| Solo configuración (el `docker-compose.yml` del stack o una variable de entorno) | Solo Portainer: **Pull and redeploy** (o **Update the stack** si cambiaste una variable) |
+| Documentos, presentaciones, README | Nada |
+
+- El script construye lo que haya en la carpeta del PC, no lo que esté en GitHub: sube el commit antes, para que el repositorio y lo que corre sean lo mismo.
+- Cargar la imagen no cambia los contenedores en marcha: el redeploy los recrea con la nueva. Habrá un corte de unos 90 segundos mientras arranca el backend.
+- Cada actualización deja la imagen anterior sin nombre. De vez en cuando, en la Raspberry: `docker image prune -f`.
+
+## Notas de la Raspberry
+- **Memoria:** tiene ≈1 GB. Por eso no se compila allí (paso 4).
+- **Wi-Fi y QUIC:** `cloudflared` por defecto usa QUIC (UDP), que se cortaba por el Wi-Fi. Se fuerza HTTP/2 con una variable en un archivo aparte, sin tocar el token:
+  ```bash
+  sudo mkdir -p /etc/systemd/system/cloudflared.service.d
+  printf '[Service]\nEnvironment=TUNNEL_TRANSPORT_PROTOCOL=http2\n' | sudo tee /etc/systemd/system/cloudflared.service.d/protocolo.conf
+  sudo systemctl daemon-reload && sudo systemctl restart cloudflared
+  ```
+- **No pegues la salida de `systemctl status cloudflared`:** muestra el token completo. Para ver el estado usa `journalctl -u cloudflared -n 15 --no-pager`.
+- **Réplicas del túnel:** si el panel muestra dos réplicas, comprueba que haya un solo proceso (`ps -C cloudflared -o pid,ppid,etime,user,comm`). Tras un reinicio, la réplica anterior puede tardar unos minutos en desaparecer sola.
+- **Contraseña de Portainer olvidada:** `docker stop portainer`, luego `docker run --rm -v portainer_data:/data portainer/helper-reset-password` (muestra una contraseña nueva) y `docker start portainer`.
 
 ## Seguridad
 - La vista pública del empleado pide nombre y contraseña sin límite de intentos: protege el dominio con **Cloudflare Access** o limita quién puede entrar.
 - Cambia las contraseñas si alguna se compartió por un medio inseguro (chat, correo).
 - Mantén la Raspberry actualizada y accede por SSH con llaves.
+- Portainer se publica solo en `9443` (HTTPS), accesible en la red local en `https://IP_DE_LA_RASPBERRY:9443`. El `9000` (HTTP sin cifrar) no se publica: al crear el contenedor no uses `-p 9000:9000`.
