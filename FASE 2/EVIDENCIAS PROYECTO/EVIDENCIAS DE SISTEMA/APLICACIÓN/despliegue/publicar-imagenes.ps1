@@ -2,9 +2,13 @@
 #
 # Uso (PowerShell, desde cualquier carpeta):
 #   .\publicar-imagenes.ps1                                  # construye, envia y carga
-#   .\publicar-imagenes.ps1 -Destino otro@192.168.18.99      # otro usuario o direccion
+#   .\publicar-imagenes.ps1 -Destino usuario@direccion       # indica la Raspberry en esta ejecucion
 #   .\publicar-imagenes.ps1 -SoloConstruir                   # solo construye, no envia
 #   .\publicar-imagenes.ps1 -SinPausa                        # no espera Enter al final
+#
+# La Raspberry no esta escrita en el repositorio. Se toma de -Destino o, si no se indica, de la
+# variable de entorno SMARTRDP_DESTINO de este PC. Para dejarla guardada una sola vez:
+#   setx SMARTRDP_DESTINO "usuario@direccion"      (y abre una terminal nueva)
 #
 # Requisitos en este PC: Docker Desktop en marcha y el cliente OpenSSH (viene con Windows).
 # SSH pedira la contrasena de la Raspberry dos veces (copia y carga), o ninguna si configuraste una llave.
@@ -13,7 +17,7 @@
 # Despues, en Portainer: stack "smartrdp" > Pull and redeploy (o Update the stack).
 
 param(
-    [string]$Destino = "ezequiel@192.168.18.82",
+    [string]$Destino = $env:SMARTRDP_DESTINO,
     [switch]$SoloConstruir,
     [switch]$SinPausa
 )
@@ -34,6 +38,10 @@ function Verificar($codigo, $mensaje) {
 }
 
 try {
+    if (-not $SoloConstruir -and [string]::IsNullOrWhiteSpace($Destino)) {
+        throw "No se indico la Raspberry. Usa -Destino usuario@direccion, o guarda la variable una sola vez con: setx SMARTRDP_DESTINO ""usuario@direccion"" (y abre una terminal nueva)."
+    }
+
     Paso "Comprobando Docker"
     docker info *> $null
     Verificar $LASTEXITCODE "Docker no responde. Abre Docker Desktop y espera a que este en marcha."
