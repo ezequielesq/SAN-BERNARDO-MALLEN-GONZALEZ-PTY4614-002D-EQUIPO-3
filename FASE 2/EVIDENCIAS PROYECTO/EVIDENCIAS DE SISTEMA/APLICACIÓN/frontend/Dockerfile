@@ -2,7 +2,8 @@ FROM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 # Con "npm ci" falla: el package-lock.json se generó en Windows y no trae los binarios de Linux.
-RUN npm install
+# La caché de npm sobrevive entre intentos: si la descarga se corta, el siguiente intento continúa donde quedó.
+RUN --mount=type=cache,target=/root/.npm npm install --fetch-retries=5 --fetch-retry-mintimeout=20000
 COPY . .
 RUN npx ng build --configuration production
 

@@ -3,7 +3,8 @@ WORKDIR /app
 COPY . .
 RUN chmod +x ./mvnw
 # Las pruebas necesitan una base PostgreSQL real, por eso no corren dentro de la imagen.
-RUN ./mvnw clean package -DskipTests
+# La caché de ~/.m2 sobrevive entre intentos: si la descarga se corta (Wi-Fi inestable), el siguiente intento continúa donde quedó.
+RUN --mount=type=cache,target=/root/.m2 ./mvnw clean package -DskipTests -Daether.connector.http.retryHandler.count=10
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
