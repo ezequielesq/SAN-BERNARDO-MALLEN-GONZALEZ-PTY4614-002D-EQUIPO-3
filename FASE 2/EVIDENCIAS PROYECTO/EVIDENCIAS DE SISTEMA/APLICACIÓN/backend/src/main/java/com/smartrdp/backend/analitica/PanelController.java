@@ -1,6 +1,7 @@
 package com.smartrdp.backend.analitica;
 
 import com.smartrdp.backend.analitica.dto.ResumenPanelDto;
+import com.smartrdp.backend.analitica.dto.SerieConsumoDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,5 +29,16 @@ public class PanelController {
             @RequestParam(required = false) List<Long> productoIds,
             @RequestParam(required = false) Long solicitanteId) {
         return servicio.resumen(FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+    }
+
+    @GetMapping("/consumo-periodo")
+    public SerieConsumoDto consumoPeriodo(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) Long solicitanteId) {
+        return servicio.consumoPeriodo(FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
     }
 }

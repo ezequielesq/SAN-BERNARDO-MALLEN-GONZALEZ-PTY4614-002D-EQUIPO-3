@@ -1,6 +1,8 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.PuntoConsumoDto;
 import com.smartrdp.backend.analitica.dto.ResumenPanelDto;
+import com.smartrdp.backend.analitica.dto.SerieConsumoDto;
 import com.smartrdp.backend.movimiento.VistasInventario;
 import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.producto.ProductoRepository;
@@ -8,12 +10,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,6 +68,50 @@ public class PanelService {
                 hayCantidad ? solicitado.stream().mapToLong(Solicitado::cantidad).sum() : null,
                 hayCantidad ? cantidad(entregas) : null,
                 valor(perdidas), lineas.stream().filter(l -> l.costo() == null).count());
+    }
+
+    // ------------------------------------------------------------------ consumo por período
+
+    @Transactional(readOnly = true)
+    public SerieConsumoDto consumoPeriodo(FiltroPanel f) {
+        List<LineaPanel> lineas = lineas(f, TIPOS_CONSUMO_Y_PERDIDA);
+        List<LineaPanel> consumo = lineas.stream().filter(l -> TIPOS_CONSUMO.contains(l.tipo())).toList();
+        String unidad = unidadComun(consumo, List.of());
+
+        Map<LocalDate, long[]> acumulado = new TreeMap<>(); // [consumoValor, consumoCantidad, perdidasValor]
+        for (LocalDate inicio = inicioDePeriodo(f.desde(), f.agrupar()); !inicio.isAfter(f.hasta());
+             inicio = siguiente(inicio, f.agrupar())) {
+            acumulado.put(inicio, new long[3]);
+        }
+        for (LineaPanel l : lineas) {
+            long[] periodo = acumulado.get(inicioDePeriodo(l.fecha().toLocalDate(), f.agrupar()));
+            switch (l.tipo()) {
+                case ENTREGA_PEDIDO -> { periodo[0] += l.valor(); periodo[1] += l.cantidad(); }
+                case DEVOLUCION -> { periodo[0] -= l.valor(); periodo[1] -= l.cantidad(); }
+                default -> periodo[2] += l.valor();
+            }
+        }
+        List<PuntoConsumoDto> puntos = acumulado.entrySet().stream()
+                .map(e -> new PuntoConsumoDto(e.getKey(), e.getValue()[0],
+                        unidad == null ? null : e.getValue()[1], e.getValue()[2]))
+                .toList();
+        return new SerieConsumoDto(unidad, puntos);
+    }
+
+    private static LocalDate inicioDePeriodo(LocalDate dia, Agrupacion agrupar) {
+        return switch (agrupar) {
+            case DIA -> dia;
+            case SEMANA -> dia.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            case MES -> dia.withDayOfMonth(1);
+        };
+    }
+
+    private static LocalDate siguiente(LocalDate inicio, Agrupacion agrupar) {
+        return switch (agrupar) {
+            case DIA -> inicio.plusDays(1);
+            case SEMANA -> inicio.plusWeeks(1);
+            case MES -> inicio.plusMonths(1);
+        };
     }
 
     // ------------------------------------------------------------------ solicitado

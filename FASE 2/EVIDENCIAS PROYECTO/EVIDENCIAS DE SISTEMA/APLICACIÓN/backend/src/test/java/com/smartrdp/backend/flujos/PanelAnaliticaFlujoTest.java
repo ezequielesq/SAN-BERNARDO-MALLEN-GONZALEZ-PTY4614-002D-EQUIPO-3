@@ -204,6 +204,76 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(r.path("pedidos").asLong()).isEqualTo(1);
     }
 
+    // ================================================================== consumo por período
+
+    private static final LocalDate LUNES = LocalDate.of(2026, 3, 2);
+
+    /** Escenario común: entregas de 10 (lun 2/3), 5 (dom 8/3), 4 (lun 9/3), 2 (mar 31/3) y 3 (mié 1/4); merma de 1 el 9/3. */
+    private record Escenario(Cuenta bodeguero, Catalogo categoria) {}
+
+    private Escenario escenarioDeSerie() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = productoConEntrada(categoria, 100);
+        entregar(bodeguero, empleado, producto.id(), 10, LUNES);
+        entregar(bodeguero, empleado, producto.id(), 5, LUNES.plusDays(6));
+        entregar(bodeguero, empleado, producto.id(), 4, LUNES.plusDays(7));
+        entregar(bodeguero, empleado, producto.id(), 2, LocalDate.of(2026, 3, 31));
+        entregar(bodeguero, empleado, producto.id(), 3, LocalDate.of(2026, 4, 1));
+        long merma = salidaDeTipo(bodeguero, "MERMA", producto.id(), 1).esperando(201).json().path("id").asLong();
+        fecharOperacion(merma, LUNES.plusDays(7).atTime(9, 0));
+        return new Escenario(bodeguero, categoria);
+    }
+
+    private JsonNode serie(Escenario e, LocalDate desde, LocalDate hasta, String agrupar) {
+        return get(PANEL + "consumo-periodo?desde=" + desde + "&hasta=" + hasta + "&agrupar=" + agrupar
+                + "&categoriaId=" + e.categoria().id(), e.bodeguero().token()).esperando(200).json();
+    }
+
+    private static List<Long> valores(JsonNode serie, String campo) {
+        return serie.path("puntos").findValues(campo).stream().map(JsonNode::asLong).toList();
+    }
+
+    private static List<String> inicios(JsonNode serie) {
+        return serie.path("puntos").findValues("inicio").stream().map(JsonNode::asText).toList();
+    }
+
+    @Test
+    @DisplayName("HU-100 Serie por día: un punto por día del rango, con ceros en los días sin movimiento")
+    void serieAgrupadaPorDia() {
+        JsonNode s = serie(escenarioDeSerie(), LUNES, LUNES.plusDays(8), "DIA");
+
+        assertThat(inicios(s)).hasSize(9).first().isEqualTo("2026-03-02");
+        assertThat(valores(s, "consumoValor")).containsExactly(10_000L, 0L, 0L, 0L, 0L, 0L, 5_000L, 4_000L, 0L);
+        assertThat(valores(s, "perdidasValor")).containsExactly(0L, 0L, 0L, 0L, 0L, 0L, 0L, 1_000L, 0L);
+    }
+
+    @Test
+    @DisplayName("HU-100 Serie por semana: empieza el lunes, el rango parcial arranca en el lunes anterior y las semanas vacías van en cero")
+    void serieAgrupadaPorSemana() {
+        Escenario e = escenarioDeSerie();
+
+        JsonNode s = serie(e, LUNES, LUNES.plusDays(21), "SEMANA");
+        assertThat(inicios(s)).containsExactly("2026-03-02", "2026-03-09", "2026-03-16", "2026-03-23");
+        assertThat(valores(s, "consumoValor")).containsExactly(15_000L, 4_000L, 0L, 0L);
+
+        // Un rango que empieza a mitad de semana (miércoles 4/3) arranca en el lunes de esa semana.
+        JsonNode parcial = serie(e, LUNES.plusDays(2), LUNES.plusDays(9), "SEMANA");
+        assertThat(inicios(parcial)).containsExactly("2026-03-02", "2026-03-09");
+    }
+
+    @Test
+    @DisplayName("HU-100 Serie por mes: el borde de mes separa marzo de abril")
+    void serieAgrupadaPorMes() {
+        JsonNode s = serie(escenarioDeSerie(), LocalDate.of(2026, 3, 1), LocalDate.of(2026, 4, 30), "MES");
+
+        assertThat(inicios(s)).containsExactly("2026-03-01", "2026-04-01");
+        assertThat(valores(s, "consumoValor")).containsExactly(21_000L, 3_000L);
+        assertThat(s.path("unidadComun").asText()).isNotBlank();
+        assertThat(s.path("puntos").get(0).path("consumoCantidad").asLong()).isEqualTo(21);
+    }
+
     // ------------------------------------------------------------------ ayudantes
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */
