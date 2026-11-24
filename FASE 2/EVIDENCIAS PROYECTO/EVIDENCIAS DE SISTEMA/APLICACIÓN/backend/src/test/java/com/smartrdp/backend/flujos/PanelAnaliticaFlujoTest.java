@@ -113,6 +113,73 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         get(PANEL + consulta, token).esperando(200);
     }
 
+    // ================================================================== resumen: unidades, líneas sin costo y pérdidas
+
+    @Test
+    @DisplayName("HU-100 Unidades: con una sola unidad se devuelve la cantidad; con kg y L mezclados, solo el valor")
+    void unidadesComunesOMezcladas() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Catalogo kilos = crearUnidadPropia();
+        Catalogo litros = crearUnidadPropia();
+        Prod carne = crearProductoConUnidad(categoria, kilos);
+        Prod aceite = crearProductoConUnidad(categoria, litros);
+        entrada(carne.id(), 50, null, null).esperando(201);
+        entrada(aceite.id(), 50, null, null).esperando(201);
+        aprobar(bodeguero, pedirOk(empleado, carne.id(), 6)).esperando(200);
+
+        JsonNode soloKilos = resumen(bodeguero, "&categoriaId=" + categoria.id());
+        assertThat(soloKilos.path("unidadComun").asText()).isEqualTo(kilos.nombre());
+        assertThat(soloKilos.path("cantidadNeta").asLong()).isEqualTo(6);
+
+        aprobar(bodeguero, pedirOk(empleado, aceite.id(), 2)).esperando(200);
+        JsonNode mezcla = resumen(bodeguero, "&categoriaId=" + categoria.id());
+        assertThat(mezcla.path("consumoNetoValor").asLong()).isEqualTo(8_000);
+        assertThat(mezcla.path("unidadComun").isNull()).isTrue();
+        assertThat(mezcla.path("cantidadNeta").isNull()).isTrue();
+    }
+
+    @Test
+    @DisplayName("HU-100 Pérdidas: merma y vencimiento van aparte, no entran al consumo, y una merma corregida no cuenta")
+    void perdidasFueraDelConsumo() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = productoConEntrada(categoria, 100);
+        aprobar(bodeguero, pedirOk(empleado, producto.id(), 10)).esperando(200);
+        salidaDeTipo(bodeguero, "MERMA", producto.id(), 3).esperando(201);
+        salidaDeTipo(bodeguero, "VENCIMIENTO", producto.id(), 2).esperando(201);
+        long equivocada = salidaDeTipo(bodeguero, "MERMA", producto.id(), 9).esperando(201).json().path("id").asLong();
+        post("/api/movimientos/operaciones/" + equivocada + "/correccion", bodeguero.token(), null).esperando(201);
+
+        JsonNode r = resumen(bodeguero, "&categoriaId=" + categoria.id());
+
+        assertThat(r.path("consumoNetoValor").asLong()).isEqualTo(10_000);
+        assertThat(r.path("perdidasValor").asLong()).isEqualTo(5_000); // 3 + 2 unidades; la merma corregida no cuenta
+        // Con una persona elegida las pérdidas no se atribuyen a nadie.
+        assertThat(resumen(bodeguero, "&categoriaId=" + categoria.id() + "&solicitanteId=" + empleado.id())
+                .path("perdidasValor").asLong()).isZero();
+    }
+
+    @Test
+    @DisplayName("HU-100 Líneas sin costo: no se valorizan y se cuentan aparte")
+    void lineasSinCosto() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod sinCosto = crearProductoSinCosto(categoria);
+        entradaDeTipo("INVENTARIO_INICIAL", sinCosto.id(), 20, null).esperando(201);
+        Prod conCosto = productoConEntrada(categoria, 20);
+        aprobar(bodeguero, pedirOk(empleado, sinCosto.id(), 5)).esperando(200);
+        aprobar(bodeguero, pedirOk(empleado, conCosto.id(), 4)).esperando(200);
+
+        JsonNode r = resumen(bodeguero, "&categoriaId=" + categoria.id());
+
+        assertThat(r.path("consumoNetoValor").asLong()).isEqualTo(4_000);
+        assertThat(r.path("lineasSinCosto").asLong()).isEqualTo(1);
+    }
+
     // ------------------------------------------------------------------ ayudantes
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */

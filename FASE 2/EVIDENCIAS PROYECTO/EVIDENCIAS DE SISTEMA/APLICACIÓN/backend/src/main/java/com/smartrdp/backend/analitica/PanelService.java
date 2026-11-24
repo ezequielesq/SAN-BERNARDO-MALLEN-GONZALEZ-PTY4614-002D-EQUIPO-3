@@ -22,6 +22,7 @@ import static com.smartrdp.backend.movimiento.TipoOperacion.VENCIMIENTO;
 @RequiredArgsConstructor
 public class PanelService {
 
+    private static final List<String> TIPOS_CONSUMO = List.of(ENTREGA_PEDIDO, DEVOLUCION);
     private static final List<String> TIPOS_CONSUMO_Y_PERDIDA = List.of(ENTREGA_PEDIDO, DEVOLUCION, MERMA, VENCIMIENTO);
 
     private final PanelRepository repositorio;
@@ -31,16 +32,17 @@ public class PanelService {
         List<LineaPanel> lineas = lineas(f, TIPOS_CONSUMO_Y_PERDIDA);
         List<LineaPanel> entregas = deTipo(lineas, ENTREGA_PEDIDO);
         List<LineaPanel> devoluciones = deTipo(lineas, DEVOLUCION);
+        List<LineaPanel> perdidas = lineas.stream().filter(l -> !TIPOS_CONSUMO.contains(l.tipo())).toList();
         // Las cantidades solo se suman si todos los productos del consumo comparten unidad (regla del servidor).
-        List<LineaPanel> consumo = lineas.stream()
-                .filter(l -> ENTREGA_PEDIDO.equals(l.tipo()) || DEVOLUCION.equals(l.tipo())).toList();
+        List<LineaPanel> consumo = lineas.stream().filter(l -> TIPOS_CONSUMO.contains(l.tipo())).toList();
         String unidadComun = unidadComun(consumo);
         Long cantidadNeta = unidadComun == null ? null : cantidad(entregas) - cantidad(devoluciones);
         return new ResumenPanelDto(
                 valor(entregas) - valor(devoluciones), cantidadNeta, unidadComun,
                 entregas.stream().map(LineaPanel::solicitudId).distinct().count(),
                 entregas.stream().map(LineaPanel::solicitanteId).distinct().count(),
-                0, valor(entregas), null, null, 0, 0);
+                0, valor(entregas), null, null,
+                valor(perdidas), lineas.stream().filter(l -> l.costo() == null).count());
     }
 
     // ------------------------------------------------------------------ utilidades

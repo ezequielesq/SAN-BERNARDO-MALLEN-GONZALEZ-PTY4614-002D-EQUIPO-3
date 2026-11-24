@@ -467,15 +467,21 @@ abstract class FlujoBase {
         return new Prod(r.json().path("id").asLong(), nombre, codigo);
     }
 
-    /** Producto sin costo de referencia: sus lotes de inventario inicial nacen sin costo. */
+    /**
+     * Producto sin costo de referencia: sus lotes de inventario inicial nacen sin costo, como los lotes antiguos.
+     * La API exige el costo al crear el producto, así que se crea con 0 y se anula directo en la base.
+     */
     protected Prod crearProductoSinCosto(Catalogo categoria) {
         String nombre = "Producto " + unico();
         String codigo = siguienteCodigo();
         var r = post("/api/productos", bodeguero().token(), objeto(
                 "codigo", codigo, "nombre", nombre,
                 "categoriaId", categoria.id(), "unidadMedidaId", unidadComun(),
-                "esPerecible", false, "stockMinimo", 5, "stockCritico", 2)).esperando(201);
-        return new Prod(r.json().path("id").asLong(), nombre, codigo);
+                "esPerecible", false, "stockMinimo", 5, "stockCritico", 2,
+                "costoUnitario", 0)).esperando(201);
+        long id = r.json().path("id").asLong();
+        jdbc.update("UPDATE productos SET costo_unitario = NULL WHERE id = ?", id);
+        return new Prod(id, nombre, codigo);
     }
 
     /** Entrada de un tipo cualquiera (COMPRA, INVENTARIO_INICIAL, AJUSTE_ENTRADA) con costo opcional. */
