@@ -1,7 +1,5 @@
 package com.smartrdp.backend.analitica;
 
-import com.smartrdp.backend.analitica.dto.ConsumoDto;
-import com.smartrdp.backend.analitica.dto.ProductoMasUsadoDto;
 import com.smartrdp.backend.analitica.dto.VencimientoDto;
 import com.smartrdp.backend.movimiento.MovimientoRepository;
 import com.smartrdp.backend.movimiento.VistasInventario;
@@ -14,14 +12,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Analítica sobre el libro. Las "entradas" y "salidas" se miden por el sentido del tipo de operación (incluye
- * compras, entregas de pedidos, mermas, etc.); las correcciones y las operaciones corregidas no cuentan.
+ * Vencimientos y exportación a Excel del libro. Los cálculos del panel (consumo, productos más usados,
+ * pedidos por persona) viven en {@link PanelService}.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,30 +28,18 @@ public class AnaliticaService {
     private final VistasInventario vistas;
 
     @Transactional(readOnly = true)
-    public List<ProductoMasUsadoDto> getProductosMasUsados(LocalDate desde, LocalDate hasta, Long categoriaId) {
-        LocalDateTime desdeTime = desde.atStartOfDay();
-        LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
-        return movimientoRepository.findConsumoEntreFechas(desdeTime, hastaTime, categoriaId).stream()
-                .map(row -> new ProductoMasUsadoDto(
-                        ((Number) row[0]).longValue(),
-                        (String) row[1],
-                        (String) row[2],
-                        ((Number) row[3]).longValue()))
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<VencimientoDto> getVencimientos(int diasUmbral, Long categoriaId) {
+    public List<VencimientoDto> getVencimientos(int diasUmbral, Long categoriaId, List<Long> productoIds) {
         // El límite de la consulta es exclusivo: se suma un día para que el lote que vence justo en N días entre.
         LocalDate limiteExclusivo = LocalDate.now().plusDays(diasUmbral + 1L);
-        return vistas.lotesConVencimiento(null, limiteExclusivo, categoriaId).stream()
+        return vistas.lotesConVencimiento(null, limiteExclusivo, categoriaId, productoIds).stream()
                 .map(this::aVencimiento)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<VencimientoDto> getVencimientosPorRango(LocalDate desde, LocalDate hasta, Long categoriaId) {
-        return vistas.lotesConVencimiento(desde, hasta.plusDays(1), categoriaId).stream()
+    public List<VencimientoDto> getVencimientosPorRango(LocalDate desde, LocalDate hasta, Long categoriaId,
+                                                        List<Long> productoIds) {
+        return vistas.lotesConVencimiento(desde, hasta.plusDays(1), categoriaId, productoIds).stream()
                 .map(this::aVencimiento)
                 .toList();
     }
@@ -65,10 +50,12 @@ public class AnaliticaService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] exportarMovimientosExcel(LocalDate desde, LocalDate hasta, Long categoriaId) throws IOException {
-        LocalDateTime desdeTime = desde.atStartOfDay();
-        LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
-        var movimientos = new ArrayList<>(movimientoRepository.buscar(desdeTime, hastaTime, null, categoriaId));
+    public byte[] exportarMovimientosExcel(LocalDate desde, LocalDate hasta, Long categoriaId,
+                                           List<Long> productoIds, Long solicitanteId) throws IOException {
+        boolean todos = productoIds == null || productoIds.isEmpty();
+        var movimientos = new ArrayList<>(movimientoRepository.buscarParaExportar(desde.atStartOfDay(),
+                hasta.plusDays(1).atStartOfDay(), categoriaId, todos, todos ? List.of(-1L) : productoIds,
+                solicitanteId));
         Collections.reverse(movimientos); // la consulta viene de más reciente a más antigua
 
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -101,30 +88,5 @@ public class AnaliticaService {
             wb.write(out);
             return out.toByteArray();
         }
-    }
-
-    @Transactional(readOnly = true)
-    public List<ConsumoDto> getConsumo(LocalDate desde, LocalDate hasta, AgruparPor agruparPor, Long categoriaId) {
-        LocalDateTime desdeTime = desde.atStartOfDay();
-        LocalDateTime hastaTime = hasta.atTime(23, 59, 59);
-        List<Object[]> filas = agruparPor == AgruparPor.CATEGORIA
-                ? movimientoRepository.findConsumoPorCategoria(desdeTime, hastaTime, categoriaId)
-                : movimientoRepository.findConsumoPorProducto(desdeTime, hastaTime, categoriaId);
-        return filas.stream().map(this::mapearFilaConsumo).toList();
-    }
-
-    private ConsumoDto mapearFilaConsumo(Object[] fila) {
-        Long id = ((Number) fila[0]).longValue();
-        String nombre = (String) fila[1];
-        // Sumas en long: costo × cantidad acumulado puede superar el rango de int.
-        long entradaCantidad = ((Number) fila[2]).longValue();
-        long entradaValorSuma = ((Number) fila[3]).longValue();
-        long entradaConCosto = ((Number) fila[4]).longValue();
-        long salidaCantidad = ((Number) fila[5]).longValue();
-        long salidaValorSuma = ((Number) fila[6]).longValue();
-        long salidaConCosto = ((Number) fila[7]).longValue();
-        Long entradaValor = entradaConCosto == 0 ? null : entradaValorSuma;
-        Long salidaValor = salidaConCosto == 0 ? null : salidaValorSuma;
-        return new ConsumoDto(id, nombre, entradaCantidad, entradaValor, salidaCantidad, salidaValor);
     }
 }

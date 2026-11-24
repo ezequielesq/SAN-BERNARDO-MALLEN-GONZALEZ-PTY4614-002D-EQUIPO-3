@@ -1,11 +1,14 @@
 package com.smartrdp.backend.flujos;
 
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -425,7 +428,68 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(stockDe(producto.id())).isEqualTo(4);
     }
 
+    // ================================================================== vencimientos y exportación con filtros
+
+    @Test
+    @DisplayName("HU-130 Vencimientos filtrados por productos, tanto con umbral de días como por rango")
+    void vencimientosFiltranPorProductos() {
+        Cuenta bodeguero = crearBodeguero();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod uno = crearProductoEn(categoria.id(), true);
+        Prod dos = crearProductoEn(categoria.id(), true);
+        entrada(uno.id(), 4, hoy().plusDays(5), "U-" + unico()).esperando(201);
+        entrada(dos.id(), 6, hoy().plusDays(8), "D-" + unico()).esperando(201);
+        String base = "categoriaId=" + categoria.id();
+
+        assertThat(idsDe(get("/api/analitica/vencimientos?dias=30&" + base, bodeguero.token()).esperando(200).json()))
+                .containsExactlyInAnyOrder(uno.id(), dos.id());
+        assertThat(idsDe(get("/api/analitica/vencimientos?dias=30&" + base + "&productoIds=" + uno.id(),
+                bodeguero.token()).esperando(200).json())).containsExactly(uno.id());
+        assertThat(idsDe(get("/api/analitica/vencimientos/rango?desde=" + hoy() + "&hasta=" + hoy().plusDays(30)
+                + "&" + base + "&productoIds=" + dos.id() + "," + uno.id(), bodeguero.token()).esperando(200).json()))
+                .containsExactlyInAnyOrder(uno.id(), dos.id());
+        assertThat(idsDe(get("/api/analitica/vencimientos/rango?desde=" + hoy() + "&hasta=" + hoy().plusDays(30)
+                + "&" + base + "&productoIds=" + dos.id(), bodeguero.token()).esperando(200).json()))
+                .containsExactly(dos.id());
+    }
+
+    @Test
+    @DisplayName("HU-120 Exportar a Excel respeta los filtros del panel: productos y persona")
+    void exportarConFiltros() throws Exception {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta ana = crearEmpleado();
+        Cuenta beto = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod uno = productoConEntrada(categoria, 50);
+        Prod dos = productoConEntrada(categoria, 50);
+        aprobar(bodeguero, pedirOk(ana, uno.id(), 3)).esperando(200);
+        aprobar(bodeguero, pedirOk(beto, dos.id(), 2)).esperando(200);
+        String base = "/api/analitica/exportar-movimientos?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id();
+
+        assertThat(productosDelExcel(base, bodeguero)).hasSize(4); // 2 entradas + 2 entregas
+        assertThat(productosDelExcel(base + "&productoIds=" + uno.id(), bodeguero)).containsOnly(uno.nombre()).hasSize(2);
+        assertThat(productosDelExcel(base + "&solicitanteId=" + ana.id(), bodeguero)).containsExactly(uno.nombre());
+    }
+
     // ------------------------------------------------------------------ ayudantes
+
+    private static List<Long> idsDe(JsonNode vencimientos) {
+        return vencimientos.findValues("productoId").stream().map(JsonNode::asLong).toList();
+    }
+
+    /** Nombres de producto de las filas de datos del Excel exportado (columna «Producto»). */
+    private List<String> productosDelExcel(String url, Cuenta quien) throws Exception {
+        Descarga descarga = descargar(url, quien.token()).esperando(200);
+        try (var libro = new XSSFWorkbook(new ByteArrayInputStream(descarga.bytes()))) {
+            var hoja = libro.getSheetAt(0);
+            List<String> productos = new ArrayList<>();
+            for (int i = 1; i <= hoja.getLastRowNum(); i++) {
+                productos.add(hoja.getRow(i).getCell(2).getStringCellValue());
+            }
+            return productos;
+        }
+    }
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */
     private JsonNode resumen(Cuenta quien, String filtrosExtra) {

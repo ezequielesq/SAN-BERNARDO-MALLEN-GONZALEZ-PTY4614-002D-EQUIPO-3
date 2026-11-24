@@ -17,7 +17,7 @@ class AccesoYRolesFlujoTest extends FlujoBase {
                 "/api/usuarios", "/api/productos", "/api/categorias", "/api/unidades-medida",
                 "/api/movimientos", "/api/movimientos/stock", "/api/movimientos/alertas/vencimiento",
                 "/api/solicitudes", "/api/solicitudes/pendientes", "/api/eventos",
-                "/api/analitica/mas-usados?desde=2026-01-01&hasta=2026-12-31",
+                "/api/analitica/panel/resumen?desde=2026-01-01&hasta=2026-12-31",
                 "/api/auditoria/historial?desde=2026-01-01&hasta=2026-12-31");
         for (String ruta : rutas) {
             assertThat(get(ruta, null).estado()).as("GET %s sin token", ruta).isEqualTo(401);

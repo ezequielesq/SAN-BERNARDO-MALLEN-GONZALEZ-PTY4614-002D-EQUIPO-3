@@ -22,60 +22,21 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
     List<Movimiento> buscar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
                             @Param("productoId") Long productoId, @Param("categoriaId") Long categoriaId);
 
-    /**
-     * Productos más usados: salidas netas de devoluciones. Por producto, la cantidad de las líneas de sentido -1
-     * menos la de las operaciones DEVOLUCION; los netos que quedan en 0 o menos se omiten. Las correcciones y las
-     * operaciones corregidas no cuentan.
-     */
+    /** Líneas del libro para exportar: rango, categoría, productos y persona (solo operaciones de solicitudes). */
     @Query("""
-        SELECT p.id, p.nombre, p.categoria.nombre,
-               SUM(CASE WHEN t.sentido = -1 THEN m.cantidad ELSE -m.cantidad END)
-        FROM Movimiento m JOIN m.operacion o JOIN o.tipo t JOIN m.lote l JOIN l.producto p
-        WHERE (t.sentido = -1 OR t.codigo = 'DEVOLUCION')
-        AND o.createdAt BETWEEN :desde AND :hasta
+        SELECT m FROM Movimiento m
+        JOIN FETCH m.operacion o JOIN FETCH o.tipo JOIN FETCH o.usuario
+        JOIN FETCH m.lote l JOIN FETCH l.producto p
+        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u
+        WHERE o.createdAt >= :desde AND o.createdAt < :hasta
         AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
-        AND t.codigo NOT IN ('CORRECCION_AUMENTA', 'CORRECCION_DISMINUYE')
-        AND NOT EXISTS (SELECT 1 FROM Operacion c WHERE c.operacionCorregida = o)
-        GROUP BY p.id, p.nombre, p.categoria.nombre
-        HAVING SUM(CASE WHEN t.sentido = -1 THEN m.cantidad ELSE -m.cantidad END) > 0
-        ORDER BY SUM(CASE WHEN t.sentido = -1 THEN m.cantidad ELSE -m.cantidad END) DESC
+        AND (:todosLosProductos = true OR p.id IN :productoIds)
+        AND (:solicitanteId IS NULL OR u.id = :solicitanteId)
+        ORDER BY o.createdAt DESC, m.id DESC
         """)
-    List<Object[]> findConsumoEntreFechas(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
-                                          @Param("categoriaId") Long categoriaId);
-
-    @Query("""
-        SELECT p.id, p.nombre,
-               SUM(CASE WHEN t.sentido = 1 THEN m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = 1 AND l.costoUnitario IS NOT NULL THEN CAST(l.costoUnitario AS Long) * m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = 1 AND l.costoUnitario IS NOT NULL THEN 1 ELSE 0 END),
-               SUM(CASE WHEN t.sentido = -1 THEN m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = -1 AND l.costoUnitario IS NOT NULL THEN CAST(l.costoUnitario AS Long) * m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = -1 AND l.costoUnitario IS NOT NULL THEN 1 ELSE 0 END)
-        FROM Movimiento m JOIN m.operacion o JOIN o.tipo t JOIN m.lote l JOIN l.producto p
-        WHERE o.createdAt BETWEEN :desde AND :hasta
-        AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
-        AND t.codigo NOT IN ('CORRECCION_AUMENTA', 'CORRECCION_DISMINUYE')
-        AND NOT EXISTS (SELECT 1 FROM Operacion c WHERE c.operacionCorregida = o)
-        GROUP BY p.id, p.nombre
-        """)
-    List<Object[]> findConsumoPorProducto(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
-                                          @Param("categoriaId") Long categoriaId);
-
-    @Query("""
-        SELECT p.categoria.id, p.categoria.nombre,
-               SUM(CASE WHEN t.sentido = 1 THEN m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = 1 AND l.costoUnitario IS NOT NULL THEN CAST(l.costoUnitario AS Long) * m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = 1 AND l.costoUnitario IS NOT NULL THEN 1 ELSE 0 END),
-               SUM(CASE WHEN t.sentido = -1 THEN m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = -1 AND l.costoUnitario IS NOT NULL THEN CAST(l.costoUnitario AS Long) * m.cantidad ELSE 0 END),
-               SUM(CASE WHEN t.sentido = -1 AND l.costoUnitario IS NOT NULL THEN 1 ELSE 0 END)
-        FROM Movimiento m JOIN m.operacion o JOIN o.tipo t JOIN m.lote l JOIN l.producto p
-        WHERE o.createdAt BETWEEN :desde AND :hasta
-        AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
-        AND t.codigo NOT IN ('CORRECCION_AUMENTA', 'CORRECCION_DISMINUYE')
-        AND NOT EXISTS (SELECT 1 FROM Operacion c WHERE c.operacionCorregida = o)
-        GROUP BY p.categoria.id, p.categoria.nombre
-        """)
-    List<Object[]> findConsumoPorCategoria(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
-                                           @Param("categoriaId") Long categoriaId);
+    List<Movimiento> buscarParaExportar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
+                                        @Param("categoriaId") Long categoriaId,
+                                        @Param("todosLosProductos") boolean todosLosProductos,
+                                        @Param("productoIds") java.util.Collection<Long> productoIds,
+                                        @Param("solicitanteId") Long solicitanteId);
 }

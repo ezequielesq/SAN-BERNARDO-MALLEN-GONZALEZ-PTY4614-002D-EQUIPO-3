@@ -150,11 +150,17 @@ public class VistasInventario {
         return pendientes;
     }
 
-    /**
-     * Lotes con saldo cuyo vencimiento cae en [desde, hastaExcl). {@code desde} y {@code categoriaId}
-     * son opcionales (nulos = sin límite / todas las categorías).
-     */
     public List<LoteConVencimiento> lotesConVencimiento(LocalDate desde, LocalDate hastaExcl, Long categoriaId) {
+        return lotesConVencimiento(desde, hastaExcl, categoriaId, List.of());
+    }
+
+    /**
+     * Lotes con saldo cuyo vencimiento cae en [desde, hastaExcl). {@code desde}, {@code categoriaId} y
+     * {@code productoIds} son opcionales (nulo o vacío = sin filtro).
+     */
+    public List<LoteConVencimiento> lotesConVencimiento(LocalDate desde, LocalDate hastaExcl, Long categoriaId,
+                                                        Collection<Long> productoIds) {
+        boolean todos = productoIds == null || productoIds.isEmpty();
         return jdbc.sql("""
                 SELECT s.lote_id, s.producto_id, p.nombre AS producto_nombre, l.numero_lote,
                        s.saldo, s.fecha_vencimiento
@@ -166,11 +172,14 @@ public class VistasInventario {
                    AND s.fecha_vencimiento < :hasta
                    AND (CAST(:desde AS date) IS NULL OR s.fecha_vencimiento >= :desde)
                    AND (CAST(:categoria AS bigint) IS NULL OR p.categoria_id = :categoria)
+                   AND (:todos OR s.producto_id IN (:productos))
                  ORDER BY s.fecha_vencimiento, s.lote_id
                 """)
                 .param("hasta", hastaExcl)
                 .param("desde", desde, Types.DATE)
                 .param("categoria", categoriaId, Types.BIGINT)
+                .param("todos", todos)
+                .param("productos", todos ? List.of(-1L) : productoIds)
                 .query(LoteConVencimiento.class).list();
     }
 }
