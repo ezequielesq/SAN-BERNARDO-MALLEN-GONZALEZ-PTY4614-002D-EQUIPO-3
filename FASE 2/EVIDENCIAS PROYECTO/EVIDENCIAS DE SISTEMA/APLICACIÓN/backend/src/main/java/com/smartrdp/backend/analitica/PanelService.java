@@ -91,7 +91,8 @@ public class PanelService {
     public SerieConsumoDto consumoPeriodo(FiltroPanel f) {
         List<LineaPanel> lineas = lineas(f, TIPOS_CONSUMO_Y_PERDIDA);
         List<LineaPanel> consumo = lineas.stream().filter(l -> TIPOS_CONSUMO.contains(l.tipo())).toList();
-        String unidad = unidadComun(consumo, List.of());
+        // Misma regla que el resumen: lo solicitado también cuenta para decidir si las unidades se mezclan.
+        String unidad = unidadComun(consumo, solicitado(f, deTipo(consumo, ENTREGA_PEDIDO)));
 
         Map<LocalDate, long[]> acumulado = new TreeMap<>(); // [consumoValor, consumoCantidad, perdidasValor]
         for (LocalDate inicio = inicioDePeriodo(f.desde(), f.agrupar()); !inicio.isAfter(f.hasta());

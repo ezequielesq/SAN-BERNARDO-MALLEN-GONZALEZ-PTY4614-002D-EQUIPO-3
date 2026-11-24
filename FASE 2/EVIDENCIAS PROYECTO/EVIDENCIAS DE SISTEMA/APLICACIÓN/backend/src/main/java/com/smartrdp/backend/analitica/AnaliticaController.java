@@ -41,7 +41,10 @@ public class AnaliticaController {
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) List<Long> productoIds,
             @RequestParam(required = false) Long solicitanteId) throws IOException {
-        byte[] data = analiticaService.exportarMovimientosExcel(desde, hasta, categoriaId, productoIds, solicitanteId);
+        // Mismas reglas que el panel: rango, 366 días y 50 productos como máximo.
+        FiltroPanel filtro = FiltroPanel.de(desde, hasta, null, categoriaId, productoIds, solicitanteId);
+        byte[] data = analiticaService.exportarMovimientosExcel(filtro.desde(), filtro.hasta(), filtro.categoriaId(),
+                filtro.productoIds(), filtro.solicitanteId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=movimientos.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

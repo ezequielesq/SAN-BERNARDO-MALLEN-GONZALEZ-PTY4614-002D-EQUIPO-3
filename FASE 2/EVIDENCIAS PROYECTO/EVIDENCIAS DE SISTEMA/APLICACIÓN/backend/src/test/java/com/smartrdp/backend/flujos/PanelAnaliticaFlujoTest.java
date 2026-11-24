@@ -144,6 +144,32 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
     }
 
     @Test
+    @DisplayName("HU-100 Unidades: la serie por período usa la misma regla que el resumen y cuenta también lo solicitado")
+    void serieConUnidadSoloSolicitadaMezclada() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod carne = crearProductoConUnidad(categoria, crearUnidadPropia());
+        Prod aceite = crearProductoConUnidad(categoria, crearUnidadPropia());
+        entrada(carne.id(), 50, null, null).esperando(201);
+        entrada(aceite.id(), 50, null, null).esperando(201);
+        // Pidió carne (kg) y aceite (L), pero solo se le entregó la carne.
+        long pedido = pedir(empleado, item(carne.id(), 3), item(aceite.id(), 2)).esperando(201).json()
+                .path("id").asLong();
+        aprobar(bodeguero, pedido, item(carne.id(), 3), item(aceite.id(), 0)).esperando(200);
+
+        String filtro = "&categoriaId=" + categoria.id();
+        JsonNode resumen = resumen(bodeguero, filtro);
+        JsonNode serie = get(PANEL + "consumo-periodo?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&agrupar=DIA" + filtro, bodeguero.token()).esperando(200).json();
+
+        assertThat(resumen.path("unidadComun").isNull()).isTrue();
+        assertThat(serie.path("unidadComun").isNull()).isTrue();
+        assertThat(serie.path("puntos").findValues("consumoCantidad")).allMatch(JsonNode::isNull);
+        assertThat(valores(serie, "consumoValor").stream().mapToLong(Long::longValue).sum()).isEqualTo(3_000);
+    }
+
+    @Test
     @DisplayName("HU-100 Pérdidas: merma y vencimiento van aparte, no entran al consumo, y una merma corregida no cuenta")
     void perdidasFueraDelConsumo() {
         Cuenta bodeguero = crearBodeguero();
@@ -470,6 +496,26 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(productosDelExcel(base, bodeguero)).hasSize(4); // 2 entradas + 2 entregas
         assertThat(productosDelExcel(base + "&productoIds=" + uno.id(), bodeguero)).containsOnly(uno.nombre()).hasSize(2);
         assertThat(productosDelExcel(base + "&solicitanteId=" + ana.id(), bodeguero)).containsExactly(uno.nombre());
+    }
+
+    @Test
+    @DisplayName("HU-120 Exportar valida el filtro igual que el panel: rango invertido, más de 366 días o más de 50 productos dan 422")
+    void exportarValidaElFiltro() {
+        String token = bodeguero().token();
+        String exportar = "/api/analitica/exportar-movimientos?";
+
+        var invertido = get(exportar + "desde=" + hoy() + "&hasta=" + hoy().minusDays(1), token);
+        assertThat(invertido.estado()).isEqualTo(422);
+        assertThat(invertido.campo()).isEqualTo("desde");
+        var largo = get(exportar + "desde=" + hoy().minusDays(366) + "&hasta=" + hoy(), token);
+        assertThat(largo.estado()).isEqualTo(422);
+        assertThat(largo.campo()).isEqualTo("hasta");
+        String cincuentaYUno = IntStream.rangeClosed(1, 51).mapToObj(Integer::toString).collect(Collectors.joining(","));
+        var demasiados = get(exportar + "desde=" + hoy() + "&hasta=" + hoy() + "&productoIds=" + cincuentaYUno, token);
+        assertThat(demasiados.estado()).isEqualTo(422);
+        assertThat(demasiados.campo()).isEqualTo("productoIds");
+        // El límite exacto sigue pasando.
+        descargar(exportar + "desde=" + hoy().minusDays(365) + "&hasta=" + hoy(), token).esperando(200);
     }
 
     // ================================================================== historial de precios

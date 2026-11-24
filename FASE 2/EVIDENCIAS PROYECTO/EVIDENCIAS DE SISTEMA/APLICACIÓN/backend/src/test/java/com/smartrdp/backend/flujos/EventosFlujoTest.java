@@ -131,7 +131,7 @@ class EventosFlujoTest extends FlujoBase {
     }
 
     @Test
-    @DisplayName("HU-250 Solo el Bodeguero usa la agenda: el administrador y quien no tiene sesión reciben error")
+    @DisplayName("HU-250/HU-310 La Administradora consulta la agenda; solo el Bodeguero la modifica")
     void soloElBodegueroUsaLaAgenda() {
         Cuenta bodeguero = crearBodeguero();
         LocalDate dia = diaPropio();
