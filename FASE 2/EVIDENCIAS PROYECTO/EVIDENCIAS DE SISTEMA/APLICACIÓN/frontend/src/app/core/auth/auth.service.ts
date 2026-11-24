@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { puedeEscribirEnBodega } from './permisos';
 import { Credenciales, Sesion, esSesion } from './sesion';
 
 const CLAVE_SESION = 'smartrdp.sesion';
@@ -16,6 +17,7 @@ export class AuthService {
   readonly sesion = this._sesion.asReadonly();
   readonly estaAutenticado = computed(() => this._sesion() !== null);
   readonly rol = computed(() => this._sesion()?.rol ?? null);
+  readonly puedeEscribir = computed(() => puedeEscribirEnBodega(this.rol()));
 
   login(credenciales: Credenciales): Observable<Sesion> {
     return this.http.post<Sesion>(`${environment.apiUrl}/auth/login`, credenciales).pipe(

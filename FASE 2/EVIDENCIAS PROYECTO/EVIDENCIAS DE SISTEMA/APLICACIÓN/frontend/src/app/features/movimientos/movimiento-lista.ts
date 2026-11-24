@@ -112,10 +112,7 @@ export class MovimientoLista {
     this.notificaciones.exito(`Se cargaron ${lotes} ${lotes === 1 ? 'lote' : 'lotes'}.`);
   }
 
-  protected readonly puedeGestionar = computed(() => {
-    const rol = this.auth.rol();
-    return rol === 'ADMIN' || rol === 'BODEGUERO';
-  });
+  protected readonly puedeGestionar = this.auth.puedeEscribir;
 
   protected readonly productoIdFiltro = signal<number | null>(null);
   protected readonly desdeFiltro = signal<string | null>(null);

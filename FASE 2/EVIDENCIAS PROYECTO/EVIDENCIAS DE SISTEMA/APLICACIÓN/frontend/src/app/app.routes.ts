@@ -22,12 +22,12 @@ export const routes: Routes = [
     children: [
       {
         path: 'productos',
-        canActivate: [rolGuard(['BODEGUERO'])],
+        canActivate: [rolGuard(['ADMIN', 'BODEGUERO'])],
         loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES),
       },
       {
         path: 'movimientos',
-        canActivate: [rolGuard(['BODEGUERO'])],
+        canActivate: [rolGuard(['ADMIN', 'BODEGUERO'])],
         loadChildren: () => import('./features/movimientos/movimientos.routes').then(m => m.MOVIMIENTOS_ROUTES),
       },
       {
@@ -37,7 +37,7 @@ export const routes: Routes = [
       },
       {
         path: 'calendario',
-        canActivate: [rolGuard(['BODEGUERO'])],
+        canActivate: [rolGuard(['ADMIN', 'BODEGUERO'])],
         loadChildren: () => import('./features/calendario/calendario.routes').then(m => m.CALENDARIO_ROUTES),
       },
       {

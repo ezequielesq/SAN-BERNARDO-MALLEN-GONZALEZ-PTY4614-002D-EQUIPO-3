@@ -54,10 +54,7 @@ export class ProductoLista {
   private readonly notificaciones = inject(NotificacionService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly puedeGestionar = computed(() => {
-    const rol = this.auth.rol();
-    return rol === 'ADMIN' || rol === 'BODEGUERO';
-  });
+  protected readonly puedeGestionar = this.auth.puedeEscribir;
   protected readonly soloActivos = signal(true);
   protected readonly busqueda = signal('');
   protected readonly categoriaId = signal<number | null>(null);
