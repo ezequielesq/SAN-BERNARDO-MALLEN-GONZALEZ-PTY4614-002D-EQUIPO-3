@@ -341,9 +341,9 @@ class ImportacionExcelFlujoTest extends FlujoBase {
         List<List<Object>> filas = new ArrayList<>();
         // Columnas: Código, N° lote, Fecha vencimiento, Cantidad, Costo unitario.
         filas.add(fila(noPerecible.codigo(), "LA-1", null, 10, 500)); // 2 válida
-        filas.add(fila(perecibleB.codigo(), "LB-1", venceB.format(DD_MM_AAAA), 8, null)); // 3 válida: fecha como texto
-        filas.add(fila(Long.parseLong(perecibleE.codigo()), "LE-1", venceE, 6, null)); // 4 válida: código y fecha como celdas
-        filas.add(fila(noPerecible.codigo(), "LA-1", null, 5, null)); // 5 válida: mismo producto y lote otra vez
+        filas.add(fila(perecibleB.codigo(), "LB-1", venceB.format(DD_MM_AAAA), 8, 300)); // 3 válida: fecha como texto
+        filas.add(fila(Long.parseLong(perecibleE.codigo()), "LE-1", venceE, 6, 400)); // 4 válida: código y fecha como celdas
+        filas.add(fila(noPerecible.codigo(), "LA-1", null, 5, 700)); // 5 válida: mismo producto y lote otra vez
         filas.add(fila(perecibleB.codigo(), "LB-2", "31-02-2027", 3, null)); // 6 fecha inexistente
         filas.add(fila(perecibleE.codigo(), "LE-2", "mañana", 3, null)); // 7 fecha mal escrita
         filas.add(fila(perecibleE.codigo(), "LE-3", null, 3, null)); // 8 perecible sin fecha
@@ -408,11 +408,11 @@ class ImportacionExcelFlujoTest extends FlujoBase {
         assertThat(movimientos(sinMovimientos.id())).isEmpty();
         assertThat(movimientos(inactivo.id())).isEmpty();
 
-        // Cada fila creó un lote: el mismo N° lote repetido son dos lotes, con el costo de la fila o el del producto.
+        // Cada fila creó un lote: el mismo N° lote repetido son dos lotes, cada uno con el costo de su fila.
         var compras = movimientosDeTipo(noPerecible.id(), "COMPRA");
         assertThat(compras).hasSize(2);
         assertThat(compras).allMatch(m -> "LA-1".equals(m.path("numeroLote").asText()));
-        assertThat(compras.stream().map(m -> m.path("costoUnitario").asInt())).containsExactlyInAnyOrder(500, 1000);
+        assertThat(compras.stream().map(m -> m.path("costoUnitario").asInt())).containsExactlyInAnyOrder(500, 700);
         assertThat(compras.stream().map(m -> m.path("loteId").asLong()).distinct()).hasSize(2);
     }
 
@@ -422,8 +422,8 @@ class ImportacionExcelFlujoTest extends FlujoBase {
         var comun = crearProducto(false);
         var perecible = crearProducto(true);
         byte[] archivo = entradasXlsx(List.of(
-                fila(comun.codigo(), "L-1", null, 7, null),
-                fila(perecible.codigo(), "L-2", "99-99-2027", 4, null)));
+                fila(comun.codigo(), "L-1", null, 7, 800),
+                fila(perecible.codigo(), "L-2", "99-99-2027", 4, 600)));
         var leidas = subirArchivo(ENTRADAS_LEER, bodeguero().token(), "archivo", "entradas.xlsx", archivo)
                 .esperando(200).json();
         List<JsonNode> todas = new ArrayList<>();

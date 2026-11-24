@@ -104,7 +104,8 @@ public class EntradaImportacionService {
                     "4. N° lote: opcional.",
                     "5. Fecha vencimiento: obligatoria para los productos perecibles. Usa el formato dd-mm-aaaa.",
                     "6. Cantidad: número entero mayor o igual a 1. Es obligatoria.",
-                    "7. Costo unitario: opcional. Si no lo indicas, se usa el costo de referencia del producto.",
+                    "7. Costo unitario: obligatorio en las compras. En los demás tipos es opcional y, si no lo indicas, "
+                            + "se usa el costo de referencia del producto.",
                     "8. Cada fila crea un lote nuevo. Máximo " + MAXIMO_FILAS + " filas por archivo.",
                     "9. El tipo de entrada (por ejemplo, compra) y la nota se eligen en pantalla, no en el archivo.",
                     "10. Todo o nada: antes de cargar verás una lista para revisar y corregir; si una fila tiene errores, "
@@ -129,7 +130,7 @@ public class EntradaImportacionService {
         List<FilaLeida> leidas = leerFilas(archivo);
         Map<Integer, Map<String, String>> erroresDeLectura = new HashMap<>();
         leidas.forEach(l -> erroresDeLectura.put(l.datos().fila(), l.errores()));
-        return validarFilas(leidas.stream().map(FilaLeida::datos).toList(), erroresDeLectura);
+        return validarFilas(leidas.stream().map(FilaLeida::datos).toList(), erroresDeLectura, false);
     }
 
     private List<FilaLeida> leerFilas(InputStream archivo) {
@@ -213,14 +214,14 @@ public class EntradaImportacionService {
 
     /** Revalida filas ya editadas (sin Excel). */
     @Transactional(readOnly = true)
-    public List<FilaEntradaValidada> validar(List<FilaEntrada> filas) {
-        return validarFilas(filas, Map.of());
+    public List<FilaEntradaValidada> validar(List<FilaEntrada> filas, String tipo) {
+        return validarFilas(filas, Map.of(), TipoOperacion.COMPRA.equals(tipo));
     }
 
     /** Registra todas las entradas o ninguna: una fila con error cancela la carga completa. */
     @Transactional
     public OperacionResponse importar(ImportacionEntradaRequest request) {
-        List<FilaEntradaValidada> validadas = validarFilas(request.filas(), Map.of());
+        List<FilaEntradaValidada> validadas = validarFilas(request.filas(), Map.of(), TipoOperacion.COMPRA.equals(request.tipo()));
         long conError = validadas.stream().filter(f -> !f.errores().isEmpty()).count();
         if (conError > 0) {
             throw new BusinessException("Hay " + conError + (conError == 1 ? " fila con errores" : " filas con errores")
@@ -235,7 +236,8 @@ public class EntradaImportacionService {
     }
 
     private List<FilaEntradaValidada> validarFilas(List<FilaEntrada> filas,
-                                                   Map<Integer, Map<String, String>> erroresDeLectura) {
+                                                   Map<Integer, Map<String, String>> erroresDeLectura,
+                                                   boolean exigirCosto) {
         Map<String, Optional<Producto>> porCodigo = new HashMap<>();
         List<FilaEntradaValidada> resultado = new ArrayList<>();
         for (int i = 0; i < filas.size(); i++) {
@@ -269,6 +271,9 @@ public class EntradaImportacionService {
             }
             if (f.costoUnitario() != null && f.costoUnitario() < 0) {
                 errores.putIfAbsent("costoUnitario", "El costo no puede ser negativo.");
+            }
+            if (exigirCosto && f.costoUnitario() == null) {
+                errores.putIfAbsent("costoUnitario", "Una compra necesita el costo unitario.");
             }
             if (producto != null && producto.isEsPerecible() && f.fechaVencimiento() == null) {
                 errores.putIfAbsent("fechaVencimiento", "El producto es perecible: indica su fecha de vencimiento.");

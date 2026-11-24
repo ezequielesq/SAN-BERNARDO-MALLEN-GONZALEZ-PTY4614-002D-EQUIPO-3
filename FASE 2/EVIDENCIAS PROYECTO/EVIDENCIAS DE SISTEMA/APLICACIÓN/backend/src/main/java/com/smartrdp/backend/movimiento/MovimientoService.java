@@ -48,6 +48,10 @@ public class MovimientoService {
                 throw new BusinessException("'" + producto.getNombre()
                         + "' es perecible: indica su fecha de vencimiento.", "fechaVencimiento");
             }
+            if (TipoOperacion.COMPRA.equals(tipo.getCodigo()) && linea.costoUnitario() == null) {
+                throw new BusinessException("Una compra necesita el costo unitario de '" + producto.getNombre()
+                        + "': sin él no se puede seguir el precio.", "costoUnitario");
+            }
             Lote lote = new Lote();
             lote.setProducto(producto);
             lote.setNumeroLote(linea.numeroLote());

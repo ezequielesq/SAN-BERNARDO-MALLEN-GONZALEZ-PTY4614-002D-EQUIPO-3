@@ -311,7 +311,8 @@ abstract class FlujoBase {
 
     protected static Map<String, Object> lineaEntrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
         return objeto("productoId", productoId, "cantidad", cantidad,
-                "fechaVencimiento", vencimiento == null ? null : vencimiento.toString(), "numeroLote", lote);
+                "fechaVencimiento", vencimiento == null ? null : vencimiento.toString(), "numeroLote", lote,
+                "costoUnitario", 1000);
     }
 
     protected Respuesta entrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {

@@ -385,6 +385,46 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(get(PANEL + "solicitantes", null).estado()).isEqualTo(401);
     }
 
+    // ================================================================== costo obligatorio en compras
+
+    @Test
+    @DisplayName("HU-140 Una compra sin costo se rechaza; inventario inicial y ajustes siguen con costo opcional")
+    void compraExigeCosto() {
+        Prod producto = crearProducto(false);
+
+        var sinCosto = entradaDeTipo("COMPRA", producto.id(), 5, null);
+        assertThat(sinCosto.estado()).isEqualTo(422);
+        assertThat(sinCosto.campo()).isEqualTo("costoUnitario");
+        assertThat(stockDe(producto.id())).isZero();
+
+        compra(producto.id(), 5, 1_200).esperando(201);
+        entradaDeTipo("INVENTARIO_INICIAL", producto.id(), 3, null).esperando(201);
+        entradaDeTipo("AJUSTE_ENTRADA", producto.id(), 2, null).esperando(201);
+        assertThat(stockDe(producto.id())).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("HU-140 Importar entradas: la fila de compra sin costo es un error de fila; con otro tipo no lo es")
+    void importarCompraExigeCosto() {
+        Prod producto = crearProducto(false);
+        var sinCosto = List.of(objeto("fila", 2, "codigo", producto.codigo(), "cantidad", 4));
+        String validar = "/api/movimientos/entradas/importar/validar";
+        String importar = "/api/movimientos/entradas/importar";
+        String token = bodeguero().token();
+
+        JsonNode compraSinCosto = post(validar, token, objeto("tipo", "COMPRA", "filas", sinCosto)).esperando(200).json();
+        assertThat(compraSinCosto.get(0).path("errores").path("costoUnitario").asText()).contains("costo");
+        JsonNode inicial = post(validar, token, objeto("tipo", "INVENTARIO_INICIAL", "filas", sinCosto))
+                .esperando(200).json();
+        assertThat(inicial.get(0).path("errores").has("costoUnitario")).isFalse();
+
+        assertThat(post(importar, token, objeto("tipo", "COMPRA", "filas", sinCosto)).estado()).isEqualTo(422);
+        assertThat(stockDe(producto.id())).isZero();
+        var conCosto = List.of(objeto("fila", 2, "codigo", producto.codigo(), "cantidad", 4, "costoUnitario", 900));
+        post(importar, token, objeto("tipo", "COMPRA", "filas", conCosto)).esperando(201);
+        assertThat(stockDe(producto.id())).isEqualTo(4);
+    }
+
     // ------------------------------------------------------------------ ayudantes
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */
