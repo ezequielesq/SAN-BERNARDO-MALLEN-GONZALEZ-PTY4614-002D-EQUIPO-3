@@ -48,7 +48,7 @@ export class AnaliticaProductosClave {
     const aplicables = productos === null ? ids : conservarDeCategoria(ids, productos, categoriaId);
     if (aplicables.length === 0) {
       this.notificaciones.error(
-        'Tus productos clave pertenecen a otras categorías. Cambia la categoría del filtro para usarlos.',
+        'Ninguno de tus productos clave está en la categoría elegida (o ya no existe).',
       );
       return;
     }

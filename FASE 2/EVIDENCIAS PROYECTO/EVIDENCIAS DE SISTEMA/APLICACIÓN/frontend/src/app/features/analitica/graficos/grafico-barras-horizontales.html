@@ -34,7 +34,7 @@
       </tbody>
     </table>
   </div>
-  @if (hayPaginasTabla()) {
+  @if (conPaginador()) {
     <app-paginacion
       [pagina]="paginaTablaActual()"
       [totalItems]="items().length"

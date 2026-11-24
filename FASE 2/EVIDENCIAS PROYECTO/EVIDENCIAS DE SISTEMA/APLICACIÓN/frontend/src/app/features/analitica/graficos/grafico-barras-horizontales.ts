@@ -7,10 +7,10 @@ import {
   signal,
 } from '@angular/core';
 import { Paginacion } from '../../../shared/paginacion/paginacion';
-import { paginaAjustada, paginar } from '../../../shared/paginacion/paginar';
+import { paginaAjustada } from '../../../shared/paginacion/paginar';
 import { maximoBarras } from './escala';
 import { idUnico } from './id-unico';
-import { TAMANO_TABLA_INICIAL } from './tabla-grafico';
+import { TAMANO_TABLA_INICIAL, filasVisibles, hayPaginasTabla } from './tabla-grafico';
 
 export interface ItemBarra {
   etiqueta: string;
@@ -50,10 +50,10 @@ export class GraficoBarrasHorizontales {
     paginaAjustada(this.paginaTabla(), this.items().length, this.tamanoTabla()),
   );
   protected readonly filasTabla = computed(() =>
-    paginar(this.items(), this.paginaTablaActual(), this.tamanoTabla()),
+    filasVisibles(this.items(), this.paginaTablaActual(), this.tamanoTabla()),
   );
-  /** Umbral fijo (el tamaño por defecto): con otro tamaño elegido el paginador sigue visible y no deja al usuario varado. */
-  protected readonly hayPaginasTabla = computed(() => this.items().length > TAMANO_TABLA_INICIAL);
+  /** Hay paginador solo con más filas que el tamaño inicial (umbral fijo, no el tamaño elegido); con menos se ven todas. */
+  protected readonly conPaginador = computed(() => hayPaginasTabla(this.items().length));
 
   protected cambiarTamanoTabla(tamano: number): void {
     this.tamanoTabla.set(tamano);
