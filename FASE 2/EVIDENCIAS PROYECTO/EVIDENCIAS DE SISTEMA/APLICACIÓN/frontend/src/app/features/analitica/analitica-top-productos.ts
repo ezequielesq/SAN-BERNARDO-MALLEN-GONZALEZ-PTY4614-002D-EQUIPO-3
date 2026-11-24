@@ -27,7 +27,12 @@ export class AnaliticaTopProductos {
     const unidades = new Set(this.lista().map((p) => p.unidad));
     return unidades.size === 1 ? [...unidades][0] : null;
   });
-  protected readonly decision = computed(() => decidirMedida(this.estado().medida(), this.unidadComun()));
+  /** Sin productos (cargando, vacío o con error) no hay unidad que comparar: se conserva la medida y no se avisa. */
+  protected readonly decision = computed(() =>
+    this.lista().length === 0
+      ? { medida: this.estado().medida(), aviso: null }
+      : decidirMedida(this.estado().medida(), this.unidadComun()),
+  );
   protected readonly enCantidad = computed(() => this.decision().medida === 'cantidad');
 
   protected readonly items = computed<ItemBarra[]>(() =>
