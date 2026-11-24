@@ -8,6 +8,8 @@ html { scroll-padding-top: calc(var(--alto-barra) + 0.5rem); }
 main a:not(.w3-button) { color: #0050ef; text-decoration: underline; }
 main .w3-crimson a, main .w3-emerald a { color: #fff; }
 .texto-error { color: #a20025; }
+.sin-margen { margin: 0; }
+.sin-relleno { padding: 0; }
 .boton-peligro { background-color: #fff; color: #a20025; border: 2px solid #a20025; }
 .saltar-contenido { position: absolute; left: 0.5rem; top: -10rem; z-index: 10; }
 .saltar-contenido:focus { top: 0.5rem; }

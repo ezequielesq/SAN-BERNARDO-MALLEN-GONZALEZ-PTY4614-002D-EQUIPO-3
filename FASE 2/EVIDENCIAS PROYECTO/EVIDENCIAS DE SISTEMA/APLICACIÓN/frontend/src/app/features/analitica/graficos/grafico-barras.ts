@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { marcas, maximoRedondo } from './escala';
+import { marcas, margenIzquierdo, maximoRedondo } from './escala';
+import { idUnico } from './id-unico';
 
 export interface PuntoBarra {
   etiqueta: string;
@@ -9,7 +10,7 @@ export interface PuntoBarra {
 
 const ANCHO = 640;
 const ALTO = 260;
-const MARGEN = { izq: 76, der: 12, arr: 12, abajo: 40 };
+const MARGEN = { der: 12, arr: 12, abajo: 40 };
 
 /** Barras verticales con una segunda serie (rayada) al lado; los valores negativos se dibujan como 0. */
 @Component({
@@ -23,15 +24,16 @@ export class GraficoBarras {
   readonly nombrePrincipal = input('Consumo');
   readonly nombreSecundario = input('Pérdidas');
   readonly formatear = input.required<(n: number) => string>();
+  /** Falso cuando la segunda serie no aplica (p. ej. pérdidas en modo cantidad): se oculta de barras, leyenda y tabla. */
+  readonly mostrarSecundario = input(true);
 
   protected readonly verTabla = signal(false);
+  protected readonly idTabla = idUnico('grafico-tabla');
   protected readonly ancho = ANCHO;
   protected readonly alto = ALTO;
-  protected readonly xEjeIzq = MARGEN.izq;
   protected readonly xEjeDer = ANCHO - MARGEN.der;
   protected readonly yEtiqueta = ALTO - MARGEN.abajo + 16;
 
-  private readonly areaAncho = ANCHO - MARGEN.izq - MARGEN.der;
   private readonly areaAlto = ALTO - MARGEN.arr - MARGEN.abajo;
 
   protected readonly maximo = computed(() =>
@@ -45,21 +47,28 @@ export class GraficoBarras {
     })),
   );
 
+  /** Crece si alguna etiqueta del eje (p. ej. $12.345.678) no cabe en el margen mínimo. */
+  protected readonly xEjeIzq = computed(() =>
+    margenIzquierdo(this.marcasY().map((m) => this.formatear()(m.valor))),
+  );
+
   protected readonly barras = computed(() => {
     const puntos = this.puntos();
-    const grupo = this.areaAncho / Math.max(puntos.length, 1);
-    const anchoBarra = Math.max(2, Math.min(20, (grupo * 0.8) / 2));
+    const izq = this.xEjeIzq();
+    const grupo = (ANCHO - izq - MARGEN.der) / Math.max(puntos.length, 1);
+    const series = this.mostrarSecundario() ? 2 : 1;
+    const anchoBarra = Math.max(2, Math.min(20, (grupo * 0.8) / series));
     const paso = Math.max(1, Math.ceil(puntos.length / 10));
     const base = MARGEN.arr + this.areaAlto;
     return puntos.map((p, i) => {
-      const centro = MARGEN.izq + grupo * (i + 0.5);
+      const centro = izq + grupo * (i + 0.5);
       const altoPrincipal = (this.areaAlto * Math.max(0, p.valor)) / this.maximo();
       const altoSecundario = (this.areaAlto * Math.max(0, p.secundario)) / this.maximo();
       return {
         etiqueta: p.etiqueta,
         mostrarEtiqueta: i % paso === 0,
         centro,
-        x: centro - anchoBarra,
+        x: this.mostrarSecundario() ? centro - anchoBarra : centro - anchoBarra / 2,
         anchoBarra,
         yPrincipal: base - altoPrincipal,
         altoPrincipal,

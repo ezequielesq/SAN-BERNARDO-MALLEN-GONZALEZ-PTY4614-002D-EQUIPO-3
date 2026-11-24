@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { maximoBarras } from './escala';
+import { idUnico } from './id-unico';
 
 export interface ItemBarra {
   etiqueta: string;
@@ -26,13 +28,14 @@ export class GraficoBarrasHorizontales {
   readonly descripcion = input.required<string>();
 
   protected readonly verTabla = signal(false);
+  protected readonly idTabla = idUnico('grafico-tabla');
   protected readonly ancho = ANCHO;
   protected readonly xBarra = IZQ;
 
   protected readonly alto = computed(() => 16 + this.items().length * FILA);
 
   protected readonly barras = computed(() => {
-    const maximo = Math.max(1, ...this.items().map((i) => i.valor));
+    const maximo = maximoBarras(this.items().map((i) => i.valor));
     return this.items().map((item, i) => {
       const largo = ((ANCHO - IZQ - DER) * Math.max(0, item.valor)) / maximo;
       return {

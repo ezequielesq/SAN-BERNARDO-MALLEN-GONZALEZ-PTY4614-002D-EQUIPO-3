@@ -57,6 +57,7 @@ export class AnaliticaConsumoPeriodo {
   protected readonly descripcion = computed(() => {
     const agrupar = { DIA: 'día', SEMANA: 'semana', MES: 'mes' }[this.filtro()?.agrupar ?? 'SEMANA'];
     const unidad = this.enCantidad() ? 'cantidad' : 'valor en pesos';
-    return `Gráfico de barras del consumo por ${agrupar} (${unidad}), con las pérdidas como segunda serie rayada.`;
+    const perdidas = this.enCantidad() ? '' : ', con las pérdidas como segunda serie rayada';
+    return `Gráfico de barras del consumo por ${agrupar} (${unidad})${perdidas}.`;
   });
 }

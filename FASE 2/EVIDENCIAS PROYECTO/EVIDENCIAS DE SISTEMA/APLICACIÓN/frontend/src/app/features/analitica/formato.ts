@@ -32,3 +32,8 @@ export function formatearVariacion(porcentaje: number | null): string {
   if (porcentaje === null) return '—';
   return `${porcentaje > 0 ? '+' : ''}${NUMERO.format(porcentaje)} %`;
 }
+
+/** «1 persona», «2 personas»: singular solo con uno. */
+export function contar(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`;
+}

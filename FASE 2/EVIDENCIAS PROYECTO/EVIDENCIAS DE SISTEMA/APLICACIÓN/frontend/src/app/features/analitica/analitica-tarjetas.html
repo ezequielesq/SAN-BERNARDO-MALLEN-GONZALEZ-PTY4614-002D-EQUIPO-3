@@ -25,7 +25,7 @@
         <li class="tarjeta-kpi w3-card w3-white w3-padding">
           <h3 class="w3-medium">Pedidos</h3>
           <p class="tarjeta-kpi__valor">{{ r.pedidos }}</p>
-          <p class="w3-small">de {{ r.personas }} {{ r.personas === 1 ? 'persona' : 'personas' }}</p>
+          <p class="w3-small">de {{ contar(r.personas, 'persona', 'personas') }}</p>
         </li>
         <li class="tarjeta-kpi w3-card w3-white w3-padding">
           <h3 class="w3-medium">Entregado vs. solicitado</h3>
@@ -46,7 +46,7 @@
         </li>
         <li class="tarjeta-kpi w3-card w3-white w3-padding">
           <h3 class="w3-medium">Lotes por vencer</h3>
-          <p class="tarjeta-kpi__valor">{{ lotesPorVencer() }}</p>
+          <p class="tarjeta-kpi__valor">{{ lotesPorVencer() ?? '—' }}</p>
           <p class="w3-small">en los próximos {{ diasVencimientos }} días</p>
         </li>
       </ul>

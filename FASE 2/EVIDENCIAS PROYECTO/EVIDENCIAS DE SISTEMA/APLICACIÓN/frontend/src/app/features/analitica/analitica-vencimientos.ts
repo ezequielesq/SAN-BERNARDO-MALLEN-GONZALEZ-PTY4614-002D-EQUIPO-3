@@ -1,11 +1,11 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
-import { VencimientoDto } from './analitica.modelo';
+import { FiltroPanel, VencimientoDto } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
-import { EstadoFiltros } from './panel-estado';
 import { VencimientoCalendario } from './vencimiento-calendario';
 
 type ColumnaOrdenVencimiento = 'fechaVencimiento' | 'nombre' | 'cantidadEnRiesgo';
@@ -28,12 +28,13 @@ function formatearFecha(fecha: Date): string {
 
 @Component({
   selector: 'app-analitica-vencimientos',
-  imports: [DatePipe, EstadoBadge, SelectorOrden, VencimientoCalendario],
+  imports: [DatePipe, EstadoBadge, EstadoVista, SelectorOrden, VencimientoCalendario],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-vencimientos.html',
 })
 export class AnaliticaVencimientos {
-  readonly estado = input.required<EstadoFiltros>();
+  /** Filtro del panel ya con la espera de 250 ms (no una petición por casilla marcada); nulo si el rango no es válido. */
+  readonly filtro = input.required<FiltroPanel | null>();
 
   private readonly analiticaService = inject(AnaliticaService);
 
@@ -47,8 +48,8 @@ export class AnaliticaVencimientos {
 
   private readonly filtroUmbral = computed(() => ({
     dias: this.diasUmbral(),
-    categoriaId: this.estado().categoriaId(),
-    productoIds: this.estado().productoIds(),
+    categoriaId: this.filtro()?.categoriaId ?? null,
+    productoIds: this.filtro()?.productoIds ?? [],
   }));
   protected readonly tarjetas = this.analiticaService.vencimientos(this.filtroUmbral);
   protected readonly filasTarjetas = computed(() =>
@@ -65,8 +66,8 @@ export class AnaliticaVencimientos {
   private readonly filtroRango = computed(() => ({
     desde: this.desdeFiltro(),
     hasta: this.hastaFiltro(),
-    categoriaId: this.estado().categoriaId(),
-    productoIds: this.estado().productoIds(),
+    categoriaId: this.filtro()?.categoriaId ?? null,
+    productoIds: this.filtro()?.productoIds ?? [],
   }));
   protected readonly detalle = this.analiticaService.vencimientosRango(this.filtroRango);
   protected readonly filasDetalle = computed(() =>

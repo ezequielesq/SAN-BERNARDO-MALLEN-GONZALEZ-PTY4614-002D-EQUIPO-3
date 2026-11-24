@@ -1,4 +1,15 @@
-import { decidirMedida, diasDelRango, rangoDeAtajo, sugerirAgrupacion, validarRango } from './panel-filtros';
+import { ResumenPanel } from './analitica.modelo';
+import {
+  MAXIMO_PRODUCTOS,
+  alternarProducto,
+  decidirMedida,
+  diasDelRango,
+  hayDatosEnResumen,
+  limiteAlcanzado,
+  rangoDeAtajo,
+  sugerirAgrupacion,
+  validarRango,
+} from './panel-filtros';
 
 describe('atajos de fecha', () => {
   const hoy = new Date(2026, 10, 24); // 24-11-2026
@@ -50,5 +61,63 @@ describe('decidirMedida', () => {
     const r = decidirMedida('cantidad', null);
     expect(r.medida).toBe('valor');
     expect(r.aviso).toContain('unidades distintas');
+  });
+});
+
+describe('hayDatosEnResumen', () => {
+  const vacio: ResumenPanel = {
+    consumoNetoValor: 0,
+    cantidadNeta: null,
+    unidadComun: null,
+    pedidos: 0,
+    personas: 0,
+    solicitadoValor: 0,
+    entregadoValor: 0,
+    solicitadoCantidad: null,
+    entregadoCantidad: null,
+    perdidasValor: 0,
+    lineasSinCosto: 0,
+  };
+
+  it('un resumen en ceros no tiene datos (no hay unidad que comparar)', () => {
+    expect(hayDatosEnResumen(vacio)).toBe(false);
+  });
+
+  it('con pedidos, consumo o pérdidas sí hay datos', () => {
+    expect(hayDatosEnResumen({ ...vacio, pedidos: 1 })).toBe(true);
+    expect(hayDatosEnResumen({ ...vacio, consumoNetoValor: 500 })).toBe(true);
+    expect(hayDatosEnResumen({ ...vacio, perdidasValor: 200 })).toBe(true);
+    expect(hayDatosEnResumen({ ...vacio, lineasSinCosto: 2 })).toBe(true);
+  });
+});
+
+describe('límite de productos elegidos', () => {
+  const ids = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+
+  it('el máximo coincide con el del servidor', () => {
+    expect(MAXIMO_PRODUCTOS).toBe(50);
+  });
+
+  it('agrega y quita productos', () => {
+    expect(alternarProducto([1, 2], 3, true)).toEqual([1, 2, 3]);
+    expect(alternarProducto([1, 2, 3], 2, false)).toEqual([1, 3]);
+  });
+
+  it('no agrega dos veces el mismo producto', () => {
+    expect(alternarProducto([1, 2], 2, true)).toEqual([1, 2]);
+  });
+
+  it('no deja pasar el producto 51', () => {
+    expect(alternarProducto(ids(49), 100, true)).toHaveLength(50);
+    expect(alternarProducto(ids(50), 100, true)).toEqual(ids(50));
+  });
+
+  it('con 50 elegidos todavía se puede quitar uno', () => {
+    expect(alternarProducto(ids(50), 7, false)).toHaveLength(49);
+  });
+
+  it('informa si se alcanzó el límite', () => {
+    expect(limiteAlcanzado(ids(49))).toBe(false);
+    expect(limiteAlcanzado(ids(50))).toBe(true);
   });
 });

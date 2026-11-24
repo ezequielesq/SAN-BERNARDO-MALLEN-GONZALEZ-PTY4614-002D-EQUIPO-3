@@ -10,9 +10,16 @@
     }
   </svg>
 </figure>
-<button type="button" class="w3-button w3-small w3-white w3-border" [attr.aria-pressed]="verTabla()" (click)="verTabla.set(!verTabla())">
-  {{ verTabla() ? 'Ocultar tabla' : 'Ver como tabla' }}
+<button
+  type="button"
+  class="w3-button w3-small w3-white w3-border"
+  [attr.aria-expanded]="verTabla()"
+  [attr.aria-controls]="idTabla"
+  (click)="verTabla.set(!verTabla())"
+>
+  Ver como tabla
 </button>
+<div [id]="idTabla">
 @if (verTabla()) {
   <div class="w3-responsive">
     <table class="w3-table-all w3-small">
@@ -28,3 +35,4 @@
     </table>
   </div>
 }
+</div>

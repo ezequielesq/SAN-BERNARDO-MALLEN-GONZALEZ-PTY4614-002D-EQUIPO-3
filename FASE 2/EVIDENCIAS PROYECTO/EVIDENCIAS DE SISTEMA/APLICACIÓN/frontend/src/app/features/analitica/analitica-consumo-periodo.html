@@ -13,6 +13,11 @@
     mensajeVacio="No hay movimientos con estos filtros."
     (reintentar)="serie.reload()"
   >
-    <app-grafico-barras [puntos]="puntos()" [descripcion]="descripcion()" [formatear]="formatear()" />
+    <app-grafico-barras
+      [puntos]="puntos()"
+      [descripcion]="descripcion()"
+      [formatear]="formatear()"
+      [mostrarSecundario]="!enCantidad()"
+    />
   </app-estado-vista>
 </section>

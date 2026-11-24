@@ -1,8 +1,8 @@
 <figure class="grafico">
   <svg [attr.viewBox]="'0 0 ' + ancho + ' ' + alto" class="grafico__svg" role="img" [attr.aria-label]="descripcion()">
     @for (m of marcasY(); track $index) {
-      <line [attr.x1]="xEjeIzq" [attr.x2]="xEjeDer" [attr.y1]="m.y" [attr.y2]="m.y" stroke="#cccccc" stroke-width="1" />
-      <text [attr.x]="xEjeIzq - 6" [attr.y]="m.y + 4" text-anchor="end" font-size="11" fill="#333333">{{ formatear()(m.valor) }}</text>
+      <line [attr.x1]="xEjeIzq()" [attr.x2]="xEjeDer" [attr.y1]="m.y" [attr.y2]="m.y" stroke="#cccccc" stroke-width="1" />
+      <text [attr.x]="xEjeIzq() - 6" [attr.y]="m.y + 4" text-anchor="end" font-size="11" fill="#333333">{{ formatear()(m.valor) }}</text>
     }
     <polyline [attr.points]="linea()" fill="none" stroke="#dc143c" stroke-width="2" />
     @for (m of marcas(); track $index) {
@@ -15,9 +15,16 @@
     }
   </svg>
 </figure>
-<button type="button" class="w3-button w3-small w3-white w3-border" [attr.aria-pressed]="verTabla()" (click)="verTabla.set(!verTabla())">
-  {{ verTabla() ? 'Ocultar tabla' : 'Ver como tabla' }}
+<button
+  type="button"
+  class="w3-button w3-small w3-white w3-border"
+  [attr.aria-expanded]="verTabla()"
+  [attr.aria-controls]="idTabla"
+  (click)="verTabla.set(!verTabla())"
+>
+  Ver como tabla
 </button>
+<div [id]="idTabla">
 @if (verTabla()) {
   <div class="w3-responsive">
     <table class="w3-table-all w3-small">
@@ -33,3 +40,4 @@
     </table>
   </div>
 }
+</div>

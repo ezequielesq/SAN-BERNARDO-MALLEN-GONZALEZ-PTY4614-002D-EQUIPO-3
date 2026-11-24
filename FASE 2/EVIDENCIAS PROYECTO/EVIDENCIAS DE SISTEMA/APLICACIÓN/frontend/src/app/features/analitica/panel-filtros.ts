@@ -1,9 +1,12 @@
-import { Agrupacion, Medida } from './analitica.modelo';
+import { Agrupacion, Medida, ResumenPanel } from './analitica.modelo';
 
 export type Atajo = '7d' | '30d' | '90d' | 'mes';
 
 /** El servidor rechaza rangos de más de este número de días (ambos extremos incluidos). */
 export const MAXIMO_DIAS = 366;
+
+/** El servidor rechaza filtros con más de este número de productos. */
+export const MAXIMO_PRODUCTOS = 50;
 
 const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
@@ -79,4 +82,27 @@ export function decidirMedida(
     };
   }
   return { medida: preferida, aviso: null };
+}
+
+/** Hay algo que mostrar en el resumen; sin datos no hay unidades que comparar y no corresponde avisar. */
+export function hayDatosEnResumen(r: ResumenPanel): boolean {
+  return (
+    r.pedidos > 0 ||
+    r.consumoNetoValor !== 0 ||
+    r.entregadoValor !== 0 ||
+    r.solicitadoValor !== 0 ||
+    r.perdidasValor !== 0 ||
+    r.lineasSinCosto > 0
+  );
+}
+
+export function limiteAlcanzado(productoIds: readonly number[]): boolean {
+  return productoIds.length >= MAXIMO_PRODUCTOS;
+}
+
+/** Marca o desmarca un producto; nunca pasa de MAXIMO_PRODUCTOS ni repite uno ya elegido. */
+export function alternarProducto(productoIds: readonly number[], id: number, marcado: boolean): number[] {
+  if (!marcado) return productoIds.filter((x) => x !== id);
+  if (productoIds.includes(id) || limiteAlcanzado(productoIds)) return [...productoIds];
+  return [...productoIds, id];
 }

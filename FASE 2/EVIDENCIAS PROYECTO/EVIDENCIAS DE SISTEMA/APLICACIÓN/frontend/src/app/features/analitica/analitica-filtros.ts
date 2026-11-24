@@ -7,7 +7,8 @@ import { Agrupacion, Medida } from './analitica.modelo';
 import { AnaliticaProductosClave } from './analitica-productos-clave';
 import { AnaliticaService } from './analitica.service';
 import { EstadoFiltros } from './panel-estado';
-import { Atajo } from './panel-filtros';
+import { contar } from './formato';
+import { Atajo, MAXIMO_PRODUCTOS, alternarProducto, limiteAlcanzado } from './panel-filtros';
 
 interface OpcionCategoria {
   id: number;
@@ -45,6 +46,10 @@ export class AnaliticaFiltros {
   protected readonly solicitantes = this.service.solicitantes();
   protected readonly busquedaProducto = signal('');
   protected readonly exportando = signal(false);
+  protected readonly maximoProductos = MAXIMO_PRODUCTOS;
+  protected readonly contar = contar;
+
+  protected readonly limiteProductos = computed(() => limiteAlcanzado(this.estado().productoIds()));
 
   protected readonly categorias = computed<OpcionCategoria[]>(() => {
     if (!this.productos.hasValue()) return [];
@@ -88,8 +93,7 @@ export class AnaliticaFiltros {
   }
 
   protected alternarProducto(id: number, marcado: boolean): void {
-    const actuales = this.estado().productoIds();
-    this.estado().productoIds.set(marcado ? [...actuales, id] : actuales.filter((x) => x !== id));
+    this.estado().productoIds.update((actuales) => alternarProducto(actuales, id, marcado));
   }
 
   protected limpiarProductos(): void {
@@ -101,8 +105,12 @@ export class AnaliticaFiltros {
   }
 
   protected exportar(): void {
+    if (this.exportando()) return;
     const filtro = this.estado().filtro();
-    if (filtro === null || this.exportando()) return;
+    if (filtro === null) {
+      this.notificaciones.error(`No se puede exportar: ${this.estado().errorRango() ?? 'revisa las fechas.'}`);
+      return;
+    }
     this.exportando.set(true);
     this.service
       .exportarMovimientos(filtro)

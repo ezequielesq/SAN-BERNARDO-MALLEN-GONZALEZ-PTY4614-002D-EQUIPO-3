@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { FiltroPanel } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
-import { formatearCantidad, formatearPesos } from './formato';
+import { contar, formatearCantidad, formatearPesos } from './formato';
 import { EstadoFiltros } from './panel-estado';
-import { decidirMedida } from './panel-filtros';
+import { decidirMedida, hayDatosEnResumen } from './panel-filtros';
 
 /** Días del umbral de la quinta tarjeta (lotes por vencer). */
 const DIAS_TARJETA_VENCIMIENTOS = 30;
@@ -30,14 +30,20 @@ export class AnaliticaTarjetas {
     productoIds: this.filtro()?.productoIds ?? [],
   }));
   protected readonly vencimientos = this.service.vencimientos(this.filtroVencimientos);
+  /** Nulo mientras carga o si falla: la tarjeta muestra «—» en vez de un 0 que no es real. */
   protected readonly lotesPorVencer = computed(() =>
-    this.vencimientos.hasValue() ? this.vencimientos.value().length : 0,
+    this.vencimientos.isLoading() || this.vencimientos.error() ? null : this.vencimientos.value().length,
   );
+  protected readonly contar = contar;
   protected readonly diasVencimientos = DIAS_TARJETA_VENCIMIENTOS;
 
-  protected readonly decision = computed(() =>
-    decidirMedida(this.estado().medida(), this.r()?.unidadComun ?? null),
-  );
+  /** Sin datos reales no hay unidad que comparar: se conserva la medida y no se avisa. */
+  protected readonly decision = computed(() => {
+    const r = this.r();
+    return r !== null && hayDatosEnResumen(r)
+      ? decidirMedida(this.estado().medida(), r.unidadComun)
+      : { medida: this.estado().medida(), aviso: null };
+  });
   protected readonly enCantidad = computed(() => this.decision().medida === 'cantidad');
 
   protected readonly consumo = computed(() => {
@@ -73,6 +79,6 @@ export class AnaliticaTarjetas {
     const r = this.r();
     return r === null
       ? ''
-      : `Panel actualizado: consumo neto ${this.consumo()}, ${r.pedidos} pedidos de ${r.personas} personas.`;
+      : `Panel actualizado: consumo neto ${this.consumo()}, ${contar(r.pedidos, 'pedido', 'pedidos')} de ${contar(r.personas, 'persona', 'personas')}.`;
   });
 }
