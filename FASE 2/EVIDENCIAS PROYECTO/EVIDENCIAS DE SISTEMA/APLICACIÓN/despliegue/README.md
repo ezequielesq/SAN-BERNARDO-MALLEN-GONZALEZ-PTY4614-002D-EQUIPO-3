@@ -145,6 +145,19 @@ Copia esa carpeta también a otro equipo o disco: un respaldo en la misma tarjet
 - Cargar la imagen no cambia los contenedores en marcha: el redeploy los recrea con la nueva. Habrá un corte de unos 90 segundos mientras arranca el backend.
 - Cada actualización deja la imagen anterior sin nombre. De vez en cuando, en la Raspberry: `docker image prune -f`.
 
+### Versión con panel de analítica (migración V4)
+
+La versión con panel de analítica incluye la migración **V4** (`productos_clave`). **Antes de publicar en la Raspberry, haz un respaldo de la base** (`pg_dump`); Flyway aplicará V4 solo al iniciar el backend nuevo.
+
+```bash
+docker exec pg-central pg_dump -U postgres -Fc smartrdp > ~/smartrdp_antes-de-V4.dump
+```
+
+El archivo se restaura con `pg_restore`, igual que los respaldos automáticos (ver «Respaldo»). Publicar esta versión es un paso aparte, que decide la persona responsable del despliegue.
+
+- Desde esta versión una entrada de tipo **Compra** exige el costo unitario (también al importar entradas desde Excel). Las entradas anteriores sin costo se conservan; el historial de precios solo tiene datos desde que se exige el costo.
+- **Zona horaria:** el backend corre en UTC en la Raspberry. El panel agrupa por día con esa hora, así que una entrega registrada después de las 21:00 hora de Chile (20:00 en horario de invierno) puede aparecer en el día siguiente. Es una limitación conocida; no se cambió la configuración del contenedor.
+
 ## Notas de la Raspberry
 - **Memoria:** tiene ≈1 GB. Por eso no se compila allí (paso 4).
 - **Wi-Fi y QUIC:** `cloudflared` por defecto usa QUIC (UDP), que se cortaba por el Wi-Fi. Se fuerza HTTP/2 con una variable en un archivo aparte, sin tocar el token:
