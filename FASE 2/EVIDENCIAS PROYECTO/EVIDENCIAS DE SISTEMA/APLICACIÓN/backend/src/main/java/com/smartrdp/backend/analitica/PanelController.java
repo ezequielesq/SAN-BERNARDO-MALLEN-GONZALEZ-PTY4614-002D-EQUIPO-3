@@ -1,5 +1,6 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.HistorialPreciosDto;
 import com.smartrdp.backend.analitica.dto.OpcionDto;
 import com.smartrdp.backend.analitica.dto.PedidosPorPersonaDto;
 import com.smartrdp.backend.analitica.dto.ProductoClaveDto;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -74,6 +76,14 @@ public class PanelController {
             @RequestParam(required = false) Long solicitanteId) {
         return servicio.pedidosPorPersona(
                 FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+    }
+
+    @GetMapping("/precios/{productoId}")
+    public HistorialPreciosDto precios(
+            @PathVariable Long productoId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        return servicio.precios(productoId, desde, hasta);
     }
 
     @GetMapping("/solicitantes")

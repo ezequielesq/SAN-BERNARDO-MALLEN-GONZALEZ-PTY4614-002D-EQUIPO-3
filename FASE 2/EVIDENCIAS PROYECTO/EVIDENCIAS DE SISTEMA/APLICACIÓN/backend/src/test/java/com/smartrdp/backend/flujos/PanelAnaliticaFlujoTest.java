@@ -472,6 +472,54 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(productosDelExcel(base + "&solicitanteId=" + ana.id(), bodeguero)).containsExactly(uno.nombre());
     }
 
+    // ================================================================== historial de precios
+
+    @Test
+    @DisplayName("HU-140 Historial de precios: solo compras, con último, anterior, variación, mínimo, máximo y promedios")
+    void historialDePrecios() {
+        Cuenta bodeguero = crearBodeguero();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = crearProductoEn(categoria.id(), false);
+        long c1 = compra(producto.id(), 10, 1_000).esperando(201).json().path("id").asLong();
+        long c2 = compra(producto.id(), 30, 1_200).esperando(201).json().path("id").asLong();
+        long c3 = compra(producto.id(), 20, 900).esperando(201).json().path("id").asLong();
+        fecharOperacion(c1, LocalDate.of(2026, 3, 2).atTime(10, 0));
+        fecharOperacion(c2, LocalDate.of(2026, 4, 6).atTime(10, 0));
+        fecharOperacion(c3, LocalDate.of(2026, 5, 4).atTime(10, 0));
+        entradaDeTipo("INVENTARIO_INICIAL", producto.id(), 5, 5_000).esperando(201); // no es una compra
+        String base = PANEL + "precios/" + producto.id() + "?";
+
+        JsonNode r = get(base + "desde=2026-03-01&hasta=2026-06-30", bodeguero.token()).esperando(200).json();
+        assertThat(r.path("nombre").asText()).isEqualTo(producto.nombre());
+        assertThat(r.path("unidad").asText()).isNotBlank();
+        assertThat(r.path("compras").findValues("costo").stream().map(JsonNode::asInt).toList())
+                .containsExactly(1_000, 1_200, 900);
+        assertThat(r.path("compras").findValues("fecha").stream().map(JsonNode::asText).toList())
+                .containsExactly("2026-03-02", "2026-04-06", "2026-05-04");
+        assertThat(r.path("ultimo").asInt()).isEqualTo(900);
+        assertThat(r.path("anterior").asInt()).isEqualTo(1_200);
+        assertThat(r.path("variacionPct").asDouble()).isEqualTo(-25.0);
+        assertThat(r.path("minimo").asInt()).isEqualTo(900);
+        assertThat(r.path("maximo").asInt()).isEqualTo(1_200);
+        assertThat(r.path("promedio").asDouble()).isEqualTo(1_033.3);
+        assertThat(r.path("promedioPonderado").asDouble()).isEqualTo(1_066.7);
+
+        // Con una sola compra en el rango no hay estadísticos; sin compras tampoco.
+        JsonNode una = get(base + "desde=2026-03-01&hasta=2026-03-31", bodeguero.token()).esperando(200).json();
+        assertThat(una.path("compras")).hasSize(1);
+        assertThat(una.path("ultimo").isNull()).isTrue();
+        assertThat(una.path("variacionPct").isNull()).isTrue();
+        assertThat(get(base + "desde=2026-07-01&hasta=2026-07-31", bodeguero.token()).esperando(200).json()
+                .path("compras")).isEmpty();
+
+        // Producto inexistente, rango inválido y acceso.
+        assertThat(get(PANEL + "precios/999999999?desde=2026-03-01&hasta=2026-03-31", bodeguero.token()).estado())
+                .isEqualTo(404);
+        assertThat(get(base + "desde=2026-04-01&hasta=2026-03-01", bodeguero.token()).estado()).isEqualTo(422);
+        assertThat(get(base + "desde=2026-03-01&hasta=2026-03-31", null).estado()).isEqualTo(401);
+        get(base + "desde=2026-03-01&hasta=2026-03-31", tokenAdmin()).esperando(200);
+    }
+
     // ------------------------------------------------------------------ ayudantes
 
     private static List<Long> idsDe(JsonNode vencimientos) {

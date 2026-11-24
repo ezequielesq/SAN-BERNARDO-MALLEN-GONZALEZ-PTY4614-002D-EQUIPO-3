@@ -1,6 +1,8 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.CompraDto;
 import com.smartrdp.backend.analitica.dto.FilaPersonaDto;
+import com.smartrdp.backend.analitica.dto.HistorialPreciosDto;
 import com.smartrdp.backend.analitica.dto.ImporteDto;
 import com.smartrdp.backend.analitica.dto.OpcionDto;
 import com.smartrdp.backend.analitica.dto.PedidosPorPersonaDto;
@@ -9,6 +11,8 @@ import com.smartrdp.backend.analitica.dto.PuntoConsumoDto;
 import com.smartrdp.backend.analitica.dto.ResumenPanelDto;
 import com.smartrdp.backend.analitica.dto.SerieConsumoDto;
 import com.smartrdp.backend.exception.BusinessException;
+import com.smartrdp.backend.exception.ResourceNotFoundException;
+import com.smartrdp.backend.movimiento.TipoOperacion;
 import com.smartrdp.backend.movimiento.VistasInventario;
 import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.producto.ProductoRepository;
@@ -180,6 +184,39 @@ public class PanelService {
         return usuarioRepository.findByRolCodigoInAndActivoTrueOrderByNombreAsc(List.of(Rol.EMPLEADO)).stream()
                 .map(u -> new OpcionDto(u.getId(), u.getNombre()))
                 .toList();
+    }
+
+    // ------------------------------------------------------------------ historial de precios
+
+    @Transactional(readOnly = true)
+    public HistorialPreciosDto precios(Long productoId, LocalDate desde, LocalDate hasta) {
+        Producto producto = productoRepository.findById(productoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto", productoId));
+        FiltroPanel f = FiltroPanel.de(desde, hasta, null, null, List.of(productoId), null);
+        List<LineaPanel> lineas = lineas(f, List.of(TipoOperacion.COMPRA)).stream()
+                .filter(l -> l.costo() != null).toList();
+        List<CompraDto> compras = lineas.stream()
+                .map(l -> new CompraDto(l.fecha().toLocalDate(), l.costo(), l.cantidad())).toList();
+
+        if (compras.size() < 2) {
+            return new HistorialPreciosDto(productoId, producto.getNombre(), producto.getUnidadMedida().getNombre(),
+                    compras, null, null, null, null, null, null, null);
+        }
+        int ultimo = compras.get(compras.size() - 1).costo();
+        int anterior = compras.get(compras.size() - 2).costo();
+        long cantidadTotal = compras.stream().mapToLong(CompraDto::cantidad).sum();
+        double ponderado = compras.stream().mapToDouble(c -> (double) c.costo() * c.cantidad()).sum() / cantidadTotal;
+        return new HistorialPreciosDto(productoId, producto.getNombre(), producto.getUnidadMedida().getNombre(),
+                compras, ultimo, anterior,
+                anterior == 0 ? null : redondear((ultimo - anterior) * 100.0 / anterior),
+                compras.stream().mapToInt(CompraDto::costo).min().orElseThrow(),
+                compras.stream().mapToInt(CompraDto::costo).max().orElseThrow(),
+                redondear(compras.stream().mapToInt(CompraDto::costo).average().orElseThrow()),
+                redondear(ponderado));
+    }
+
+    private static double redondear(double valor) {
+        return Math.round(valor * 10) / 10.0;
     }
 
     private static ImporteDto importe(long valor, long cantidad, boolean conCantidad) {
