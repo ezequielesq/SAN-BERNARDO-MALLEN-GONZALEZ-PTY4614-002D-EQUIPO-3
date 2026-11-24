@@ -1,4 +1,4 @@
-import { marcas, marcasEnteras, margenIzquierdo, maximoBarras, maximoRedondo } from './escala';
+import { marcas, marcasDistintas, marcasEnteras, margenIzquierdo, maximoBarras, maximoRedondo } from './escala';
 
 describe('escala de ejes', () => {
   it('redondea el máximo hacia arriba a 1, 2, 5 o 10 por una potencia de diez', () => {
@@ -64,5 +64,35 @@ describe('margen izquierdo según las etiquetas', () => {
 
   it('sin etiquetas devuelve el mínimo', () => {
     expect(margenIzquierdo([])).toBe(76);
+  });
+});
+
+describe('marcas distintas del eje', () => {
+  const unDecimal = (n: number) => n.toFixed(1);
+  const entero = (n: number) => String(Math.round(n));
+  const etiquetas = (valores: number[], f: (n: number) => string) => valores.map(f);
+
+  it('mantiene los cuatro tramos cuando las etiquetas no se repiten', () => {
+    expect(marcasDistintas(10000, entero)).toEqual([0, 2500, 5000, 7500, 10000]);
+  });
+
+  it('con decimales cambia de tramos para que ninguna etiqueta se repita', () => {
+    const valores = marcasDistintas(0.2, unDecimal);
+    expect(valores).toEqual([0, 0.1, 0.2]);
+    expect(new Set(etiquetas(valores, unDecimal)).size).toBe(valores.length);
+  });
+
+  it('con un máximo diminuto en pesos deja solo 0 y el máximo', () => {
+    const valores = marcasDistintas(1, entero);
+    expect(valores).toEqual([0, 1]);
+  });
+
+  it('nunca repite etiquetas, con cualquier máximo redondo', () => {
+    for (const maximo of [0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 250, 1000]) {
+      for (const f of [unDecimal, entero]) {
+        const textos = etiquetas(marcasDistintas(maximo, f), f);
+        expect(new Set(textos).size).toBe(textos.length);
+      }
+    }
   });
 });

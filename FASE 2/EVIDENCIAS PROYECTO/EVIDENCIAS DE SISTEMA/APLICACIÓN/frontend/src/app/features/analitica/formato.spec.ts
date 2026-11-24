@@ -1,4 +1,4 @@
-import { contar, formatearVariacion } from './formato';
+import { contar, descripcionTop, formatearVariacion } from './formato';
 
 describe('formatearVariacion', () => {
   it('sin dato muestra una raya', () => {
@@ -26,5 +26,15 @@ describe('contar', () => {
   it('usa el plural con cero y con más de uno', () => {
     expect(contar(0, 'persona', 'personas')).toBe('0 personas');
     expect(contar(2, 'pedido', 'pedidos')).toBe('2 pedidos');
+  });
+});
+
+describe('descripcionTop', () => {
+  it('con un producto usa el singular', () => {
+    expect(descripcionTop(1)).toBe('Gráfico de barras horizontales con el producto más usado del período.');
+  });
+
+  it('con varios usa el plural', () => {
+    expect(descripcionTop(7)).toBe('Gráfico de barras horizontales con los 7 productos más usados del período.');
   });
 });

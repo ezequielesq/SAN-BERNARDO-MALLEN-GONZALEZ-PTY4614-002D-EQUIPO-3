@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { FiltroPanel } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
-import { formatearCantidad, formatearPesos } from './formato';
+import { descripcionTop, formatearCantidad, formatearPesos } from './formato';
 import { GraficoBarrasHorizontales, ItemBarra } from './graficos/grafico-barras-horizontales';
 import { EstadoFiltros } from './panel-estado';
 import { decidirMedida } from './panel-filtros';
@@ -43,7 +43,5 @@ export class AnaliticaTopProductos {
     })),
   );
 
-  protected readonly descripcion = computed(
-    () => `Gráfico de barras horizontales con los ${this.lista().length} productos más usados del período.`,
-  );
+  protected readonly descripcion = computed(() => descripcionTop(this.lista().length));
 }

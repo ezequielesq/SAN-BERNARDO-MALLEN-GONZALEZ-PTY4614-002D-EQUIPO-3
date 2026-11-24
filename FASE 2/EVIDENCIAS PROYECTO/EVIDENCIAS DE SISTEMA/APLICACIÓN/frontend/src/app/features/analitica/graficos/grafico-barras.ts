@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { marcas, margenIzquierdo, maximoRedondo } from './escala';
+import { marcasDistintas, margenIzquierdo, maximoRedondo } from './escala';
 import { idUnico } from './id-unico';
 
 export interface PuntoBarra {
@@ -41,7 +41,7 @@ export class GraficoBarras {
   );
 
   protected readonly marcasY = computed(() =>
-    marcas(this.maximo(), 4).map((valor) => ({
+    marcasDistintas(this.maximo(), this.formatear()).map((valor) => ({
       valor,
       y: MARGEN.arr + this.areaAlto * (1 - valor / this.maximo()),
     })),

@@ -106,3 +106,17 @@ export function alternarProducto(productoIds: readonly number[], id: number, mar
   if (productoIds.includes(id) || limiteAlcanzado(productoIds)) return [...productoIds];
   return [...productoIds, id];
 }
+
+type ValorFiltro = string | number | null | readonly number[];
+
+/** Igualdad por contenido de filtros planos (los arreglos se comparan elemento a elemento); sirve de `equal` de un computed. */
+export function sonIguales<T extends Record<string, ValorFiltro>>(a: T, b: T): boolean {
+  const claves = Object.keys(a);
+  if (claves.length !== Object.keys(b).length) return false;
+  return claves.every((clave) => {
+    const x = a[clave];
+    const y = b[clave];
+    if (Array.isArray(x) && Array.isArray(y)) return x.length === y.length && x.every((v, i) => v === y[i]);
+    return x === y;
+  });
+}

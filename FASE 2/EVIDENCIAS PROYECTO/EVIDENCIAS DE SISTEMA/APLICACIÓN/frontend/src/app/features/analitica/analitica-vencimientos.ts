@@ -6,6 +6,7 @@ import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
 import { FiltroPanel, VencimientoDto } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
+import { sonIguales } from './panel-filtros';
 import { VencimientoCalendario } from './vencimiento-calendario';
 
 type ColumnaOrdenVencimiento = 'fechaVencimiento' | 'nombre' | 'cantidadEnRiesgo';
@@ -46,11 +47,15 @@ export class AnaliticaVencimientos {
     formatearFecha(new Date(this.hoy.getFullYear(), this.hoy.getMonth() + 1, 0)),
   );
 
-  private readonly filtroUmbral = computed(() => ({
-    dias: this.diasUmbral(),
-    categoriaId: this.filtro()?.categoriaId ?? null,
-    productoIds: this.filtro()?.productoIds ?? [],
-  }));
+  /** `sonIguales`: un cambio de fechas, agrupación o persona del panel no vuelve a pedir los vencimientos. */
+  private readonly filtroUmbral = computed(
+    () => ({
+      dias: this.diasUmbral(),
+      categoriaId: this.filtro()?.categoriaId ?? null,
+      productoIds: this.filtro()?.productoIds ?? [],
+    }),
+    { equal: sonIguales },
+  );
   protected readonly tarjetas = this.analiticaService.vencimientos(this.filtroUmbral);
   protected readonly filasTarjetas = computed(() =>
     this.tarjetas.hasValue() ? this.tarjetas.value() : [],
@@ -63,12 +68,15 @@ export class AnaliticaVencimientos {
     ordenar(this.filasTarjetas(), this.ordenTarjetas, EXTRACTORES_VENCIMIENTO),
   );
 
-  private readonly filtroRango = computed(() => ({
-    desde: this.desdeFiltro(),
-    hasta: this.hastaFiltro(),
-    categoriaId: this.filtro()?.categoriaId ?? null,
-    productoIds: this.filtro()?.productoIds ?? [],
-  }));
+  private readonly filtroRango = computed(
+    () => ({
+      desde: this.desdeFiltro(),
+      hasta: this.hastaFiltro(),
+      categoriaId: this.filtro()?.categoriaId ?? null,
+      productoIds: this.filtro()?.productoIds ?? [],
+    }),
+    { equal: sonIguales },
+  );
   protected readonly detalle = this.analiticaService.vencimientosRango(this.filtroRango);
   protected readonly filasDetalle = computed(() =>
     this.detalle.hasValue() ? this.detalle.value() : [],

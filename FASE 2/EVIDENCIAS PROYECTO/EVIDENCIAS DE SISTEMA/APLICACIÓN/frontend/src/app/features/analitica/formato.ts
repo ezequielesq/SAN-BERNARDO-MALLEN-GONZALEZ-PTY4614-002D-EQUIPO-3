@@ -37,3 +37,9 @@ export function formatearVariacion(porcentaje: number | null): string {
 export function contar(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`;
 }
+
+/** Texto accesible del gráfico de productos más usados, en singular o plural según el número de productos. */
+export function descripcionTop(n: number): string {
+  const productos = n === 1 ? 'el producto más usado' : `los ${n} productos más usados`;
+  return `Gráfico de barras horizontales con ${productos} del período.`;
+}

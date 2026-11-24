@@ -4,6 +4,7 @@ import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { AnaliticaService } from './analitica.service';
 import { EstadoFiltros } from './panel-estado';
+import { MAXIMO_PRODUCTOS } from './panel-filtros';
 
 /** Botones de la lista personal de productos clave (se guarda en el servidor, por usuario). */
 @Component({
@@ -36,7 +37,7 @@ export class AnaliticaProductosClave {
       );
       return;
     }
-    this.estado().productoIds.set(ids);
+    this.estado().productoIds.set(ids.slice(0, MAXIMO_PRODUCTOS));
   }
 
   protected guardarSeleccion(): void {

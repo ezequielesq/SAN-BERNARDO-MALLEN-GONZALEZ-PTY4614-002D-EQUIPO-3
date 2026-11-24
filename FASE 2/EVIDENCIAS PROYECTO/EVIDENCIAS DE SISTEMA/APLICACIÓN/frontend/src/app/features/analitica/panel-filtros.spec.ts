@@ -7,6 +7,7 @@ import {
   hayDatosEnResumen,
   limiteAlcanzado,
   rangoDeAtajo,
+  sonIguales,
   sugerirAgrupacion,
   validarRango,
 } from './panel-filtros';
@@ -119,5 +120,24 @@ describe('límite de productos elegidos', () => {
   it('informa si se alcanzó el límite', () => {
     expect(limiteAlcanzado(ids(49))).toBe(false);
     expect(limiteAlcanzado(ids(50))).toBe(true);
+  });
+});
+
+describe('sonIguales (filtros de vencimientos)', () => {
+  it('compara los productos por contenido, no por referencia', () => {
+    expect(sonIguales({ dias: 30, categoriaId: null, productoIds: [1, 2] }, { dias: 30, categoriaId: null, productoIds: [1, 2] })).toBe(true);
+  });
+
+  it('distingue categoría, productos y demás campos', () => {
+    const base = { dias: 30, categoriaId: 1, productoIds: [1, 2] };
+    expect(sonIguales(base, { ...base, categoriaId: 2 })).toBe(false);
+    expect(sonIguales(base, { ...base, productoIds: [1] })).toBe(false);
+    expect(sonIguales(base, { ...base, productoIds: [2, 1] })).toBe(false);
+    expect(sonIguales(base, { ...base, dias: 7 })).toBe(false);
+  });
+
+  it('con fechas distintas no son iguales', () => {
+    const base = { desde: '2026-11-01', hasta: '2026-11-30', categoriaId: null, productoIds: [] as number[] };
+    expect(sonIguales(base, { ...base, hasta: '2026-11-29' })).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ import { FiltroPanel } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { contar, formatearCantidad, formatearPesos } from './formato';
 import { EstadoFiltros } from './panel-estado';
-import { decidirMedida, hayDatosEnResumen } from './panel-filtros';
+import { decidirMedida, hayDatosEnResumen, sonIguales } from './panel-filtros';
 
 /** Días del umbral de la quinta tarjeta (lotes por vencer). */
 const DIAS_TARJETA_VENCIMIENTOS = 30;
@@ -24,11 +24,15 @@ export class AnaliticaTarjetas {
   protected readonly resumen = this.service.resumen(this.filtro);
   protected readonly r = computed(() => (this.resumen.hasValue() ? this.resumen.value() : null));
 
-  private readonly filtroVencimientos = computed(() => ({
-    dias: DIAS_TARJETA_VENCIMIENTOS,
-    categoriaId: this.filtro()?.categoriaId ?? null,
-    productoIds: this.filtro()?.productoIds ?? [],
-  }));
+  /** `sonIguales`: un cambio de fechas, agrupación o persona no vuelve a pedir los vencimientos. */
+  private readonly filtroVencimientos = computed(
+    () => ({
+      dias: DIAS_TARJETA_VENCIMIENTOS,
+      categoriaId: this.filtro()?.categoriaId ?? null,
+      productoIds: this.filtro()?.productoIds ?? [],
+    }),
+    { equal: sonIguales },
+  );
   protected readonly vencimientos = this.service.vencimientos(this.filtroVencimientos);
   /** Nulo mientras carga o si falla: la tarjeta muestra «—» en vez de un 0 que no es real. */
   protected readonly lotesPorVencer = computed(() =>
