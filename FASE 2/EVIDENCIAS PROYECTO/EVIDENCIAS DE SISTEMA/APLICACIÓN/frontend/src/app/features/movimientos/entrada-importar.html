@@ -8,7 +8,7 @@
       required
       [disabled]="!!tipos.error()"
       [attr.aria-invalid]="tipo() === '' ? 'true' : null"
-      (change)="tipo.set(selectTipo.value)"
+      (change)="cambiarTipo(selectTipo.value)"
     >
       <option value="" disabled [selected]="tipo() === ''">
         {{ tipos.error() ? 'No se pudieron cargar los tipos' : 'Elige un tipo' }}

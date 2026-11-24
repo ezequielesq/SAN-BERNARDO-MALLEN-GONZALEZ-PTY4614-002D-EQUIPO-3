@@ -153,6 +153,8 @@ export class EntradaImportar implements OnInit {
       const tipos = this.opcionesTipo();
       if (tipos.length > 0 && this.tipo() === '') {
         this.tipo.set((tipos.find((t) => t.codigo === TIPO_POR_DEFECTO) ?? tipos[0]).codigo);
+        // La lectura del Excel no sabe el tipo: al conocerlo se revalida (en una compra el costo es obligatorio).
+        untracked(() => this.revalidar());
       }
     });
 
@@ -205,6 +207,11 @@ export class EntradaImportar implements OnInit {
       this.idsMostrados.set(this.idsIdeales());
       this.pagina.set(1);
     });
+  }
+
+  protected cambiarTipo(codigo: string): void {
+    this.tipo.set(codigo);
+    this.revalidar();
   }
 
   protected cambiarVista(valor: string): void {

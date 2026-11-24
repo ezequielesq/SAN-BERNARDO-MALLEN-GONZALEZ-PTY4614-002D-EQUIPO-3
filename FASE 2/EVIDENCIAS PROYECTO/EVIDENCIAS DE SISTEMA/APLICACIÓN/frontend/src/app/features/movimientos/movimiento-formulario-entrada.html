@@ -86,7 +86,7 @@
   </div>
 
   <div class="w3-section">
-    <label for="entrada-costo"><b>Costo unitario (opcional)</b></label>
+    <label for="entrada-costo"><b>Costo unitario {{ costoObligatorio() ? '' : '(opcional)' }}</b></label>
     <input
       id="entrada-costo"
       class="w3-input"
@@ -99,7 +99,10 @@
       [attr.aria-describedby]="enviado() && form.controls.costoUnitario.invalid ? 'error-entrada-costo' : null"
     />
     @if (enviado() && form.controls.costoUnitario.invalid) {
-      <p class="texto-error" id="error-entrada-costo"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa un costo entero de 0 o más.</p>
+      <p class="texto-error" id="error-entrada-costo">
+        <i class="fa-solid fa-exclamation" aria-hidden="true"></i>
+        {{ form.controls.costoUnitario.errors?.['required'] ? 'Ingresa el costo de la compra.' : 'Ingresa un costo entero de 0 o más.' }}
+      </p>
     }
   </div>
 

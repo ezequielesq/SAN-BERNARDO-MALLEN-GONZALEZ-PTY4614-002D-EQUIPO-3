@@ -17,7 +17,7 @@ import { ProductoService } from '../productos/producto.service';
 import { EntradaRequest } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
-/** El costo es opcional, pero si se ingresa debe ser un entero (el mínimo de 0 lo valida Validators.min). */
+/** El costo es opcional (salvo en compras, donde lo exige Validators.required), pero si se ingresa debe ser un entero (el mínimo de 0 lo valida Validators.min). */
 function costoEntero(control: AbstractControl): ValidationErrors | null {
   const valor = control.value;
   return valor === null || valor === '' || Number.isInteger(valor) ? null : { entero: true };
@@ -71,6 +71,13 @@ export class MovimientoFormularioEntrada {
     initialValue: this.form.controls.productoId.value,
   });
 
+  // Mismo motivo que productoIdSeleccionado: el tipo elegido debe ser una señal real.
+  private readonly tipoSeleccionado = toSignal(this.form.controls.tipo.valueChanges, {
+    initialValue: this.form.controls.tipo.value,
+  });
+
+  protected readonly costoObligatorio = computed(() => this.tipoSeleccionado() === 'COMPRA');
+
   protected readonly productoSeleccionado = computed(() => {
     const id = this.productoIdSeleccionado();
     return this.opcionesProducto().find((p) => p.id === id) ?? null;
@@ -98,6 +105,17 @@ export class MovimientoFormularioEntrada {
       } else {
         control.removeValidators(Validators.required);
         control.setValue('');
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    });
+
+    // En una compra el costo es obligatorio: de ahí sale el historial de precios. En los demás tipos sigue siendo opcional.
+    effect(() => {
+      const control = this.form.controls.costoUnitario;
+      if (this.costoObligatorio()) {
+        control.addValidators(Validators.required);
+      } else {
+        control.removeValidators(Validators.required);
       }
       control.updateValueAndValidity({ emitEvent: false });
     });
