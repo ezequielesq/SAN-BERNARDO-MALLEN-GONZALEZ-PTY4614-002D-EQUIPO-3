@@ -33,11 +33,22 @@
         <tr><th scope="col">Fecha</th><th scope="col">Costo unitario</th></tr>
       </thead>
       <tbody>
-        @for (p of puntos(); track $index) {
+        @for (p of filasTabla(); track $index) {
           <tr><td>{{ p.etiqueta }}</td><td>{{ formatear()(p.valor) }}</td></tr>
         }
       </tbody>
     </table>
   </div>
+  @if (hayPaginasTabla()) {
+    <app-paginacion
+      [pagina]="paginaTablaActual()"
+      [totalItems]="puntos().length"
+      [tamanoPagina]="tamanoTabla()"
+      [opcionesTamano]="opcionesTamanoTabla"
+      [idTamano]="idTamanoTabla"
+      (paginaCambiada)="paginaTabla.set($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoTabla($event)"
+    />
+  }
 }
 </div>

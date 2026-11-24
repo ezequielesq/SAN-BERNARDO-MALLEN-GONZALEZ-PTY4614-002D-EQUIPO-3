@@ -1,7 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
+import { Paginacion } from '../../shared/paginacion/paginacion';
+import { paginaAjustada, paginar } from '../../shared/paginacion/paginar';
 import { FilaPersona, FiltroPanel, Importe } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { formatearCantidad, formatearPesos } from './formato';
@@ -12,7 +22,7 @@ type ColumnaPersona = 'nombre' | 'pedidos' | 'solicitado' | 'entregado' | 'devue
 
 @Component({
   selector: 'app-analitica-pedidos-persona',
-  imports: [EstadoVista, ThOrden],
+  imports: [EstadoVista, Paginacion, ThOrden],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-pedidos-persona.html',
 })
@@ -27,7 +37,15 @@ export class AnaliticaPedidosPersona {
     this.resultado.hasValue() ? this.resultado.value() : null,
   );
 
-  protected readonly orden = new Orden<ColumnaPersona>({ columna: 'neto', direccion: 'desc' });
+  /** Vuelve a la página 1 si cambia el filtro, el orden o el tamaño de página. */
+  protected readonly pagina = linkedSignal({ source: this.filtro, computation: () => 1 });
+  protected readonly tamano = signal(10);
+  protected readonly opcionesTamano = [5, 10, 20, 50] as const;
+
+  protected readonly orden = new Orden<ColumnaPersona>(
+    { columna: 'neto', direccion: 'desc' },
+    () => this.pagina.set(1),
+  );
 
   private readonly extractores = computed<Extractores<FilaPersona, ColumnaPersona>>(() => {
     const medida = (i: Importe) => (this.enCantidad() ? (i.cantidad ?? 0) : i.valor);
@@ -45,6 +63,17 @@ export class AnaliticaPedidosPersona {
     ordenar(this.datos()?.filas ?? [], this.orden, this.extractores()),
   );
 
+  /** Página efectiva: si los datos se reducen y la elegida queda fuera de rango, se ajusta a la última. */
+  protected readonly paginaActual = computed(() =>
+    paginaAjustada(this.pagina(), this.filas().length, this.tamano()),
+  );
+  protected readonly filasPaginadas = computed(() =>
+    paginar(this.filas(), this.paginaActual(), this.tamano()),
+  );
+  protected readonly hayPaginas = computed(
+    () => this.filas().length > Math.min(...this.opcionesTamano),
+  );
+
   /** Hay filas reales que mostrar: ni cargando ni con error ni vacío. */
   protected readonly hayDatos = computed(() => (this.datos()?.filas.length ?? 0) > 0);
 
@@ -55,6 +84,11 @@ export class AnaliticaPedidosPersona {
       : { medida: this.estado().medida(), aviso: null },
   );
   protected readonly enCantidad = computed(() => this.decision().medida === 'cantidad');
+
+  protected cambiarTamano(tamano: number): void {
+    this.tamano.set(tamano);
+    this.pagina.set(1);
+  }
 
   protected importe(i: Importe): string {
     return this.enCantidad() && i.cantidad !== null

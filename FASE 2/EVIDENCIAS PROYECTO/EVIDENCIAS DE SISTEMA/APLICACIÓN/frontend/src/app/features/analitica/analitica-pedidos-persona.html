@@ -32,7 +32,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (f of filas(); track f.usuarioId) {
+          @for (f of filasPaginadas(); track f.usuarioId) {
             <tr>
               <td>{{ f.nombre }}</td>
               <td>{{ f.pedidos }}</td>
@@ -47,5 +47,16 @@
         </tbody>
       </table>
     </div>
+    @if (hayPaginas()) {
+      <app-paginacion
+        [pagina]="paginaActual()"
+        [totalItems]="filas().length"
+        [tamanoPagina]="tamano()"
+        [opcionesTamano]="opcionesTamano"
+        idTamano="personas-tamano"
+        (paginaCambiada)="pagina.set($event)"
+        (tamanoPaginaCambiado)="cambiarTamano($event)"
+      />
+    }
   </app-estado-vista>
 </section>

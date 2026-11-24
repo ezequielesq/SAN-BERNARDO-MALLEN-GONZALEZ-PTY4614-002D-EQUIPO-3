@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
+import { Paginacion } from '../../../shared/paginacion/paginacion';
+import { paginaAjustada, paginar } from '../../../shared/paginacion/paginar';
 import { maximoBarras } from './escala';
 import { idUnico } from './id-unico';
 
@@ -20,6 +29,7 @@ function recortar(texto: string, maximo: number): string {
 
 @Component({
   selector: 'app-grafico-barras-horizontales',
+  imports: [Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './grafico-barras-horizontales.html',
 })
@@ -29,6 +39,26 @@ export class GraficoBarrasHorizontales {
 
   protected readonly verTabla = signal(false);
   protected readonly idTabla = idUnico('grafico-tabla');
+  protected readonly idTamanoTabla = `${this.idTabla}-tamano`;
+
+  /** Paginación solo de la tabla alternativa: el gráfico dibuja todos los puntos. Vuelve a 1 si cambian los datos o el tamaño. */
+  protected readonly paginaTabla = linkedSignal({ source: this.items, computation: () => 1 });
+  protected readonly tamanoTabla = signal(10);
+  protected readonly opcionesTamanoTabla = [5, 10, 20, 50] as const;
+  protected readonly paginaTablaActual = computed(() =>
+    paginaAjustada(this.paginaTabla(), this.items().length, this.tamanoTabla()),
+  );
+  protected readonly filasTabla = computed(() =>
+    paginar(this.items(), this.paginaTablaActual(), this.tamanoTabla()),
+  );
+  protected readonly hayPaginasTabla = computed(
+    () => this.items().length > Math.min(...this.opcionesTamanoTabla),
+  );
+
+  protected cambiarTamanoTabla(tamano: number): void {
+    this.tamanoTabla.set(tamano);
+    this.paginaTabla.set(1);
+  }
   protected readonly ancho = ANCHO;
   protected readonly xBarra = IZQ;
 

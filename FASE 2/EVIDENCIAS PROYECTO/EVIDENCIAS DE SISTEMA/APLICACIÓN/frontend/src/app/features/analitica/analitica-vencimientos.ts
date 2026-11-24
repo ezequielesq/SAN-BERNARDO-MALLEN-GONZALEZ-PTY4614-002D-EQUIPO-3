@@ -1,9 +1,19 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
+import { Paginacion } from '../../shared/paginacion/paginacion';
+import { paginaAjustada, paginar } from '../../shared/paginacion/paginar';
 import { FiltroPanel, VencimientoDto } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { sonIguales } from './panel-filtros';
@@ -29,7 +39,7 @@ function formatearFecha(fecha: Date): string {
 
 @Component({
   selector: 'app-analitica-vencimientos',
-  imports: [DatePipe, EstadoBadge, EstadoVista, SelectorOrden, VencimientoCalendario],
+  imports: [DatePipe, EstadoBadge, EstadoVista, Paginacion, SelectorOrden, VencimientoCalendario],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-vencimientos.html',
 })
@@ -60,12 +70,27 @@ export class AnaliticaVencimientos {
   protected readonly filasTarjetas = computed(() =>
     this.tarjetas.hasValue() ? this.tarjetas.value() : [],
   );
-  protected readonly ordenTarjetas = new Orden<ColumnaOrdenVencimiento>({
-    columna: 'fechaVencimiento',
-  });
+  /** Vuelve a la página 1 si cambian los datos pedidos (umbral, categoría o productos), el orden o el tamaño. */
+  protected readonly paginaTarjetas = linkedSignal({ source: this.filtroUmbral, computation: () => 1 });
+  protected readonly tamanoTarjetas = signal(12);
+  protected readonly opcionesTamanoTarjetas = [6, 12, 24, 48] as const;
+  protected readonly ordenTarjetas = new Orden<ColumnaOrdenVencimiento>(
+    { columna: 'fechaVencimiento' },
+    () => this.paginaTarjetas.set(1),
+  );
   protected readonly opcionesTarjetas = OPCIONES_VENCIMIENTO;
   protected readonly tarjetasOrdenadas = computed(() =>
     ordenar(this.filasTarjetas(), this.ordenTarjetas, EXTRACTORES_VENCIMIENTO),
+  );
+  /** Página efectiva: si los datos se reducen y la elegida queda fuera de rango, se ajusta a la última. */
+  protected readonly paginaTarjetasActual = computed(() =>
+    paginaAjustada(this.paginaTarjetas(), this.tarjetasOrdenadas().length, this.tamanoTarjetas()),
+  );
+  protected readonly tarjetasPaginadas = computed(() =>
+    paginar(this.tarjetasOrdenadas(), this.paginaTarjetasActual(), this.tamanoTarjetas()),
+  );
+  protected readonly hayPaginasTarjetas = computed(
+    () => this.tarjetasOrdenadas().length > Math.min(...this.opcionesTamanoTarjetas),
   );
 
   private readonly filtroRango = computed(
@@ -81,6 +106,28 @@ export class AnaliticaVencimientos {
   protected readonly filasDetalle = computed(() =>
     this.detalle.hasValue() ? this.detalle.value() : [],
   );
+  protected readonly paginaDetalle = linkedSignal({ source: this.filtroRango, computation: () => 1 });
+  protected readonly tamanoDetalle = signal(10);
+  protected readonly opcionesTamanoDetalle = [5, 10, 20, 50] as const;
+  protected readonly paginaDetalleActual = computed(() =>
+    paginaAjustada(this.paginaDetalle(), this.filasDetalle().length, this.tamanoDetalle()),
+  );
+  protected readonly detallePaginado = computed(() =>
+    paginar(this.filasDetalle(), this.paginaDetalleActual(), this.tamanoDetalle()),
+  );
+  protected readonly hayPaginasDetalle = computed(
+    () => this.filasDetalle().length > Math.min(...this.opcionesTamanoDetalle),
+  );
+
+  protected cambiarTamanoTarjetas(tamano: number): void {
+    this.tamanoTarjetas.set(tamano);
+    this.paginaTarjetas.set(1);
+  }
+
+  protected cambiarTamanoDetalle(tamano: number): void {
+    this.tamanoDetalle.set(tamano);
+    this.paginaDetalle.set(1);
+  }
 
   protected cambiarUmbral(valor: string): void {
     const numero = Number(valor);

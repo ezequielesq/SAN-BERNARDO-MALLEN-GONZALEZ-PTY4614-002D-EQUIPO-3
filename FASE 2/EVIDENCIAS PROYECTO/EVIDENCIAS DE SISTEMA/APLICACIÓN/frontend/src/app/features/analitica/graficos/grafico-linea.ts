@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
+import { Paginacion } from '../../../shared/paginacion/paginacion';
+import { paginaAjustada, paginar } from '../../../shared/paginacion/paginar';
 import { marcasEnteras, margenIzquierdo } from './escala';
 import { idUnico } from './id-unico';
 
@@ -14,6 +23,7 @@ const MARGEN = { der: 24, arr: 16, abajo: 40 };
 /** Línea con un punto por observación; el eje vertical se ajusta al rango de los datos (con holgura). */
 @Component({
   selector: 'app-grafico-linea',
+  imports: [Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './grafico-linea.html',
 })
@@ -24,6 +34,26 @@ export class GraficoLinea {
 
   protected readonly verTabla = signal(false);
   protected readonly idTabla = idUnico('grafico-tabla');
+  protected readonly idTamanoTabla = `${this.idTabla}-tamano`;
+
+  /** Paginación solo de la tabla alternativa: el gráfico dibuja todos los puntos. Vuelve a 1 si cambian los datos o el tamaño. */
+  protected readonly paginaTabla = linkedSignal({ source: this.puntos, computation: () => 1 });
+  protected readonly tamanoTabla = signal(10);
+  protected readonly opcionesTamanoTabla = [5, 10, 20, 50] as const;
+  protected readonly paginaTablaActual = computed(() =>
+    paginaAjustada(this.paginaTabla(), this.puntos().length, this.tamanoTabla()),
+  );
+  protected readonly filasTabla = computed(() =>
+    paginar(this.puntos(), this.paginaTablaActual(), this.tamanoTabla()),
+  );
+  protected readonly hayPaginasTabla = computed(
+    () => this.puntos().length > Math.min(...this.opcionesTamanoTabla),
+  );
+
+  protected cambiarTamanoTabla(tamano: number): void {
+    this.tamanoTabla.set(tamano);
+    this.paginaTabla.set(1);
+  }
   protected readonly ancho = ANCHO;
   protected readonly alto = ALTO;
   protected readonly xEjeDer = ANCHO - MARGEN.der;
