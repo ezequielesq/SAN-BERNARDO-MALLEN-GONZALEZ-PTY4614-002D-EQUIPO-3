@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
+import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
 import { AnaliticaService } from './analitica.service';
 import { EstadoFiltros } from './panel-estado';
 import { MAXIMO_PRODUCTOS } from './panel-filtros';
@@ -17,6 +19,7 @@ export class AnaliticaProductosClave {
 
   private readonly service = inject(AnaliticaService);
   private readonly notificaciones = inject(NotificacionService);
+  private readonly confirmacion = inject(ConfirmacionService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly claves = this.service.productosClave();
@@ -42,10 +45,27 @@ export class AnaliticaProductosClave {
 
   protected guardarSeleccion(): void {
     const ids = this.estado().productoIds();
+    if (this.guardando()) return;
     if (ids.length === 0) {
-      this.notificaciones.error('Elige primero los productos en el filtro para guardarlos como productos clave.');
+      // Una selección vacía es una orden de vaciar la lista: se pide confirmación antes de borrarla.
+      this.confirmacion
+        .confirmar({
+          titulo: '¿Vaciar tus productos clave?',
+          descripcion:
+            'No hay productos elegidos en el filtro: se guardará una lista vacía y se quitarán los productos clave que tienes guardados.',
+          textoConfirmar: 'Vaciar lista',
+        })
+        .pipe(
+          filter((confirmado) => confirmado),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe(() => this.guardar(ids, 'Vaciaste tu lista de productos clave.'));
       return;
     }
+    this.guardar(ids, 'Guardaste tu selección como productos clave.');
+  }
+
+  private guardar(ids: number[], mensajeExito: string): void {
     if (this.guardando()) return;
     this.guardando.set(true);
     this.mensajeError.set(null);
@@ -56,7 +76,7 @@ export class AnaliticaProductosClave {
         next: () => {
           this.guardando.set(false);
           this.claves.reload();
-          this.notificaciones.exito('Guardaste tu selección como productos clave.');
+          this.notificaciones.exito(mensajeExito);
         },
         error: (err: unknown) => {
           this.guardando.set(false);

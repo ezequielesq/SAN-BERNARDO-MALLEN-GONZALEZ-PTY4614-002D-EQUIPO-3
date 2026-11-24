@@ -8,7 +8,7 @@ import { AnaliticaProductosClave } from './analitica-productos-clave';
 import { AnaliticaService } from './analitica.service';
 import { EstadoFiltros } from './panel-estado';
 import { contar } from './formato';
-import { Atajo, MAXIMO_PRODUCTOS, alternarProducto, limiteAlcanzado } from './panel-filtros';
+import { Atajo, MAXIMO_PRODUCTOS, alternarProducto, conservarDeCategoria, limiteAlcanzado } from './panel-filtros';
 
 interface OpcionCategoria {
   id: number;
@@ -81,7 +81,12 @@ export class AnaliticaFiltros {
 
   protected cambiarCategoria(valor: string): void {
     const estado = this.estado();
-    estado.categoriaId.set(valor === '' ? null : Number(valor));
+    const categoriaId = valor === '' ? null : Number(valor);
+    estado.categoriaId.set(categoriaId);
+    // Los productos elegidos de otra categoría no se ven en la lista pero seguirían filtrando: se quitan.
+    if (this.productos.hasValue()) {
+      estado.productoIds.update((actuales) => conservarDeCategoria(actuales, this.productos.value(), categoriaId));
+    }
   }
 
   protected cambiarPersona(valor: string): void {

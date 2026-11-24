@@ -1,4 +1,4 @@
-import { Agrupacion, Medida, ResumenPanel } from './analitica.modelo';
+import { Agrupacion, Medida, ResumenPanel, VencimientoDto } from './analitica.modelo';
 
 export type Atajo = '7d' | '30d' | '90d' | 'mes';
 
@@ -105,6 +105,22 @@ export function alternarProducto(productoIds: readonly number[], id: number, mar
   if (!marcado) return productoIds.filter((x) => x !== id);
   if (productoIds.includes(id) || limiteAlcanzado(productoIds)) return [...productoIds];
   return [...productoIds, id];
+}
+
+/** Lotes que todavía no vencieron: la tarjeta cuenta los de «los próximos N días», no los ya vencidos. */
+export function contarPorVencer(lotes: readonly VencimientoDto[]): number {
+  return lotes.filter((lote) => !lote.vencido).length;
+}
+
+/** Al elegir una categoría deja solo los productos elegidos que pertenecen a ella; sin categoría no toca nada. */
+export function conservarDeCategoria(
+  productoIds: readonly number[],
+  productos: readonly { id: number; categoriaId: number }[],
+  categoriaId: number | null,
+): number[] {
+  if (categoriaId === null) return [...productoIds];
+  const deLaCategoria = new Set(productos.filter((p) => p.categoriaId === categoriaId).map((p) => p.id));
+  return productoIds.filter((id) => deLaCategoria.has(id));
 }
 
 type ValorFiltro = string | number | null | readonly number[];

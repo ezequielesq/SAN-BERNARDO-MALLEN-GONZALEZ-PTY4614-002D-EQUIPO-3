@@ -37,6 +37,11 @@ export class AnaliticaConsumoPeriodo {
   );
   protected readonly enCantidad = computed(() => this.decision().medida === 'cantidad');
 
+  protected readonly conPersona = computed(() => this.filtro()?.solicitanteId != null);
+
+  /** Las pérdidas no se asocian a una persona y van en pesos: con persona elegida o en cantidad no se muestran. */
+  protected readonly mostrarPerdidas = computed(() => !this.enCantidad() && !this.conPersona());
+
   protected readonly formatear = computed(() => {
     const unidad = this.datos()?.unidadComun ?? null;
     return this.enCantidad() ? (n: number) => formatearCantidad(n, unidad) : formatearPesos;
@@ -50,14 +55,14 @@ export class AnaliticaConsumoPeriodo {
     return d.puntos.map((p) => ({
       etiqueta: formatearPeriodo(p.inicio, agrupar),
       valor: this.enCantidad() ? (p.consumoCantidad ?? 0) : p.consumoValor,
-      secundario: this.enCantidad() ? 0 : p.perdidasValor,
+      secundario: this.mostrarPerdidas() ? p.perdidasValor : 0,
     }));
   });
 
   protected readonly descripcion = computed(() => {
     const agrupar = { DIA: 'día', SEMANA: 'semana', MES: 'mes' }[this.filtro()?.agrupar ?? 'SEMANA'];
     const unidad = this.enCantidad() ? 'cantidad' : 'valor en pesos';
-    const perdidas = this.enCantidad() ? '' : ', con las pérdidas como segunda serie rayada';
+    const perdidas = this.mostrarPerdidas() ? ', con las pérdidas como segunda serie rayada' : '';
     return `Gráfico de barras del consumo por ${agrupar} (${unidad})${perdidas}.`;
   });
 }

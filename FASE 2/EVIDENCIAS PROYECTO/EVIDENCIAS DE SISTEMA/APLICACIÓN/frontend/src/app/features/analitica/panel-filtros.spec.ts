@@ -1,7 +1,9 @@
-import { ResumenPanel } from './analitica.modelo';
+import { ResumenPanel, VencimientoDto } from './analitica.modelo';
 import {
   MAXIMO_PRODUCTOS,
   alternarProducto,
+  conservarDeCategoria,
+  contarPorVencer,
   decidirMedida,
   diasDelRango,
   hayDatosEnResumen,
@@ -139,5 +141,45 @@ describe('sonIguales (filtros de vencimientos)', () => {
   it('con fechas distintas no son iguales', () => {
     const base = { desde: '2026-11-01', hasta: '2026-11-30', categoriaId: null, productoIds: [] as number[] };
     expect(sonIguales(base, { ...base, hasta: '2026-11-29' })).toBe(false);
+  });
+});
+
+describe('contarPorVencer', () => {
+  const lote = (vencido: boolean): VencimientoDto => ({
+    productoId: 1,
+    nombre: 'Harina',
+    cantidadEnRiesgo: 5,
+    fechaVencimiento: '2026-11-30',
+    vencido,
+  });
+
+  it('cuenta solo los lotes que aún no vencieron', () => {
+    expect(contarPorVencer([lote(false), lote(true), lote(false), lote(true), lote(true)])).toBe(2);
+  });
+
+  it('sin lotes o con todos vencidos da cero', () => {
+    expect(contarPorVencer([])).toBe(0);
+    expect(contarPorVencer([lote(true), lote(true)])).toBe(0);
+  });
+});
+
+describe('conservarDeCategoria', () => {
+  const productos = [
+    { id: 1, categoriaId: 10 },
+    { id: 2, categoriaId: 10 },
+    { id: 3, categoriaId: 20 },
+  ];
+
+  it('al elegir una categoría se quitan los productos de las otras', () => {
+    expect(conservarDeCategoria([1, 3, 2], productos, 10)).toEqual([1, 2]);
+    expect(conservarDeCategoria([1, 2], productos, 20)).toEqual([]);
+  });
+
+  it('con «todas las categorías» se conserva la selección', () => {
+    expect(conservarDeCategoria([1, 3], productos, null)).toEqual([1, 3]);
+  });
+
+  it('un producto desconocido se quita al filtrar por categoría', () => {
+    expect(conservarDeCategoria([1, 99], productos, 10)).toEqual([1]);
   });
 });

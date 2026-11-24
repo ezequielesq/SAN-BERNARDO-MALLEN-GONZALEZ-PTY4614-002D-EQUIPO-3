@@ -4,7 +4,7 @@ import { FiltroPanel } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { contar, formatearCantidad, formatearPesos } from './formato';
 import { EstadoFiltros } from './panel-estado';
-import { decidirMedida, hayDatosEnResumen, sonIguales } from './panel-filtros';
+import { contarPorVencer, decidirMedida, hayDatosEnResumen, sonIguales } from './panel-filtros';
 
 /** Días del umbral de la quinta tarjeta (lotes por vencer). */
 const DIAS_TARJETA_VENCIMIENTOS = 30;
@@ -36,7 +36,7 @@ export class AnaliticaTarjetas {
   protected readonly vencimientos = this.service.vencimientos(this.filtroVencimientos);
   /** Nulo mientras carga o si falla: la tarjeta muestra «—» en vez de un 0 que no es real. */
   protected readonly lotesPorVencer = computed(() =>
-    this.vencimientos.isLoading() || this.vencimientos.error() ? null : this.vencimientos.value().length,
+    this.vencimientos.isLoading() || this.vencimientos.error() ? null : contarPorVencer(this.vencimientos.value()),
   );
   protected readonly contar = contar;
   protected readonly diasVencimientos = DIAS_TARJETA_VENCIMIENTOS;
