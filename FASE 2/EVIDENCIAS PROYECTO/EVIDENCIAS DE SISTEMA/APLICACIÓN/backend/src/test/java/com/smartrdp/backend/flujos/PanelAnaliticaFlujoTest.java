@@ -180,6 +180,30 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(r.path("lineasSinCosto").asLong()).isEqualTo(1);
     }
 
+    // ================================================================== resumen: solicitado frente a entregado
+
+    @Test
+    @DisplayName("HU-100 Solicitado: solo pedidos aprobados; pendientes y rechazados no cuentan; se valoriza con el costo de referencia")
+    void solicitadoSoloDePedidosAprobados() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = productoConEntrada(categoria, 100);
+        // Aprobado: pidió 10 y se entregaron 8.
+        aprobar(bodeguero, pedirOk(empleado, producto.id(), 10), item(producto.id(), 8)).esperando(200);
+        // Pendiente y rechazado: no cuentan.
+        pedirOk(empleado, producto.id(), 50);
+        rechazar(bodeguero, pedirOk(empleado, producto.id(), 70)).esperando(204);
+
+        JsonNode r = resumen(bodeguero, "&categoriaId=" + categoria.id());
+
+        assertThat(r.path("solicitadoValor").asLong()).isEqualTo(10_000);
+        assertThat(r.path("solicitadoCantidad").asLong()).isEqualTo(10);
+        assertThat(r.path("entregadoValor").asLong()).isEqualTo(8_000);
+        assertThat(r.path("entregadoCantidad").asLong()).isEqualTo(8);
+        assertThat(r.path("pedidos").asLong()).isEqualTo(1);
+    }
+
     // ------------------------------------------------------------------ ayudantes
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */
