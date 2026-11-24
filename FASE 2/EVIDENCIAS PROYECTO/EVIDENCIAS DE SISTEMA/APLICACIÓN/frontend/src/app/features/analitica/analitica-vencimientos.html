@@ -1,5 +1,6 @@
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
   <h2 class="w3-large w3-margin-left">Próximos a vencer</h2>
+  <p class="w3-small w3-margin-left">Usa la categoría y los productos elegidos en los filtros.</p>
   <div class="w3-row">
     <div class="w3-col s12 m3 w3-padding">
       <label for="vencimientos-umbral"><b>Días de umbral</b></label>
@@ -14,20 +15,6 @@
         [value]="diasUmbral()"
         (change)="cambiarUmbral(campoUmbral.value)"
       />
-    </div>
-    <div class="w3-col s12 m3 w3-padding">
-      <label for="vencimientos-umbral-categoria"><b>Categoría</b></label>
-      <select
-        #selectCategoriaUmbral
-        id="vencimientos-umbral-categoria"
-        class="w3-select"
-        (change)="cambiarCategoriaUmbral(selectCategoriaUmbral.value)"
-      >
-        <option value="">Todas</option>
-        @for (c of categorias(); track c.id) {
-          <option [value]="c.id">{{ c.nombre }}</option>
-        }
-      </select>
     </div>
   </div>
 
@@ -79,20 +66,6 @@
             [value]="hastaFiltro()"
             (change)="cambiarHasta(campoHasta.value)"
           />
-        </div>
-        <div class="w3-col s12 m4 w3-padding">
-          <label for="vencimientos-rango-categoria"><b>Categoría</b></label>
-          <select
-            #selectCategoriaRango
-            id="vencimientos-rango-categoria"
-            class="w3-select"
-            (change)="cambiarCategoriaRango(selectCategoriaRango.value)"
-          >
-            <option value="">Todas</option>
-            @for (c of categorias(); track c.id) {
-              <option [value]="c.id">{{ c.nombre }}</option>
-            }
-          </select>
         </div>
       </div>
     </div>

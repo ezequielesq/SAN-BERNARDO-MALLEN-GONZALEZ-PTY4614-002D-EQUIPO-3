@@ -1,11 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { EstadoBadge } from '../../shared/estado-badge/estado-badge';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
-import { ProductoService } from '../productos/producto.service';
 import { VencimientoDto } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
+import { EstadoFiltros } from './panel-estado';
 import { VencimientoCalendario } from './vencimiento-calendario';
 
 type ColumnaOrdenVencimiento = 'fechaVencimiento' | 'nombre' | 'cantidadEnRiesgo';
@@ -22,11 +22,6 @@ const OPCIONES_VENCIMIENTO: readonly OpcionOrden[] = [
   { valor: 'cantidadEnRiesgo', etiqueta: 'Cantidad en riesgo' },
 ];
 
-interface OpcionCategoria {
-  id: number;
-  nombre: string;
-}
-
 function formatearFecha(fecha: Date): string {
   return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
 }
@@ -38,34 +33,30 @@ function formatearFecha(fecha: Date): string {
   templateUrl: './analitica-vencimientos.html',
 })
 export class AnaliticaVencimientos {
+  readonly estado = input.required<EstadoFiltros>();
+
   private readonly analiticaService = inject(AnaliticaService);
-  private readonly productoService = inject(ProductoService);
 
   protected readonly diasUmbral = signal(30);
-  protected readonly categoriaUmbral = signal<number | null>(null);
 
   private readonly hoy = new Date();
   protected readonly desdeFiltro = signal(formatearFecha(this.hoy));
-  protected readonly hastaFiltro = signal(formatearFecha(new Date(this.hoy.getFullYear(), this.hoy.getMonth() + 1, 0)));
-  protected readonly categoriaRango = signal<number | null>(null);
-
-  protected readonly productos = this.productoService.listar(signal(true));
-  protected readonly categorias = computed<OpcionCategoria[]>(() => {
-    if (!this.productos.hasValue()) return [];
-    const mapa = new Map<number, string>();
-    for (const p of this.productos.value()) mapa.set(p.categoriaId, p.categoriaNombre);
-    return [...mapa]
-      .map(([id, nombre]) => ({ id, nombre }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
-  });
+  protected readonly hastaFiltro = signal(
+    formatearFecha(new Date(this.hoy.getFullYear(), this.hoy.getMonth() + 1, 0)),
+  );
 
   private readonly filtroUmbral = computed(() => ({
     dias: this.diasUmbral(),
-    categoriaId: this.categoriaUmbral(),
+    categoriaId: this.estado().categoriaId(),
+    productoIds: this.estado().productoIds(),
   }));
   protected readonly tarjetas = this.analiticaService.vencimientos(this.filtroUmbral);
-  protected readonly filasTarjetas = computed(() => (this.tarjetas.hasValue() ? this.tarjetas.value() : []));
-  protected readonly ordenTarjetas = new Orden<ColumnaOrdenVencimiento>({ columna: 'fechaVencimiento' });
+  protected readonly filasTarjetas = computed(() =>
+    this.tarjetas.hasValue() ? this.tarjetas.value() : [],
+  );
+  protected readonly ordenTarjetas = new Orden<ColumnaOrdenVencimiento>({
+    columna: 'fechaVencimiento',
+  });
   protected readonly opcionesTarjetas = OPCIONES_VENCIMIENTO;
   protected readonly tarjetasOrdenadas = computed(() =>
     ordenar(this.filasTarjetas(), this.ordenTarjetas, EXTRACTORES_VENCIMIENTO),
@@ -74,22 +65,17 @@ export class AnaliticaVencimientos {
   private readonly filtroRango = computed(() => ({
     desde: this.desdeFiltro(),
     hasta: this.hastaFiltro(),
-    categoriaId: this.categoriaRango(),
+    categoriaId: this.estado().categoriaId(),
+    productoIds: this.estado().productoIds(),
   }));
   protected readonly detalle = this.analiticaService.vencimientosRango(this.filtroRango);
-  protected readonly filasDetalle = computed(() => (this.detalle.hasValue() ? this.detalle.value() : []));
+  protected readonly filasDetalle = computed(() =>
+    this.detalle.hasValue() ? this.detalle.value() : [],
+  );
 
   protected cambiarUmbral(valor: string): void {
     const numero = Number(valor);
     if (Number.isInteger(numero) && numero > 0) this.diasUmbral.set(numero);
-  }
-
-  protected cambiarCategoriaUmbral(valor: string): void {
-    this.categoriaUmbral.set(valor === '' ? null : Number(valor));
-  }
-
-  protected cambiarCategoriaRango(valor: string): void {
-    this.categoriaRango.set(valor === '' ? null : Number(valor));
   }
 
   protected cambiarDesde(valor: string): void {
