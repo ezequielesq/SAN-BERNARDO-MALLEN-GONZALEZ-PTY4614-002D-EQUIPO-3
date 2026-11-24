@@ -26,3 +26,9 @@ export function formatearPeriodo(inicio: string, agrupar: Agrupacion): string {
   }
   return agrupar === 'SEMANA' ? `sem ${formatearFechaCorta(inicio)}` : formatearFechaCorta(inicio);
 }
+
+/** Variación porcentual con signo explícito en las alzas: «+12,5 %»; sin dato, «—». */
+export function formatearVariacion(porcentaje: number | null): string {
+  if (porcentaje === null) return '—';
+  return `${porcentaje > 0 ? '+' : ''}${NUMERO.format(porcentaje)} %`;
+}

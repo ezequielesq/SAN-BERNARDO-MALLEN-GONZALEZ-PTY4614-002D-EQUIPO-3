@@ -4,6 +4,7 @@ import { debounceTime } from 'rxjs';
 import { AnaliticaConsumoPeriodo } from './analitica-consumo-periodo';
 import { AnaliticaFiltros } from './analitica-filtros';
 import { AnaliticaPedidosPersona } from './analitica-pedidos-persona';
+import { AnaliticaPrecios } from './analitica-precios';
 import { AnaliticaTarjetas } from './analitica-tarjetas';
 import { AnaliticaTopProductos } from './analitica-top-productos';
 import { AnaliticaVencimientos } from './analitica-vencimientos';
@@ -19,6 +20,7 @@ import { EstadoFiltros } from './panel-estado';
     AnaliticaTopProductos,
     AnaliticaPedidosPersona,
     AnaliticaVencimientos,
+    AnaliticaPrecios,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-panel.html',

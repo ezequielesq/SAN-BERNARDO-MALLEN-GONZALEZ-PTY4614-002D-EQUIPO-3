@@ -1,0 +1,30 @@
+<section class="w3-container w3-border w3-margin w3-padding w3-light-grey" aria-labelledby="precios-titulo">
+  <h2 id="precios-titulo" class="w3-large w3-margin-left">Historial de precios de compra</h2>
+  @if (productoId() === null) {
+    <p>Elige exactamente un producto en los filtros para ver cómo cambió su precio de compra.</p>
+  } @else {
+    <app-estado-vista
+      [cargando]="historial.isLoading()"
+      [error]="historial.error()"
+      [vacio]="historial.hasValue() && puntos().length === 0"
+      mensajeVacio="Este producto no tiene compras con costo en el rango."
+      (reintentar)="historial.reload()"
+    >
+      @if (h(); as h) {
+        <h3 class="w3-medium">{{ h.nombre }} ({{ h.unidad }})</h3>
+        <app-grafico-linea [puntos]="puntos()" [descripcion]="descripcion()" [formatear]="formatear" />
+        @if (estadisticos(); as e) {
+          <ul class="tarjetas">
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Último</h4><p class="tarjeta-kpi__valor">{{ e.ultimo }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Anterior</h4><p class="tarjeta-kpi__valor">{{ e.anterior }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Variación</h4><p class="tarjeta-kpi__valor">{{ e.variacion }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Mínimo / máximo</h4><p class="tarjeta-kpi__valor">{{ e.rango }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Promedio</h4><p class="tarjeta-kpi__valor">{{ e.promedio }}</p><p class="w3-small">Ponderado por cantidad: {{ e.ponderado }}</p></li>
+          </ul>
+        } @else {
+          <p class="w3-small">Hace falta más de una compra en el rango para calcular estadísticos.</p>
+        }
+      }
+    </app-estado-vista>
+  }
+</section>
