@@ -274,6 +274,117 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
         assertThat(s.path("puntos").get(0).path("consumoCantidad").asLong()).isEqualTo(21);
     }
 
+    // ================================================================== top de productos, personas, solicitantes
+
+    @Test
+    @DisplayName("HU-110 Productos más usados: por valor neto de devoluciones, con límite")
+    void productosMasUsados() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod a = productoConEntrada(categoria, 100);
+        Prod b = productoConEntrada(categoria, 100);
+        Prod c = productoConEntrada(categoria, 100);
+        long pedidoA = pedirOk(empleado, a.id(), 10);
+        aprobar(bodeguero, pedidoA).esperando(200);
+        long devolucion = devolver(empleado, pedidoA, item(a.id(), 2)).esperando(201).json().path("id").asLong();
+        aprobar(bodeguero, devolucion).esperando(200); // A neto 8
+        aprobar(bodeguero, pedirOk(empleado, b.id(), 15)).esperando(200); // B 15
+        aprobar(bodeguero, pedirOk(empleado, c.id(), 3)).esperando(200); // C 3
+
+        String base = "productos-top?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id();
+        JsonNode todos = get(PANEL + base, bodeguero.token()).esperando(200).json();
+        assertThat(todos).hasSize(3);
+        assertThat(todos.get(0).path("productoId").asLong()).isEqualTo(b.id());
+        assertThat(todos.get(0).path("cantidad").asLong()).isEqualTo(15);
+        assertThat(todos.get(0).path("valor").asLong()).isEqualTo(15_000);
+        assertThat(todos.get(0).path("nombre").asText()).isEqualTo(b.nombre());
+        assertThat(todos.get(1).path("productoId").asLong()).isEqualTo(a.id());
+        assertThat(todos.get(1).path("cantidad").asLong()).isEqualTo(8);
+        assertThat(todos.get(2).path("productoId").asLong()).isEqualTo(c.id());
+
+        assertThat(get(PANEL + base + "&limite=2", bodeguero.token()).esperando(200).json()).hasSize(2);
+        assertThat(get(PANEL + base + "&limite=0", bodeguero.token()).estado()).isEqualTo(422);
+        // El filtro por productos recorta la lista.
+        assertThat(get(PANEL + base + "&productoIds=" + c.id(), bodeguero.token()).esperando(200).json()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("HU-100 Pedidos por persona: solicitado, entregado, devuelto y neto de cada empleado")
+    void pedidosPorPersona() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta ana = crearEmpleado();
+        Cuenta beto = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = productoConEntrada(categoria, 100);
+        long pedidoAna = pedirOk(ana, producto.id(), 10);
+        aprobar(bodeguero, pedidoAna, item(producto.id(), 8)).esperando(200); // pidió 10, se entregaron 8
+        long devolucion = devolver(ana, pedidoAna, item(producto.id(), 2)).esperando(201).json().path("id").asLong();
+        aprobar(bodeguero, devolucion).esperando(200);
+        aprobar(bodeguero, pedirOk(beto, producto.id(), 5)).esperando(200);
+
+        String base = "pedidos-por-persona?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id();
+        JsonNode r = get(PANEL + base, bodeguero.token()).esperando(200).json();
+
+        JsonNode filas = r.path("filas");
+        assertThat(filas).hasSize(2);
+        JsonNode filaAna = filas.get(0); // neto 6000 > 5000
+        assertThat(filaAna.path("usuarioId").asLong()).isEqualTo(ana.id());
+        assertThat(filaAna.path("nombre").asText()).isEqualTo(ana.nombre());
+        assertThat(filaAna.path("pedidos").asLong()).isEqualTo(1);
+        assertThat(filaAna.path("solicitado").path("valor").asLong()).isEqualTo(10_000);
+        assertThat(filaAna.path("solicitado").path("cantidad").asLong()).isEqualTo(10);
+        assertThat(filaAna.path("entregado").path("valor").asLong()).isEqualTo(8_000);
+        assertThat(filaAna.path("devuelto").path("valor").asLong()).isEqualTo(2_000);
+        assertThat(filaAna.path("neto").path("valor").asLong()).isEqualTo(6_000);
+        assertThat(filaAna.path("neto").path("cantidad").asLong()).isEqualTo(6);
+        assertThat(filas.get(1).path("usuarioId").asLong()).isEqualTo(beto.id());
+        assertThat(filas.get(1).path("neto").path("valor").asLong()).isEqualTo(5_000);
+
+        JsonNode soloBeto = get(PANEL + base + "&solicitanteId=" + beto.id(), bodeguero.token()).esperando(200).json();
+        assertThat(soloBeto.path("filas")).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("HU-100 Pedidos por persona: con unidades mezcladas solo se muestra el valor")
+    void pedidosPorPersonaConUnidadesMezcladas() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod carne = crearProductoConUnidad(categoria, crearUnidadPropia());
+        Prod aceite = crearProductoConUnidad(categoria, crearUnidadPropia());
+        entrada(carne.id(), 20, null, null).esperando(201);
+        entrada(aceite.id(), 20, null, null).esperando(201);
+        aprobar(bodeguero, pedirOk(empleado, carne.id(), 3)).esperando(200);
+        aprobar(bodeguero, pedirOk(empleado, aceite.id(), 2)).esperando(200);
+
+        JsonNode r = get(PANEL + "pedidos-por-persona?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id(), bodeguero.token()).esperando(200).json();
+
+        assertThat(r.path("unidadComun").isNull()).isTrue();
+        JsonNode fila = r.path("filas").get(0);
+        assertThat(fila.path("neto").path("valor").asLong()).isEqualTo(5_000);
+        assertThat(fila.path("neto").path("cantidad").isNull()).isTrue();
+        assertThat(fila.path("solicitado").path("cantidad").isNull()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Solicitantes: lista los empleados activos para el filtro (ADMIN y BODEGUERO)")
+    void solicitantes() {
+        Cuenta empleado = crearEmpleado();
+        Cuenta otroBodeguero = crearBodeguero();
+
+        for (String token : List.of(bodeguero().token(), tokenAdmin())) {
+            JsonNode lista = get(PANEL + "solicitantes", token).esperando(200).json();
+            List<Long> ids = lista.findValues("id").stream().map(JsonNode::asLong).toList();
+            assertThat(ids).contains(empleado.id()).doesNotContain(otroBodeguero.id());
+            assertThat(lista.get(0).path("nombre").asText()).isNotBlank();
+        }
+        assertThat(get(PANEL + "solicitantes", null).estado()).isEqualTo(401);
+    }
+
     // ------------------------------------------------------------------ ayudantes
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */

@@ -1,5 +1,8 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.OpcionDto;
+import com.smartrdp.backend.analitica.dto.PedidosPorPersonaDto;
+import com.smartrdp.backend.analitica.dto.ProductoTopDto;
 import com.smartrdp.backend.analitica.dto.ResumenPanelDto;
 import com.smartrdp.backend.analitica.dto.SerieConsumoDto;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +43,35 @@ public class PanelController {
             @RequestParam(required = false) List<Long> productoIds,
             @RequestParam(required = false) Long solicitanteId) {
         return servicio.consumoPeriodo(FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+    }
+
+    @GetMapping("/productos-top")
+    public List<ProductoTopDto> productosTop(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(defaultValue = "7") int limite) {
+        return servicio.productosTop(
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId), limite);
+    }
+
+    @GetMapping("/pedidos-por-persona")
+    public PedidosPorPersonaDto pedidosPorPersona(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) Long solicitanteId) {
+        return servicio.pedidosPorPersona(
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+    }
+
+    @GetMapping("/solicitantes")
+    public List<OpcionDto> solicitantes() {
+        return servicio.solicitantes();
     }
 }

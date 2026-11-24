@@ -1,11 +1,19 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.FilaPersonaDto;
+import com.smartrdp.backend.analitica.dto.ImporteDto;
+import com.smartrdp.backend.analitica.dto.OpcionDto;
+import com.smartrdp.backend.analitica.dto.PedidosPorPersonaDto;
+import com.smartrdp.backend.analitica.dto.ProductoTopDto;
 import com.smartrdp.backend.analitica.dto.PuntoConsumoDto;
 import com.smartrdp.backend.analitica.dto.ResumenPanelDto;
 import com.smartrdp.backend.analitica.dto.SerieConsumoDto;
+import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.movimiento.VistasInventario;
 import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.producto.ProductoRepository;
+import com.smartrdp.backend.usuario.Rol;
+import com.smartrdp.backend.usuario.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +23,9 @@ import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +54,7 @@ public class PanelService {
     private final PanelRepository repositorio;
     private final VistasInventario vistas;
     private final ProductoRepository productoRepository;
+    private final UsuarioRepository usuarioRepository;
 
     /** Una línea de lo solicitado, ya filtrada por categoría y productos del filtro. */
     private record Solicitado(long solicitudId, long productoId, long cantidad, long valor, long unidadId,
@@ -96,6 +107,83 @@ public class PanelService {
                         unidad == null ? null : e.getValue()[1], e.getValue()[2]))
                 .toList();
         return new SerieConsumoDto(unidad, puntos);
+    }
+
+    // ------------------------------------------------------------------ productos más usados
+
+    @Transactional(readOnly = true)
+    public List<ProductoTopDto> productosTop(FiltroPanel f, int limite) {
+        if (limite < 1 || limite > 50) {
+            throw new BusinessException("El límite debe estar entre 1 y 50.", "limite");
+        }
+        record Neto(String nombre, String unidad, long[] cantidadYValor) {}
+        Map<Long, Neto> porProducto = new LinkedHashMap<>();
+        for (LineaPanel l : lineas(f, TIPOS_CONSUMO)) {
+            int signo = ENTREGA_PEDIDO.equals(l.tipo()) ? 1 : -1;
+            long[] acumulado = porProducto
+                    .computeIfAbsent(l.productoId(), id -> new Neto(l.productoNombre(), l.unidadNombre(), new long[2]))
+                    .cantidadYValor();
+            acumulado[0] += signo * l.cantidad();
+            acumulado[1] += signo * l.valor();
+        }
+        return porProducto.entrySet().stream()
+                .filter(e -> e.getValue().cantidadYValor()[0] > 0)
+                .map(e -> new ProductoTopDto(e.getKey(), e.getValue().nombre(), e.getValue().unidad(),
+                        e.getValue().cantidadYValor()[0], e.getValue().cantidadYValor()[1]))
+                .sorted(Comparator.comparingLong(ProductoTopDto::valor).reversed()
+                        .thenComparing(Comparator.comparingLong(ProductoTopDto::cantidad).reversed())
+                        .thenComparing(ProductoTopDto::nombre))
+                .limit(limite)
+                .toList();
+    }
+
+    // ------------------------------------------------------------------ pedidos por persona
+
+    @Transactional(readOnly = true)
+    public PedidosPorPersonaDto pedidosPorPersona(FiltroPanel f) {
+        List<LineaPanel> lineas = lineas(f, TIPOS_CONSUMO);
+        List<LineaPanel> entregas = deTipo(lineas, ENTREGA_PEDIDO);
+        List<Solicitado> solicitado = solicitado(f, entregas);
+        String unidad = unidadComun(lineas, solicitado);
+        boolean hayCantidad = unidad != null;
+
+        Map<Long, Long> personaDeSolicitud = new HashMap<>();
+        entregas.forEach(l -> personaDeSolicitud.put(l.solicitudId(), l.solicitanteId()));
+        Map<Long, String> nombres = new HashMap<>();
+        lineas.forEach(l -> nombres.put(l.solicitanteId(), l.solicitanteNombre()));
+
+        List<FilaPersonaDto> filas = nombres.keySet().stream().map(personaId -> {
+            List<LineaPanel> suyasEntregas = entregas.stream().filter(l -> personaId.equals(l.solicitanteId())).toList();
+            List<LineaPanel> suyasDevoluciones = deTipo(lineas, DEVOLUCION).stream()
+                    .filter(l -> personaId.equals(l.solicitanteId())).toList();
+            List<Solicitado> suyoSolicitado = solicitado.stream()
+                    .filter(s -> personaId.equals(personaDeSolicitud.get(s.solicitudId()))).toList();
+            long solicitadoValor = suyoSolicitado.stream().mapToLong(Solicitado::valor).sum();
+            long solicitadoCantidad = suyoSolicitado.stream().mapToLong(Solicitado::cantidad).sum();
+            long entregadoValor = valor(suyasEntregas);
+            long devueltoValor = valor(suyasDevoluciones);
+            long entregadoCantidad = cantidad(suyasEntregas);
+            long devueltoCantidad = cantidad(suyasDevoluciones);
+            return new FilaPersonaDto(personaId, nombres.get(personaId),
+                    suyasEntregas.stream().map(LineaPanel::solicitudId).distinct().count(),
+                    importe(solicitadoValor, solicitadoCantidad, hayCantidad),
+                    importe(entregadoValor, entregadoCantidad, hayCantidad),
+                    importe(devueltoValor, devueltoCantidad, hayCantidad),
+                    importe(entregadoValor - devueltoValor, entregadoCantidad - devueltoCantidad, hayCantidad));
+        }).sorted(Comparator.comparingLong((FilaPersonaDto fila) -> fila.neto().valor()).reversed()
+                .thenComparing(FilaPersonaDto::nombre)).toList();
+        return new PedidosPorPersonaDto(unidad, filas);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OpcionDto> solicitantes() {
+        return usuarioRepository.findByRolCodigoInAndActivoTrueOrderByNombreAsc(List.of(Rol.EMPLEADO)).stream()
+                .map(u -> new OpcionDto(u.getId(), u.getNombre()))
+                .toList();
+    }
+
+    private static ImporteDto importe(long valor, long cantidad, boolean conCantidad) {
+        return new ImporteDto(valor, conCantidad ? cantidad : null);
     }
 
     private static LocalDate inicioDePeriodo(LocalDate dia, Agrupacion agrupar) {
