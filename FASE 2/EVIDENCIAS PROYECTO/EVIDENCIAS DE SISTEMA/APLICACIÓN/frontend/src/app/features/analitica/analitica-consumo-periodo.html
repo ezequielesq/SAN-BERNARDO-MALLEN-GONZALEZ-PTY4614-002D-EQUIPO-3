@@ -3,7 +3,7 @@
   @if (decision().aviso; as aviso) {
     <p class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">{{ aviso }}</p>
   }
-  @if (enCantidad()) {
+  @if (hayDatos() && enCantidad()) {
     <p class="w3-small">En cantidad no se muestran las pérdidas (se miden en pesos).</p>
   }
   <app-estado-vista

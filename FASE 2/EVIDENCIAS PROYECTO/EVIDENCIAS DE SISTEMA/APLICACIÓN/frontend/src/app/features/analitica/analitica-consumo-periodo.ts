@@ -26,11 +26,15 @@ export class AnaliticaConsumoPeriodo {
     return d !== null && d.puntos.every((p) => p.consumoValor === 0 && p.perdidasValor === 0);
   });
 
-  /** Sin datos (cargando, vacío o con error) no hay unidad que comparar: se conserva la medida y no se avisa. */
-  protected readonly decision = computed(() => {
-    const d = this.datos();
-    return d === null ? { medida: this.estado().medida(), aviso: null } : decidirMedida(this.estado().medida(), d.unidadComun);
-  });
+  /** Hay datos reales que mostrar: ni cargando ni con error ni vacío. */
+  protected readonly hayDatos = computed(() => this.datos() !== null && !this.vacio());
+
+  /** Sin datos reales no hay unidad que comparar: se conserva la medida y no se avisa. */
+  protected readonly decision = computed(() =>
+    this.hayDatos()
+      ? decidirMedida(this.estado().medida(), this.datos()?.unidadComun ?? null)
+      : { medida: this.estado().medida(), aviso: null },
+  );
   protected readonly enCantidad = computed(() => this.decision().medida === 'cantidad');
 
   protected readonly formatear = computed(() => {
