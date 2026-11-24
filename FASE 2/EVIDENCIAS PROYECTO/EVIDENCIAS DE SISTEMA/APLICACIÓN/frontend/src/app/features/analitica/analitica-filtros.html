@@ -130,7 +130,7 @@
   </details>
 
   <div class="w3-padding">
-    <app-analitica-productos-clave [estado]="estado()" />
+    <app-analitica-productos-clave [estado]="estado()" [productos]="productos.hasValue() ? productos.value() : null" />
   </div>
 
   <div class="w3-padding">

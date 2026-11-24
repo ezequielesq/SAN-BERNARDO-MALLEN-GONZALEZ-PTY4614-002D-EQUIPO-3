@@ -37,8 +37,11 @@ export class AnaliticaPedidosPersona {
     this.resultado.hasValue() ? this.resultado.value() : null,
   );
 
-  /** Vuelve a la página 1 si cambia el filtro, el orden o el tamaño de página. */
-  protected readonly pagina = linkedSignal({ source: this.filtro, computation: () => 1 });
+  /** Vuelve a la página 1 si cambia el filtro, la medida (reordena las filas), el orden o el tamaño de página. */
+  protected readonly pagina = linkedSignal({
+    source: () => ({ filtro: this.filtro(), medida: this.estado().medida() }),
+    computation: () => 1,
+  });
   protected readonly tamano = signal(10);
   protected readonly opcionesTamano = [5, 10, 20, 50] as const;
 

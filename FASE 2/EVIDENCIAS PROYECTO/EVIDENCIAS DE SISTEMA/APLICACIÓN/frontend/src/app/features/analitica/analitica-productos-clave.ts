@@ -6,7 +6,7 @@ import { NotificacionService } from '../../core/notificaciones/notificacion.serv
 import { ConfirmacionService } from '../../shared/confirmar-dialogo/confirmacion.service';
 import { AnaliticaService } from './analitica.service';
 import { EstadoFiltros } from './panel-estado';
-import { MAXIMO_PRODUCTOS } from './panel-filtros';
+import { MAXIMO_PRODUCTOS, conservarDeCategoria } from './panel-filtros';
 
 /** Botones de la lista personal de productos clave (se guarda en el servidor, por usuario). */
 @Component({
@@ -16,6 +16,8 @@ import { MAXIMO_PRODUCTOS } from './panel-filtros';
 })
 export class AnaliticaProductosClave {
   readonly estado = input.required<EstadoFiltros>();
+  /** Productos con su categoría (nulo mientras cargan); sirven para no marcar los de otra categoría. */
+  readonly productos = input.required<readonly { id: number; categoriaId: number }[] | null>();
 
   private readonly service = inject(AnaliticaService);
   private readonly notificaciones = inject(NotificacionService);
@@ -40,7 +42,17 @@ export class AnaliticaProductosClave {
       );
       return;
     }
-    this.estado().productoIds.set(ids.slice(0, MAXIMO_PRODUCTOS));
+    // Con una categoría elegida, los productos de otra no se verían en la lista pero seguirían filtrando (panel vacío).
+    const categoriaId = this.estado().categoriaId();
+    const productos = this.productos();
+    const aplicables = productos === null ? ids : conservarDeCategoria(ids, productos, categoriaId);
+    if (aplicables.length === 0) {
+      this.notificaciones.error(
+        'Tus productos clave pertenecen a otras categorías. Cambia la categoría del filtro para usarlos.',
+      );
+      return;
+    }
+    this.estado().productoIds.set(aplicables.slice(0, MAXIMO_PRODUCTOS));
   }
 
   protected guardarSeleccion(): void {

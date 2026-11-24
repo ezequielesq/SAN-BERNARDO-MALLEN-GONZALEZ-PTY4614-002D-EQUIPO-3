@@ -10,6 +10,7 @@ import { Paginacion } from '../../../shared/paginacion/paginacion';
 import { paginaAjustada, paginar } from '../../../shared/paginacion/paginar';
 import { maximoBarras } from './escala';
 import { idUnico } from './id-unico';
+import { TAMANO_TABLA_INICIAL } from './tabla-grafico';
 
 export interface ItemBarra {
   etiqueta: string;
@@ -43,7 +44,7 @@ export class GraficoBarrasHorizontales {
 
   /** Paginación solo de la tabla alternativa: el gráfico dibuja todos los puntos. Vuelve a 1 si cambian los datos o el tamaño. */
   protected readonly paginaTabla = linkedSignal({ source: this.items, computation: () => 1 });
-  protected readonly tamanoTabla = signal(10);
+  protected readonly tamanoTabla = signal(TAMANO_TABLA_INICIAL);
   protected readonly opcionesTamanoTabla = [5, 10, 20, 50] as const;
   protected readonly paginaTablaActual = computed(() =>
     paginaAjustada(this.paginaTabla(), this.items().length, this.tamanoTabla()),
@@ -51,9 +52,8 @@ export class GraficoBarrasHorizontales {
   protected readonly filasTabla = computed(() =>
     paginar(this.items(), this.paginaTablaActual(), this.tamanoTabla()),
   );
-  protected readonly hayPaginasTabla = computed(
-    () => this.items().length > Math.min(...this.opcionesTamanoTabla),
-  );
+  /** Umbral fijo (el tamaño por defecto): con otro tamaño elegido el paginador sigue visible y no deja al usuario varado. */
+  protected readonly hayPaginasTabla = computed(() => this.items().length > TAMANO_TABLA_INICIAL);
 
   protected cambiarTamanoTabla(tamano: number): void {
     this.tamanoTabla.set(tamano);
