@@ -4,6 +4,6 @@ export const ANALITICA_ROUTES: Routes = [
   {
     path: '',
     title: 'Analítica · Smart RDP',
-    loadComponent: () => import('./analitica-lista').then((m) => m.AnaliticaLista),
+    loadComponent: () => import('./analitica-panel').then((m) => m.AnaliticaPanel),
   },
 ];

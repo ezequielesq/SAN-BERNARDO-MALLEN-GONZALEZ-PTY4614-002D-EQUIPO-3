@@ -1,0 +1,55 @@
+<section class="w3-margin" aria-labelledby="tarjetas-titulo">
+  <h2 id="tarjetas-titulo" class="visualmente-oculto">Resumen del período</h2>
+  <p class="visualmente-oculto" role="status" aria-live="polite">{{ anuncio() }}</p>
+  <app-estado-vista
+    [cargando]="resumen.isLoading()"
+    [error]="resumen.error()"
+    (reintentar)="resumen.reload()"
+  >
+    @if (r(); as r) {
+      @if (decision().aviso; as aviso) {
+        <p class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">{{ aviso }}</p>
+      }
+      @if (r.lineasSinCosto > 0) {
+        <p class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">
+          {{ r.lineasSinCosto }} {{ r.lineasSinCosto === 1 ? 'línea sin costo no incluida' : 'líneas sin costo no incluidas' }}
+          en el valor.
+        </p>
+      }
+      <ul class="tarjetas">
+        <li class="tarjeta-kpi w3-card w3-white w3-padding">
+          <h3 class="w3-medium">Consumo neto</h3>
+          <p class="tarjeta-kpi__valor">{{ consumo() }}</p>
+          <p class="w3-small">Entregas menos devoluciones</p>
+        </li>
+        <li class="tarjeta-kpi w3-card w3-white w3-padding">
+          <h3 class="w3-medium">Pedidos</h3>
+          <p class="tarjeta-kpi__valor">{{ r.pedidos }}</p>
+          <p class="w3-small">de {{ r.personas }} {{ r.personas === 1 ? 'persona' : 'personas' }}</p>
+        </li>
+        <li class="tarjeta-kpi w3-card w3-white w3-padding">
+          <h3 class="w3-medium">Entregado vs. solicitado</h3>
+          <p class="tarjeta-kpi__valor">
+            {{ entregadoDeSolicitado().porcentaje === null ? '—' : entregadoDeSolicitado().porcentaje + ' %' }}
+          </p>
+          <p class="w3-small">{{ entregadoDeSolicitado().texto }}</p>
+          @if (!enCantidad()) {
+            <p class="w3-small">Referencial: lo solicitado se valoriza con el costo de referencia.</p>
+          }
+        </li>
+        <li class="tarjeta-kpi w3-card w3-white w3-padding">
+          <h3 class="w3-medium">Pérdidas</h3>
+          <p class="tarjeta-kpi__valor">{{ perdidas() }}</p>
+          <p class="w3-small">
+            {{ conPersona() ? 'No se asocian a una persona: con persona elegida no se muestran.' : 'Merma y vencimiento' }}
+          </p>
+        </li>
+        <li class="tarjeta-kpi w3-card w3-white w3-padding">
+          <h3 class="w3-medium">Lotes por vencer</h3>
+          <p class="tarjeta-kpi__valor">{{ lotesPorVencer() }}</p>
+          <p class="w3-small">en los próximos {{ diasVencimientos }} días</p>
+        </li>
+      </ul>
+    }
+  </app-estado-vista>
+</section>

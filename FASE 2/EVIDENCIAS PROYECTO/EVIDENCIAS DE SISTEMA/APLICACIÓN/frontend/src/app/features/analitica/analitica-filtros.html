@@ -1,0 +1,135 @@
+<section class="w3-container w3-border w3-margin w3-padding w3-light-grey" aria-labelledby="filtros-titulo">
+  <h2 id="filtros-titulo" class="w3-large w3-margin-left">Filtros</h2>
+
+  <div class="w3-bar w3-margin-bottom" role="group" aria-label="Rangos rápidos">
+    @for (a of atajos; track a.atajo) {
+      <button type="button" class="w3-button w3-white w3-border w3-margin-right" (click)="estado().aplicarAtajo(a.atajo)">
+        {{ a.etiqueta }}
+      </button>
+    }
+  </div>
+
+  <div class="w3-row">
+    <div class="w3-col s12 m3 w3-padding">
+      <label for="panel-desde"><b>Desde</b></label>
+      <input
+        #campoDesde
+        id="panel-desde"
+        class="w3-input"
+        type="date"
+        [value]="estado().desde()"
+        [attr.aria-invalid]="estado().errorRango() ? 'true' : null"
+        [attr.aria-describedby]="estado().errorRango() ? 'panel-error-rango' : null"
+        (change)="cambiarFecha('desde', campoDesde.value)"
+      />
+    </div>
+    <div class="w3-col s12 m3 w3-padding">
+      <label for="panel-hasta"><b>Hasta</b></label>
+      <input
+        #campoHasta
+        id="panel-hasta"
+        class="w3-input"
+        type="date"
+        [value]="estado().hasta()"
+        [attr.aria-invalid]="estado().errorRango() ? 'true' : null"
+        [attr.aria-describedby]="estado().errorRango() ? 'panel-error-rango' : null"
+        (change)="cambiarFecha('hasta', campoHasta.value)"
+      />
+    </div>
+    <div class="w3-col s12 m3 w3-padding">
+      <label for="panel-agrupar"><b>Agrupar por</b></label>
+      <select #selectAgrupar id="panel-agrupar" class="w3-select" (change)="cambiarAgrupacion(selectAgrupar.value)">
+        @for (g of agrupaciones; track g.valor) {
+          <option [value]="g.valor" [selected]="estado().agrupar() === g.valor">{{ g.etiqueta }}</option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m3 w3-padding">
+      <fieldset class="w3-border-0 w3-padding-0">
+        <legend><b>Mostrar</b></legend>
+        <label class="w3-margin-right">
+          <input type="radio" name="panel-medida" class="w3-radio" value="valor"
+            [checked]="estado().medida() === 'valor'" (change)="cambiarMedida('valor')" /> Valor ($)
+        </label>
+        <label>
+          <input type="radio" name="panel-medida" class="w3-radio" value="cantidad"
+            [checked]="estado().medida() === 'cantidad'" (change)="cambiarMedida('cantidad')" /> Cantidad
+        </label>
+      </fieldset>
+    </div>
+  </div>
+  @if (estado().errorRango(); as mensaje) {
+    <p id="panel-error-rango" class="texto-error w3-margin-left" role="alert">
+      <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ mensaje }}
+    </p>
+  }
+
+  <div class="w3-row">
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="panel-categoria"><b>Categoría</b></label>
+      <select #selectCategoria id="panel-categoria" class="w3-select" (change)="cambiarCategoria(selectCategoria.value)">
+        <option value="">Todas</option>
+        @for (c of categorias(); track c.id) {
+          <option [value]="c.id" [selected]="estado().categoriaId() === c.id">{{ c.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="panel-persona"><b>Persona</b></label>
+      <select #selectPersona id="panel-persona" class="w3-select" (change)="cambiarPersona(selectPersona.value)">
+        <option value="">Todas</option>
+        @for (s of solicitantes.value(); track s.id) {
+          <option [value]="s.id" [selected]="estado().solicitanteId() === s.id">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <p class="w3-margin-0"><b>Productos elegidos:</b> {{ estado().productoIds().length }} (máx. 50)</p>
+      @if (estado().productoIds().length > 0) {
+        <button type="button" class="w3-button w3-small w3-white w3-border" (click)="limpiarProductos()">Quitar selección</button>
+      }
+    </div>
+  </div>
+
+  <details class="w3-padding">
+    <summary><b>Elegir productos</b></summary>
+    <label for="panel-buscar-producto" class="visualmente-oculto">Buscar producto</label>
+    <input
+      #campoBusqueda
+      id="panel-buscar-producto"
+      class="w3-input w3-margin-top"
+      type="search"
+      placeholder="Buscar producto…"
+      [value]="busquedaProducto()"
+      (input)="busquedaProducto.set(campoBusqueda.value)"
+    />
+    <ul class="lista-productos">
+      @for (p of productosVisibles(); track p.id) {
+        <li>
+          <label>
+            <input
+              #casilla
+              type="checkbox"
+              class="w3-check"
+              [checked]="estaMarcado(p.id)"
+              (change)="alternarProducto(p.id, casilla.checked)"
+            />
+            {{ p.nombre }}
+          </label>
+        </li>
+      } @empty {
+        <li>No hay productos con ese filtro.</li>
+      }
+    </ul>
+  </details>
+
+  <div class="w3-padding">
+    <app-analitica-productos-clave [estado]="estado()" />
+  </div>
+
+  <div class="w3-padding">
+    <button type="button" class="w3-button w3-emerald w3-round" [attr.aria-disabled]="exportando()" (click)="exportar()">
+      <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Exportar a Excel con estos filtros
+    </button>
+  </div>
+</section>

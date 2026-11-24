@@ -1,0 +1,12 @@
+<app-analitica-filtros [estado]="estado" />
+
+@if (estado.errorRango(); as mensaje) {
+  <p class="w3-panel w3-pale-red w3-leftbar w3-border-red w3-margin" role="alert">
+    Corrige las fechas para ver el panel: {{ mensaje }}
+  </p>
+} @else {
+  <app-analitica-tarjetas [filtro]="filtroAplicado()" [estado]="estado" />
+  <!-- F4: consumo por período y productos más usados -->
+  <!-- F5: pedidos por persona y vencimientos -->
+  <!-- F8: historial de precios -->
+}
