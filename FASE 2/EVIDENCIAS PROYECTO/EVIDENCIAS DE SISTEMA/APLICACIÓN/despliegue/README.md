@@ -118,6 +118,11 @@ Solo se expone el frontend. El backend y la base de datos no se publican: nginx 
 ### 7. Comprobar
 Abre el dominio, inicia sesión con el administrador y crea un producto. Si falla, revisa los registros de `smartrdp-backend` en Portainer (Containers > Logs).
 
+## Datos de demostración
+
+- `poblar-demo.mjs` carga datos de hoy por la API (productos, lotes, solicitudes) en cualquier instancia, incluida la de la Raspberry.
+- `poblar-historial-demo.sql` carga 12 semanas de historial con fechas pasadas directo en una base **local** (no sirve para la Raspberry: allí no se toca la base por SQL). Se ejecuta con `psql -h localhost -U <usuario> -d smartrdp -v ON_ERROR_STOP=1 -f poblar-historial-demo.sql`; requiere un usuario con rol `BODEGUERO` y, si la categoría «Demo analítica» ya existe, se detiene sin tocar nada. Los empleados de ejemplo que crea no pueden iniciar sesión.
+
 ## Respaldo
 
 `pg-backup` guarda un volcado de cada base en `/srv/backups/postgres` al arrancar y luego cada 24 horas, y borra los de más de 14 días. Para restaurar una base vacía:
