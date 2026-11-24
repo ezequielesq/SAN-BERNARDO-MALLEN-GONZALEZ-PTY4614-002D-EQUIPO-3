@@ -1,0 +1,30 @@
+<figure class="grafico">
+  <svg [attr.viewBox]="'0 0 ' + ancho + ' ' + alto()" class="grafico__svg" role="img" [attr.aria-label]="descripcion()">
+    @for (b of barras(); track $index) {
+      <text [attr.x]="xBarra - 8" [attr.y]="b.y + 17" text-anchor="end" font-size="12" fill="#333333">
+        <title>{{ b.completa }}</title>
+        {{ b.etiqueta }}
+      </text>
+      <rect [attr.x]="xBarra" [attr.y]="b.y" [attr.width]="b.largo" height="24" fill="#dc143c" />
+      <text [attr.x]="b.xTexto" [attr.y]="b.y + 17" font-size="12" fill="#333333">{{ b.texto }}</text>
+    }
+  </svg>
+</figure>
+<button type="button" class="w3-button w3-small w3-white w3-border" [attr.aria-pressed]="verTabla()" (click)="verTabla.set(!verTabla())">
+  {{ verTabla() ? 'Ocultar tabla' : 'Ver como tabla' }}
+</button>
+@if (verTabla()) {
+  <div class="w3-responsive">
+    <table class="w3-table-all w3-small">
+      <caption class="visualmente-oculto">{{ descripcion() }}</caption>
+      <thead>
+        <tr><th scope="col">Producto</th><th scope="col">Valor</th></tr>
+      </thead>
+      <tbody>
+        @for (i of items(); track $index) {
+          <tr><td>{{ i.etiqueta }}</td><td>{{ i.texto }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

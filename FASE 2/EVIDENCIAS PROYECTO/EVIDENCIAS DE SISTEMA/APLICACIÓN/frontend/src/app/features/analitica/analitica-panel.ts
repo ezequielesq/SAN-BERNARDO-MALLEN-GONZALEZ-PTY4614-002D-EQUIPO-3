@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
+import { AnaliticaConsumoPeriodo } from './analitica-consumo-periodo';
 import { AnaliticaFiltros } from './analitica-filtros';
 import { AnaliticaTarjetas } from './analitica-tarjetas';
+import { AnaliticaTopProductos } from './analitica-top-productos';
 import { EstadoFiltros } from './panel-estado';
 
 /** Panel de analítica: filtros compartidos y bloques que se recalculan al cambiarlos. */
 @Component({
   selector: 'app-analitica-panel',
-  imports: [AnaliticaFiltros, AnaliticaTarjetas],
+  imports: [AnaliticaFiltros, AnaliticaTarjetas, AnaliticaConsumoPeriodo, AnaliticaTopProductos],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analitica-panel.html',
 })

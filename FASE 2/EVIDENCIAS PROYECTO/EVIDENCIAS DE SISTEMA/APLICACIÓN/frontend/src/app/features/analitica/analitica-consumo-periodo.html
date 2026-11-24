@@ -1,0 +1,18 @@
+<section class="w3-container w3-border w3-margin w3-padding w3-light-grey" aria-labelledby="consumo-titulo">
+  <h2 id="consumo-titulo" class="w3-large w3-margin-left">Consumo por período</h2>
+  @if (decision().aviso; as aviso) {
+    <p class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">{{ aviso }}</p>
+  }
+  @if (enCantidad()) {
+    <p class="w3-small">En cantidad no se muestran las pérdidas (se miden en pesos).</p>
+  }
+  <app-estado-vista
+    [cargando]="serie.isLoading()"
+    [error]="serie.error()"
+    [vacio]="vacio()"
+    mensajeVacio="No hay movimientos con estos filtros."
+    (reintentar)="serie.reload()"
+  >
+    <app-grafico-barras [puntos]="puntos()" [descripcion]="descripcion()" [formatear]="formatear()" />
+  </app-estado-vista>
+</section>

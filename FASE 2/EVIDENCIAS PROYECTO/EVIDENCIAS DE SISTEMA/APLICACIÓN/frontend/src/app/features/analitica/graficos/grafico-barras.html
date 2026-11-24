@@ -1,0 +1,59 @@
+<figure class="grafico">
+  <svg [attr.viewBox]="'0 0 ' + ancho + ' ' + alto" class="grafico__svg" role="img" [attr.aria-label]="descripcion()">
+    <defs>
+      <pattern id="rayas-perdida" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="6" height="6" fill="#ffffff" />
+        <rect width="3" height="6" fill="#4d4d4d" />
+      </pattern>
+    </defs>
+    @for (m of marcasY(); track m.valor) {
+      <line [attr.x1]="xEjeIzq" [attr.x2]="xEjeDer" [attr.y1]="m.y" [attr.y2]="m.y" stroke="#cccccc" stroke-width="1" />
+      <text [attr.x]="xEjeIzq - 6" [attr.y]="m.y + 4" text-anchor="end" font-size="11" fill="#333333">{{ formatear()(m.valor) }}</text>
+    }
+    @for (b of barras(); track $index) {
+      <rect [attr.x]="b.x" [attr.y]="b.yPrincipal" [attr.width]="b.anchoBarra" [attr.height]="b.altoPrincipal" fill="#dc143c" />
+      <rect
+        [attr.x]="b.x + b.anchoBarra"
+        [attr.y]="b.ySecundario"
+        [attr.width]="b.anchoBarra"
+        [attr.height]="b.altoSecundario"
+        fill="url(#rayas-perdida)"
+        stroke="#4d4d4d"
+        stroke-width="1"
+      />
+      @if (b.mostrarEtiqueta) {
+        <text [attr.x]="b.centro" [attr.y]="yEtiqueta" text-anchor="middle" font-size="11" fill="#333333">{{ b.etiqueta }}</text>
+      }
+    }
+  </svg>
+  <figcaption class="grafico__leyenda">
+    <span><span class="grafico__muestra grafico__muestra--principal" aria-hidden="true"></span>{{ nombrePrincipal() }}</span>
+    <span><span class="grafico__muestra grafico__muestra--secundaria" aria-hidden="true"></span>{{ nombreSecundario() }} (rayado)</span>
+  </figcaption>
+</figure>
+<button type="button" class="w3-button w3-small w3-white w3-border" [attr.aria-pressed]="verTabla()" (click)="verTabla.set(!verTabla())">
+  {{ verTabla() ? 'Ocultar tabla' : 'Ver como tabla' }}
+</button>
+@if (verTabla()) {
+  <div class="w3-responsive">
+    <table class="w3-table-all w3-small">
+      <caption class="visualmente-oculto">{{ descripcion() }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Período</th>
+          <th scope="col">{{ nombrePrincipal() }}</th>
+          <th scope="col">{{ nombreSecundario() }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of puntos(); track $index) {
+          <tr>
+            <td>{{ p.etiqueta }}</td>
+            <td>{{ formatear()(p.valor) }}</td>
+            <td>{{ formatear()(p.secundario) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

@@ -1,0 +1,15 @@
+<section class="w3-container w3-border w3-margin w3-padding w3-light-grey" aria-labelledby="top-titulo">
+  <h2 id="top-titulo" class="w3-large w3-margin-left">Productos más usados</h2>
+  @if (decision().aviso; as aviso) {
+    <p class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">{{ aviso }}</p>
+  }
+  <app-estado-vista
+    [cargando]="top.isLoading()"
+    [error]="top.error()"
+    [vacio]="top.hasValue() && lista().length === 0"
+    mensajeVacio="No hay movimientos con estos filtros."
+    (reintentar)="top.reload()"
+  >
+    <app-grafico-barras-horizontales [items]="items()" [descripcion]="descripcion()" />
+  </app-estado-vista>
+</section>

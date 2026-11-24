@@ -6,7 +6,8 @@
   </p>
 } @else {
   <app-analitica-tarjetas [filtro]="filtroAplicado()" [estado]="estado" />
-  <!-- F4: consumo por período y productos más usados -->
+  <app-analitica-consumo-periodo [filtro]="filtroAplicado()" [estado]="estado" />
+  <app-analitica-top-productos [filtro]="filtroAplicado()" [estado]="estado" />
   <!-- F5: pedidos por persona y vencimientos -->
   <!-- F8: historial de precios -->
 }
