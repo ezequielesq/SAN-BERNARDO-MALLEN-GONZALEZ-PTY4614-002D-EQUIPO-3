@@ -9,7 +9,7 @@ describe('navegación por rol', () => {
     expect(admin).toEqual(
       expect.arrayContaining([
         '/analitica', '/usuarios', '/productos', '/movimientos', '/movimientos/stock',
-        '/movimientos/alertas', '/calendario',
+        '/movimientos/lotes', '/movimientos/alertas', '/calendario',
       ]),
     );
     expect(admin).not.toContain('/solicitudes');
@@ -21,6 +21,7 @@ describe('navegación por rol', () => {
   it('el bodeguero conserva todo salvo usuarios, y la página inicial de la administradora sigue siendo analítica', () => {
     const bodeguero = rutas('BODEGUERO');
     expect(bodeguero).toContain('/solicitudes');
+    expect(bodeguero).toContain('/movimientos/lotes');
     expect(bodeguero).toContain('/administracion/proveedores');
     expect(bodeguero).not.toContain('/usuarios');
     expect(paginaInicialPara('ADMIN')).toBe('/analitica');

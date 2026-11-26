@@ -1,0 +1,91 @@
+<p class="w3-margin">
+  <a
+    class="w3-button w3-white w3-border w3-round"
+    routerLink="/movimientos/lotes"
+    [queryParams]="{ diasPorVencer: diasPorVencer() }"
+  >
+    <i class="fa fa-arrow-left" aria-hidden="true"></i> Volver a lotes
+  </a>
+</p>
+
+<app-estado-vista
+  [cargando]="detalle.status() === 'loading'"
+  [error]="detalle.error()"
+  [vacio]="datos() === undefined"
+  mensajeCarga="Cargando lote…"
+  mensajeVacio="No se encontró el lote."
+  (reintentar)="detalle.reload()"
+>
+  @if (datos(); as d) {
+    <section class="w3-container w3-border w3-margin w3-light-grey w3-padding" aria-labelledby="lote-titulo">
+      <h2 id="lote-titulo" class="w3-large">
+        {{ d.lote.productoNombre }} · Lote {{ d.lote.numeroLote || '#' + d.lote.id }}
+        <app-estado-badge [estado]="tipoBadge(d.lote.estado)" />
+      </h2>
+      <div class="w3-row">
+        <p class="w3-col s12 m4"><b>Categoría</b><br />{{ d.lote.categoriaNombre }}</p>
+        <p class="w3-col s12 m4"><b>Proveedor</b><br />{{ d.lote.proveedorNombre || 'Sin proveedor' }}</p>
+        <p class="w3-col s12 m4"><b>Fecha de ingreso</b><br />{{ d.lote.fechaIngreso | date: 'dd-MM-yyyy' }}</p>
+      </div>
+      <div class="w3-row">
+        <p class="w3-col s12 m4">
+          <b>Vencimiento</b><br />
+          @if (d.lote.fechaVencimiento) {
+            {{ d.lote.fechaVencimiento | date: 'dd-MM-yyyy' }} ·
+          }
+          {{ etiquetaDias(d.lote.diasParaVencer) }}
+        </p>
+        <p class="w3-col s12 m4"><b>Cantidad inicial</b><br />{{ d.lote.cantidadInicial }}</p>
+        <p class="w3-col s12 m4"><b>Saldo</b><br />{{ d.lote.saldo }}</p>
+      </div>
+      <div class="w3-row">
+        <p class="w3-col s12 m4">
+          <b>Costo unitario</b><br />{{ d.lote.costoUnitario !== null ? '$' + d.lote.costoUnitario : '—' }}
+        </p>
+        <p class="w3-col s12 m4">
+          <b>Valor en stock</b><br />{{ d.lote.valorEnStock !== null ? '$' + d.lote.valorEnStock : '—' }}
+        </p>
+      </div>
+    </section>
+
+    <div class="w3-container w3-border w3-margin w3-light-grey w3-padding">
+      <h2 class="w3-large">Trazabilidad</h2>
+      @if (d.trazabilidad.length === 0) {
+        <p>Este lote aún no tiene movimientos.</p>
+      } @else {
+        <div class="w3-responsive">
+          <table class="w3-table-all">
+            <caption class="visualmente-oculto">Movimientos del lote en orden cronológico</caption>
+            <thead>
+              <tr class="w3-light-grey">
+                <th scope="col">Fecha</th>
+                <th scope="col">Movimiento</th>
+                <th scope="col">Cantidad</th>
+                <th scope="col">Saldo después</th>
+                <th scope="col">Usuario</th>
+                <th scope="col">Nota</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of d.trazabilidad; track m.movimientoId) {
+                <tr>
+                  <td>{{ m.fecha | date: 'dd-MM-yyyy HH:mm' }}</td>
+                  <td>
+                    {{ m.tipoNombre }}
+                    @if (m.solicitudId !== null) {
+                      <br /><span class="w3-small">Pedido #{{ m.solicitudId }} de {{ m.solicitanteNombre || 'un empleado' }}</span>
+                    }
+                  </td>
+                  <td>{{ m.sentido > 0 ? '+' : '−' }}{{ m.cantidad }}</td>
+                  <td>{{ m.saldoDespues }}</td>
+                  <td>{{ m.usuarioEmail || '—' }}</td>
+                  <td>{{ m.nota || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+</app-estado-vista>

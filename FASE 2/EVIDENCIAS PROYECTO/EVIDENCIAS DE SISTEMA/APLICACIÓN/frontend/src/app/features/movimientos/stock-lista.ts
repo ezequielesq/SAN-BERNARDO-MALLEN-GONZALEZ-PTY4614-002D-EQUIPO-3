@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
@@ -34,7 +35,7 @@ const OPCIONES_TARJETAS: readonly OpcionOrden[] = [
 
 @Component({
   selector: 'app-stock-lista',
-  imports: [EstadoVista, EstadoBadge, ThOrden, SelectorOrden, Paginacion],
+  imports: [RouterLink, EstadoVista, EstadoBadge, ThOrden, SelectorOrden, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './stock-lista.html',
 })
