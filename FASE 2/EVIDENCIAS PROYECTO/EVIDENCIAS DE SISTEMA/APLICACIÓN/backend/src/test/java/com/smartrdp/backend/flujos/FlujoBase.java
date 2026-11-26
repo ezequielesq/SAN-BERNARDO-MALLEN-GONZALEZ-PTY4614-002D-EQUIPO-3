@@ -1,5 +1,6 @@
 package com.smartrdp.backend.flujos;
 
+import com.smartrdp.backend.catalogo.Rut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,6 +47,7 @@ abstract class FlujoBase {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final AtomicLong CODIGOS = new AtomicLong(7_000_000);
+    private static final AtomicLong RUTS = new AtomicLong(60_000_000);
 
     // Datos compartidos por todas las pruebas, creados una sola vez por corrida.
     private static String tokenAdmin;
@@ -92,6 +94,8 @@ abstract class FlujoBase {
     protected record Cuenta(long id, String nombre, String email, String clave, String token) {}
 
     protected record Prod(long id, String nombre, String codigo) {}
+
+    protected record Prov(long id, String rut, String nombre) {}
 
     protected record Stock(int cantidad, String estado, LocalDate proximoVencimiento) {}
 
@@ -274,6 +278,20 @@ abstract class FlujoBase {
                 "esPerecible", perecible, "stockMinimo", stockMinimo, "stockCritico", stockCritico,
                 "costoUnitario", 1000)).esperando(201);
         return new Prod(r.json().path("id").asLong(), nombre, codigo);
+    }
+
+    /** RUT válido que ninguna otra prueba de la corrida usa. */
+    protected static String rutUnico() {
+        String cuerpo = Long.toString(RUTS.incrementAndGet());
+        return cuerpo + "-" + Rut.digitoVerificador(cuerpo);
+    }
+
+    /** Proveedor propio de la prueba (RUT y nombre únicos), creado por el bodeguero compartido. */
+    protected Prov crearProveedor() {
+        String rut = rutUnico();
+        String nombre = "Proveedor " + unico();
+        var r = post("/api/proveedores", bodeguero().token(), objeto("rut", rut, "nombre", nombre)).esperando(201);
+        return new Prov(r.json().path("id").asLong(), rut, nombre);
     }
 
     /** Código numérico que ningún otro producto de la corrida usa. */

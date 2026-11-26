@@ -58,11 +58,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,
                         "/api/categorias/**", "/api/unidades-medida/**",
-                        "/api/productos/**", "/api/movimientos/**", "/api/eventos/**").hasAnyRole("ADMIN", "BODEGUERO")
+                        "/api/productos/**", "/api/movimientos/**", "/api/eventos/**",
+                        "/api/proveedores/**", "/api/lotes/**").hasAnyRole("ADMIN", "BODEGUERO")
                 .requestMatchers(
                         "/api/categorias/**", "/api/unidades-medida/**",
                         "/api/productos/**", "/api/movimientos/**",
-                        "/api/solicitudes/**", "/api/eventos/**").hasRole("BODEGUERO")
+                        "/api/solicitudes/**", "/api/eventos/**", "/api/proveedores/**").hasRole("BODEGUERO")
                 .requestMatchers("/api/analitica/**", "/api/auditoria/**").hasAnyRole("ADMIN", "BODEGUERO")
                 .anyRequest().authenticated()
             )
