@@ -54,6 +54,7 @@ abstract class FlujoBase {
     private static Cuenta bodegueroCompartido;
     private static Long categoriaComun;
     private static Long unidadComun;
+    private static Long proveedorComun;
 
     @Autowired
     private MockMvc mvc;
@@ -294,6 +295,12 @@ abstract class FlujoBase {
         return new Prov(r.json().path("id").asLong(), rut, nombre);
     }
 
+    /** Proveedor compartido por las compras de las pruebas que no se ocupan del proveedor. */
+    protected synchronized long proveedorComun() {
+        if (proveedorComun == null) proveedorComun = crearProveedor().id();
+        return proveedorComun;
+    }
+
     /** Código numérico que ningún otro producto de la corrida usa. */
     protected static String siguienteCodigo() {
         return Long.toString(CODIGOS.incrementAndGet());
@@ -327,10 +334,10 @@ abstract class FlujoBase {
 
     // ------------------------------------------------------------------ entradas, salidas y stock
 
-    protected static Map<String, Object> lineaEntrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
+    protected Map<String, Object> lineaEntrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
         return objeto("productoId", productoId, "cantidad", cantidad,
                 "fechaVencimiento", vencimiento == null ? null : vencimiento.toString(), "numeroLote", lote,
-                "costoUnitario", 1000);
+                "costoUnitario", 1000, "proveedorId", proveedorComun());
     }
 
     protected Respuesta entrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
@@ -505,8 +512,9 @@ abstract class FlujoBase {
 
     /** Entrada de un tipo cualquiera (COMPRA, INVENTARIO_INICIAL, AJUSTE_ENTRADA) con costo opcional. */
     protected Respuesta entradaDeTipo(String tipo, long productoId, int cantidad, Integer costo) {
-        return post("/api/movimientos/entradas", bodeguero().token(), objeto("tipo", tipo, "lineas",
-                List.of(objeto("productoId", productoId, "cantidad", cantidad, "costoUnitario", costo))));
+        var linea = objeto("productoId", productoId, "cantidad", cantidad, "costoUnitario", costo);
+        if ("COMPRA".equals(tipo)) linea.put("proveedorId", proveedorComun());
+        return post("/api/movimientos/entradas", bodeguero().token(), objeto("tipo", tipo, "lineas", List.of(linea)));
     }
 
     /** Compra con el costo unitario indicado (queda como precio de compra del lote). */

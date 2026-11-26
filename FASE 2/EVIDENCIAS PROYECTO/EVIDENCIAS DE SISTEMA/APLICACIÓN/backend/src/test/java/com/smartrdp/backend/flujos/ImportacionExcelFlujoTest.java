@@ -322,7 +322,7 @@ class ImportacionExcelFlujoTest extends FlujoBase {
         assertThat(plantilla.disposicion()).contains("attachment").contains("plantilla-entradas.xlsx");
         assertThat(ExcelPruebas.hojas(plantilla.bytes())).containsExactly("Entradas", "Instrucciones");
         assertThat(ExcelPruebas.leerHoja(plantilla.bytes(), "Entradas").get(0))
-                .containsExactly("Código", "N° lote", "Fecha vencimiento", "Cantidad", "Costo unitario");
+                .containsExactly("Código", "N° lote", "Fecha vencimiento", "Cantidad", "Costo unitario", "Proveedor (RUT)");
         assertThat(descargar("/api/movimientos/entradas/plantilla/xlsx", null).estado()).isEqualTo(401);
     }
 
@@ -339,11 +339,12 @@ class ImportacionExcelFlujoTest extends FlujoBase {
         LocalDate venceE = hoy().plusDays(60);
 
         List<List<Object>> filas = new ArrayList<>();
-        // Columnas: Código, N° lote, Fecha vencimiento, Cantidad, Costo unitario.
-        filas.add(fila(noPerecible.codigo(), "LA-1", null, 10, 500)); // 2 válida
-        filas.add(fila(perecibleB.codigo(), "LB-1", venceB.format(DD_MM_AAAA), 8, 300)); // 3 válida: fecha como texto
-        filas.add(fila(Long.parseLong(perecibleE.codigo()), "LE-1", venceE, 6, 400)); // 4 válida: código y fecha como celdas
-        filas.add(fila(noPerecible.codigo(), "LA-1", null, 5, 700)); // 5 válida: mismo producto y lote otra vez
+        String rut = crearProveedor().rut();
+        // Columnas: Código, N° lote, Fecha vencimiento, Cantidad, Costo unitario, Proveedor (RUT).
+        filas.add(fila(noPerecible.codigo(), "LA-1", null, 10, 500, rut)); // 2 válida
+        filas.add(fila(perecibleB.codigo(), "LB-1", venceB.format(DD_MM_AAAA), 8, 300, rut)); // 3 válida: fecha como texto
+        filas.add(fila(Long.parseLong(perecibleE.codigo()), "LE-1", venceE, 6, 400, rut)); // 4 válida: código y fecha como celdas
+        filas.add(fila(noPerecible.codigo(), "LA-1", null, 5, 700, rut)); // 5 válida: mismo producto y lote otra vez
         filas.add(fila(perecibleB.codigo(), "LB-2", "31-02-2027", 3, null)); // 6 fecha inexistente
         filas.add(fila(perecibleE.codigo(), "LE-2", "mañana", 3, null)); // 7 fecha mal escrita
         filas.add(fila(perecibleE.codigo(), "LE-3", null, 3, null)); // 8 perecible sin fecha
@@ -421,9 +422,10 @@ class ImportacionExcelFlujoTest extends FlujoBase {
     void cargarEntradasEsTodoONada() {
         var comun = crearProducto(false);
         var perecible = crearProducto(true);
+        String rut = crearProveedor().rut();
         byte[] archivo = entradasXlsx(List.of(
-                fila(comun.codigo(), "L-1", null, 7, 800),
-                fila(perecible.codigo(), "L-2", "99-99-2027", 4, 600)));
+                fila(comun.codigo(), "L-1", null, 7, 800, rut),
+                fila(perecible.codigo(), "L-2", "99-99-2027", 4, 600, rut)));
         var leidas = subirArchivo(ENTRADAS_LEER, bodeguero().token(), "archivo", "entradas.xlsx", archivo)
                 .esperando(200).json();
         List<JsonNode> todas = new ArrayList<>();

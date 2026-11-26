@@ -11,5 +11,8 @@ public record FilaEntrada(
         String numeroLote,
         LocalDate fechaVencimiento,
         Integer cantidad,
-        Integer costoUnitario
+        Integer costoUnitario,
+        String proveedorRut,
+        Long proveedorId,
+        String proveedorNombre
 ) {}

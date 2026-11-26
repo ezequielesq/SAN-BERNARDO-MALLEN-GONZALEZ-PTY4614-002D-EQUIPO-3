@@ -1,5 +1,6 @@
 package com.smartrdp.backend.movimiento;
 
+import com.smartrdp.backend.catalogo.Proveedor;
 import com.smartrdp.backend.producto.Producto;
 import com.smartrdp.backend.shared.BaseEntity;
 import jakarta.persistence.*;
@@ -30,4 +31,8 @@ public class Lote extends BaseEntity {
 
     @Column(name = "costo_unitario")
     private Integer costoUnitario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proveedor_id")
+    private Proveedor proveedor;
 }

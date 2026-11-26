@@ -22,6 +22,7 @@ public record EntradaRequest(
             @NotNull @Min(1) @Max(1_000_000) Integer cantidad,
             LocalDate fechaVencimiento,
             @Size(max = 50) String numeroLote,
-            @Min(0) Integer costoUnitario
+            @Min(0) Integer costoUnitario,
+            Long proveedorId
     ) {}
 }

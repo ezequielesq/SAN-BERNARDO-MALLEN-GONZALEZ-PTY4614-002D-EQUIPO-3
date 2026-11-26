@@ -436,7 +436,8 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
     @DisplayName("HU-140 Importar entradas: la fila de compra sin costo es un error de fila; con otro tipo no lo es")
     void importarCompraExigeCosto() {
         Prod producto = crearProducto(false);
-        var sinCosto = List.of(objeto("fila", 2, "codigo", producto.codigo(), "cantidad", 4));
+        String rut = crearProveedor().rut();
+        var sinCosto = List.of(objeto("fila", 2, "codigo", producto.codigo(), "cantidad", 4, "proveedorRut", rut));
         String validar = "/api/movimientos/entradas/importar/validar";
         String importar = "/api/movimientos/entradas/importar";
         String token = bodeguero().token();
@@ -449,7 +450,8 @@ class PanelAnaliticaFlujoTest extends FlujoBase {
 
         assertThat(post(importar, token, objeto("tipo", "COMPRA", "filas", sinCosto)).estado()).isEqualTo(422);
         assertThat(stockDe(producto.id())).isZero();
-        var conCosto = List.of(objeto("fila", 2, "codigo", producto.codigo(), "cantidad", 4, "costoUnitario", 900));
+        var conCosto = List.of(objeto("fila", 2, "codigo", producto.codigo(), "cantidad", 4, "costoUnitario", 900,
+                "proveedorRut", rut));
         post(importar, token, objeto("tipo", "COMPRA", "filas", conCosto)).esperando(201);
         assertThat(stockDe(producto.id())).isEqualTo(4);
     }
