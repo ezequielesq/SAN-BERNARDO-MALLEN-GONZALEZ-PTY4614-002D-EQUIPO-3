@@ -107,6 +107,28 @@
   </div>
 
   <div class="w3-section">
+    <label for="entrada-proveedor"><b>Proveedor{{ proveedorRequerido() ? ' (obligatorio en compras)' : '' }}</b></label>
+    <select
+      id="entrada-proveedor"
+      class="w3-select"
+      formControlName="proveedorId"
+      [attr.aria-invalid]="enviado() && form.controls.proveedorId.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.proveedorId.invalid ? 'error-entrada-proveedor' : null"
+    >
+      <option [ngValue]="null">Sin proveedor</option>
+      @for (p of opcionesProveedor(); track p.id) {
+        <option [ngValue]="p.id">{{ p.nombre }} ({{ p.rut }})</option>
+      }
+    </select>
+    @if (enviado() && form.controls.proveedorId.invalid) {
+      <p class="texto-error" id="error-entrada-proveedor"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige el proveedor de la compra.</p>
+    }
+    @if (opcionesProveedor().length === 0 && !proveedores.isLoading()) {
+      <p class="w3-small">No hay proveedores registrados. <a routerLink="/administracion/proveedores">Créalos en Administración</a>.</p>
+    }
+  </div>
+
+  <div class="w3-section">
     <label for="entrada-nota"><b>Nota (opcional)</b></label>
     <input id="entrada-nota" class="w3-input" type="text" maxlength="300" formControlName="nota" />
   </div>

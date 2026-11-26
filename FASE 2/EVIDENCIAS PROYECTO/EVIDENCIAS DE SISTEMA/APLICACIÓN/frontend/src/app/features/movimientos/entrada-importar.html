@@ -122,6 +122,7 @@
           <th appThOrden [orden]="orden" columna="fechaVencimiento">Vencimiento</th>
           <th appThOrden [orden]="orden" columna="cantidad">Cantidad</th>
           <th appThOrden [orden]="orden" columna="costoUnitario">Costo</th>
+          <th appThOrden [orden]="orden" columna="proveedor">Proveedor</th>
           <th scope="col"><span class="visualmente-oculto">Quitar</span></th>
         </tr>
       </thead>
@@ -228,6 +229,26 @@
               />
               @if (errorDe(f, 'costoUnitario'); as mensaje) {
                 <small class="texto-error" [id]="'imp-costo-error-' + f.datos.fila">{{ mensaje }}</small>
+              }
+            </td>
+            <td>
+              <label class="visualmente-oculto" [for]="'imp-proveedor-' + f.datos.fila">RUT del proveedor, fila {{ f.datos.fila }}</label>
+              <input
+                [id]="'imp-proveedor-' + f.datos.fila"
+                class="w3-input"
+                style="min-width: 8em"
+                type="text"
+                maxlength="20"
+                [value]="f.datos.proveedorRut ?? ''"
+                [attr.aria-invalid]="errorDe(f, 'proveedorRut') ? 'true' : null"
+                [attr.aria-describedby]="errorDe(f, 'proveedorRut') ? 'imp-proveedor-error-' + f.datos.fila : null"
+                (change)="editarTexto(f.datos.fila ?? 0, 'proveedorRut', $any($event.target).value)"
+              />
+              @if (f.datos.proveedorNombre) {
+                <small>{{ f.datos.proveedorNombre }}</small>
+              }
+              @if (errorDe(f, 'proveedorRut'); as mensaje) {
+                <small class="texto-error" [id]="'imp-proveedor-error-' + f.datos.fila">{{ mensaje }}</small>
               }
             </td>
             <td>
