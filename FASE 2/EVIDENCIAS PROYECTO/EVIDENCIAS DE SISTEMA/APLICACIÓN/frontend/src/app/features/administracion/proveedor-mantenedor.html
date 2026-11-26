@@ -1,0 +1,193 @@
+<form
+  [formGroup]="nuevoForm"
+  (ngSubmit)="agregar()"
+  novalidate
+  class="w3-section w3-white w3-padding w3-margin w3-card w3-border"
+>
+  <label for="nuevo-rut"><b>RUT del nuevo proveedor</b></label>
+  <input
+    id="nuevo-rut"
+    class="w3-input"
+    type="text"
+    formControlName="rut"
+    maxlength="12"
+    autocomplete="off"
+    [attr.aria-invalid]="errorNuevo().rut ? 'true' : null"
+    [attr.aria-describedby]="errorNuevo().rut ? 'ayuda-nuevo-rut error-nuevo-rut' : 'ayuda-nuevo-rut'"
+  />
+  <p id="ayuda-nuevo-rut" class="w3-small sin-margen">Ejemplo: 12.345.678-5</p>
+  @if (errorNuevo().rut; as m) {
+    <p id="error-nuevo-rut" class="texto-error">
+      <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
+    </p>
+  }
+
+  <label for="nuevo-nombre" class="w3-margin-top"><b>Nombre del nuevo proveedor</b></label>
+  <input
+    id="nuevo-nombre"
+    class="w3-input"
+    type="text"
+    formControlName="nombre"
+    maxlength="100"
+    autocomplete="off"
+    [attr.aria-invalid]="errorNuevo().nombre ? 'true' : null"
+    [attr.aria-describedby]="errorNuevo().nombre ? 'error-nuevo-nombre' : null"
+  />
+  @if (errorNuevo().nombre; as m) {
+    <p id="error-nuevo-nombre" class="texto-error">
+      <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
+    </p>
+  }
+
+  @if (errorNuevo().general; as m) {
+    <p id="error-nuevo-general" class="texto-error" role="alert">
+      <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
+    </p>
+  }
+  <button
+    type="submit"
+    class="w3-button w3-info w3-margin-top w3-round"
+    [attr.aria-disabled]="procesando()"
+  >
+    <i class="fa fa-plus" aria-hidden="true"></i> Agregar
+  </button>
+</form>
+
+<app-estado-vista
+  [cargando]="items.status() === 'loading'"
+  [error]="items.error()"
+  [vacio]="lista().length === 0"
+  mensajeCarga="Cargando proveedores…"
+  mensajeVacio="Aún no hay proveedores. Agrega el primero con el formulario de arriba."
+  (reintentar)="items.reload()"
+>
+  <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
+    <div class="w3-responsive">
+      <table class="w3-table-all">
+        <caption class="visualmente-oculto">
+          Proveedores
+        </caption>
+        <thead>
+          <tr class="w3-light-grey">
+            <th appThOrden [orden]="orden" columna="rut">RUT</th>
+            <th appThOrden [orden]="orden" columna="nombre">Nombre</th>
+            <th appThOrden [orden]="orden" columna="estado">Estado</th>
+            <th scope="col"><span class="visualmente-oculto">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of listaOrdenada(); track item.id) {
+            @if (editandoId() === item.id) {
+              <tr>
+                <td colspan="4">
+                  <form [formGroup]="edicionForm" (ngSubmit)="guardarEdicion(item)" novalidate>
+                    <label [for]="'editar-rut-' + item.id"
+                      ><b>RUT de "{{ item.nombre }}"</b></label
+                    >
+                    <input
+                      [id]="'editar-rut-' + item.id"
+                      class="w3-input"
+                      type="text"
+                      formControlName="rut"
+                      maxlength="12"
+                      autocomplete="off"
+                      (keydown.escape)="cancelarEdicion(item)"
+                      [attr.aria-invalid]="errorEdicion().rut ? 'true' : null"
+                      [attr.aria-describedby]="
+                        errorEdicion().rut ? 'ayuda-edicion-rut error-edicion-rut' : 'ayuda-edicion-rut'
+                      "
+                    />
+                    <p id="ayuda-edicion-rut" class="w3-small sin-margen">Ejemplo: 12.345.678-5</p>
+                    @if (errorEdicion().rut; as m) {
+                      <p id="error-edicion-rut" class="texto-error">
+                        <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
+                      </p>
+                    }
+
+                    <label [for]="'editar-nombre-' + item.id" class="w3-margin-top"
+                      ><b>Nombre de "{{ item.nombre }}"</b></label
+                    >
+                    <input
+                      [id]="'editar-nombre-' + item.id"
+                      class="w3-input"
+                      type="text"
+                      formControlName="nombre"
+                      maxlength="100"
+                      autocomplete="off"
+                      (keydown.escape)="cancelarEdicion(item)"
+                      [attr.aria-invalid]="errorEdicion().nombre ? 'true' : null"
+                      [attr.aria-describedby]="errorEdicion().nombre ? 'error-edicion-nombre' : null"
+                    />
+                    @if (errorEdicion().nombre; as m) {
+                      <p id="error-edicion-nombre" class="texto-error">
+                        <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
+                      </p>
+                    }
+
+                    @if (errorEdicion().general; as m) {
+                      <p id="error-edicion-general" class="texto-error" role="alert">
+                        <i class="fa-solid fa-exclamation" aria-hidden="true"></i> {{ m }}
+                      </p>
+                    }
+                    <div class="w3-margin-top">
+                      <button
+                        type="submit"
+                        class="w3-button w3-info w3-round"
+                        [attr.aria-disabled]="procesando()"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        type="button"
+                        class="w3-button w3-white w3-border w3-margin-left w3-round"
+                        (click)="cancelarEdicion(item)"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            } @else {
+              <tr>
+                <td>{{ formatearRut(item.rut) }}</td>
+                <td>
+                  <b>{{ item.nombre }}</b>
+                </td>
+                <td>
+                  @if (item.activo) {
+                    Activo
+                  } @else {
+                    <app-estado-badge estado="deshabilitado" />
+                  }
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="w3-button w3-border w3-border-red w3-margin-left w3-round w3-right"
+                    [attr.aria-disabled]="procesando()"
+                    (click)="alternar(item)"
+                  >
+                    <i [class]="item.activo ? 'fa fa-ban' : 'fa fa-undo'" aria-hidden="true"></i>
+                    {{ item.activo ? 'Deshabilitar' : 'Reactivar'
+                    }}<span class="visualmente-oculto"> {{ item.nombre }}</span>
+                  </button>
+                  <button
+                    [id]="'editar-' + item.id"
+                    type="button"
+                    class="w3-button w3-warning w3-round w3-right"
+                    (click)="iniciarEdicion(item)"
+                  >
+                    <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto">
+                      {{ item.nombre }}</span
+                    >
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</app-estado-vista>

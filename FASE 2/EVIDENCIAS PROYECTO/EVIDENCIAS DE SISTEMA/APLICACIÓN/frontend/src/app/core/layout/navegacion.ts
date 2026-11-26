@@ -24,6 +24,7 @@ export const NAVEGACION: readonly ItemNavegacion[] = [
   { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN'] },
   { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['BODEGUERO'], grupo: 'Administración' },
   { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['BODEGUERO'], grupo: 'Administración' },
+  { etiqueta: 'Proveedores', ruta: '/administracion/proveedores', roles: ['BODEGUERO'], grupo: 'Administración' },
 ];
 
 export const ETIQUETA_ROL: Record<Rol, string> = {
