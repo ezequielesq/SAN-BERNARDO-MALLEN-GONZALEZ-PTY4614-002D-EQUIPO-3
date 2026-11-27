@@ -13,7 +13,7 @@ export function etiquetaEstado(estado: EstadoLote): string {
   switch (estado) {
     case 'AGOTADO': return 'Agotado';
     case 'VENCIDO': return 'Vencido';
-    case 'POR_VENCER': return 'Por vencer';
+    case 'POR_VENCER': return 'Próximo a vencer';
     case 'VIGENTE': return 'Vigente';
   }
 }
@@ -52,6 +52,9 @@ export function tipoBadge(estado: EstadoLote): TipoEstado {
 
 const RANGO_ESTADO: Record<EstadoLote, number> = { VENCIDO: 0, POR_VENCER: 1, VIGENTE: 2, AGOTADO: 3 };
 
+/** Los estados conocidos, en el orden en que se ofrecen en el filtro. */
+export const ESTADOS_LOTE = ['VIGENTE', 'POR_VENCER', 'VENCIDO', 'AGOTADO'] as const satisfies readonly EstadoLote[];
+
 /** Posición del estado al ordenar por urgencia (lo más urgente primero). */
 export function rangoEstado(estado: EstadoLote): number {
   return RANGO_ESTADO[estado];
@@ -59,5 +62,59 @@ export function rangoEstado(estado: EstadoLote): number {
 
 /** Devuelve el estado si es uno de los conocidos; null en otro caso (p. ej. un parámetro de URL manipulado). */
 export function estadoLoteValido(valor: string | null): EstadoLote | null {
-  return valor !== null && valor in RANGO_ESTADO ? (valor as EstadoLote) : null;
+  return valor !== null && Object.hasOwn(RANGO_ESTADO, valor) ? (valor as EstadoLote) : null;
+}
+
+/** Umbral de «por vencer» cuando la URL no trae uno válido. */
+export const UMBRAL_POR_DEFECTO = 7;
+
+/** Id numérico de un parámetro de URL; null si falta o no es un entero positivo. */
+export function idDeParametro(valor: string | null): number | null {
+  const n = valor === null ? NaN : Number(valor);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/** Lo que de `ParamMap` y `URLSearchParams` necesita el parseo. */
+interface ParametrosLeibles {
+  get(nombre: string): string | null;
+}
+
+/**
+ * Filtros de la lista leídos de la URL, que es su fuente: lo ausente o inválido vuelve a su valor por defecto,
+ * para que no queden filtros viejos al cambiar la consulta. No confundir con `paramsLotes`, que arma la consulta a la API.
+ */
+export function filtroDesdeParams(params: ParametrosLeibles): FiltroLotes {
+  return {
+    productoId: idDeParametro(params.get('productoId')),
+    categoriaId: idDeParametro(params.get('categoriaId')),
+    proveedorId: idDeParametro(params.get('proveedorId')),
+    estado: estadoLoteValido(params.get('estado')),
+    texto: params.get('texto') ?? '',
+    diasPorVencer: normalizarDias(params.get('diasPorVencer') ?? '') ?? UMBRAL_POR_DEFECTO,
+    incluirAgotados: params.get('incluirAgotados') === 'true',
+  };
+}
+
+/** Parámetros de la URL de la lista: solo lo que se aparta del valor por defecto (inverso de `filtroDesdeParams`). */
+export function paramsDesdeFiltro(f: FiltroLotes): Record<string, string | number | boolean> {
+  const params: Record<string, string | number | boolean> = {};
+  if (f.productoId !== null) params['productoId'] = f.productoId;
+  if (f.categoriaId !== null) params['categoriaId'] = f.categoriaId;
+  if (f.proveedorId !== null) params['proveedorId'] = f.proveedorId;
+  if (f.estado !== null) params['estado'] = f.estado;
+  // Sin recortar: así lo que se escribe (y sus espacios) no cambia al volver desde la URL.
+  if (f.texto.trim() !== '') params['texto'] = f.texto;
+  if (f.diasPorVencer !== UMBRAL_POR_DEFECTO) params['diasPorVencer'] = f.diasPorVencer;
+  if (f.incluirAgotados) params['incluirAgotados'] = true;
+  return params;
+}
+
+/** Parámetros del enlace «Ver lotes» de un producto del stock: un producto agotado solo tiene lotes agotados. */
+export function paramsVerLotes(productoId: number, estadoStock: string): Record<string, number | boolean> {
+  return estadoStock === 'AGOTADO' ? { productoId, incluirAgotados: true } : { productoId };
+}
+
+/** La página anterior de la app era la lista de lotes: «Volver a lotes» puede retroceder y conservar sus filtros. */
+export function esVueltaALotes(urlPrevia: string | null): boolean {
+  return urlPrevia !== null && urlPrevia.split(/[?#]/)[0] === '/movimientos/lotes';
 }

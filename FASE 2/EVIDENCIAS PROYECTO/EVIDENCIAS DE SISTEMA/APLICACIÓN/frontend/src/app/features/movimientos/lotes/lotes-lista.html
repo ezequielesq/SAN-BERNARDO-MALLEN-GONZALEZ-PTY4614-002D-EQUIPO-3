@@ -72,6 +72,7 @@
         class="w3-input"
         type="search"
         [value]="texto()"
+        (input)="escribirTexto(campoTexto.value)"
         (change)="cambiarTexto(campoTexto.value)"
       />
     </div>

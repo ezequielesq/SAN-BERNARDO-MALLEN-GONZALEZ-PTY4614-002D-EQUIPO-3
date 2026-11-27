@@ -6,6 +6,7 @@ import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
+import { paramsVerLotes } from './lotes/lote-estado';
 import { StockStatus } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
@@ -77,6 +78,8 @@ export class StockLista {
     this.tamanoTarjetas.set(tamano);
     this.paginaTarjetas.set(1);
   }
+
+  protected readonly paramsVerLotes = paramsVerLotes;
 
   protected estadoBadge(estado: string): TipoEstado {
     return estado.toLowerCase() as TipoEstado;

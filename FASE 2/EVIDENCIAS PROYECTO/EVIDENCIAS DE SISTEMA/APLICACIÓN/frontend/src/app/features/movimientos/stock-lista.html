@@ -21,7 +21,7 @@
               <p>Stock actual: {{ p.stockActual }}</p>
               <p>Valor: {{ p.valorTotal !== null ? '$' + p.valorTotal : '—' }}</p>
               <p>
-                <a [routerLink]="['/movimientos/lotes']" [queryParams]="{ productoId: p.productoId }">
+                <a [routerLink]="['/movimientos/lotes']" [queryParams]="paramsVerLotes(p.productoId, p.estado)">
                   Ver lotes <span class="visualmente-oculto">de {{ p.productoNombre }}</span>
                 </a>
               </p>
@@ -66,7 +66,7 @@
               <td><app-estado-badge [estado]="estadoBadge(p.estado)" /></td>
               <td>{{ p.fechaVencimientoProximo || '—' }}</td>
               <td>
-                <a [routerLink]="['/movimientos/lotes']" [queryParams]="{ productoId: p.productoId }">
+                <a [routerLink]="['/movimientos/lotes']" [queryParams]="paramsVerLotes(p.productoId, p.estado)">
                   Ver lotes <span class="visualmente-oculto">de {{ p.productoNombre }}</span>
                 </a>
               </td>

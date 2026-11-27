@@ -3,6 +3,7 @@
     class="w3-button w3-white w3-border w3-round"
     routerLink="/movimientos/lotes"
     [queryParams]="{ diasPorVencer: diasPorVencer() }"
+    (click)="volver($event)"
   >
     <i class="fa fa-arrow-left" aria-hidden="true"></i> Volver a lotes
   </a>
@@ -73,13 +74,13 @@
                   <td>
                     {{ m.tipoNombre }}
                     @if (m.solicitudId !== null) {
-                      <br /><span class="w3-small">Pedido #{{ m.solicitudId }} de {{ m.solicitanteNombre || 'un empleado' }}</span>
+                      <br /><span class="w3-small">Solicitud #{{ m.solicitudId }} de {{ m.solicitanteNombre || 'un empleado' }}</span>
                     }
                   </td>
                   <td>{{ m.sentido > 0 ? '+' : '−' }}{{ m.cantidad }}</td>
                   <td>{{ m.saldoDespues }}</td>
                   <td>{{ m.usuarioEmail || '—' }}</td>
-                  <td>{{ m.nota || '—' }}</td>
+                  <td>{{ m.solicitudId !== null ? '—' : m.nota || '—' }}</td>
                 </tr>
               }
             </tbody>
