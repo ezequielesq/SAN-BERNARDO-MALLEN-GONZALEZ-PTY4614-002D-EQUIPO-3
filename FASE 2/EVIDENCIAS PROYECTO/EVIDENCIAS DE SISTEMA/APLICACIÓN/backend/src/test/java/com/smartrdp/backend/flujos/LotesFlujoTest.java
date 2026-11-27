@@ -46,10 +46,15 @@ class LotesFlujoTest extends FlujoBase {
     @DisplayName("Lotes: un lote sin vencimiento es vigente, no tiene días y va al final")
     void sinVencimiento() {
         var p = crearProducto(false);
-        entrada(p.id(), 5, null, "SINFECHA").esperando(201);
+        // El lote sin fecha se crea primero (id menor): solo NULLS LAST lo deja detrás del que sí vence.
+        entradaConLineas(
+                lineaEntrada(p.id(), 5, null, "SINFECHA"),
+                lineaEntrada(p.id(), 5, hoy().plusDays(30), "CONFECHA")).esperando(201);
 
-        var lote = lotes("?productoId=" + p.id()).get(0);
+        var lista = lotes("?productoId=" + p.id());
 
+        assertThat(campo(lista, "numeroLote")).containsExactly("CONFECHA", "SINFECHA");
+        var lote = lista.get(1);
         assertThat(lote.path("estado").asText()).isEqualTo("VIGENTE");
         assertThat(lote.path("diasParaVencer").isNull()).isTrue();
     }
@@ -154,5 +159,17 @@ class LotesFlujoTest extends FlujoBase {
         get("/api/lotes/999999999", bodeguero().token()).esperando(404);
         assertThat(get("/api/lotes?estado=INVENTADO", bodeguero().token()).esperando(422).campo()).isEqualTo("estado");
         assertThat(get("/api/lotes?diasPorVencer=-1", bodeguero().token()).estado()).isEqualTo(422);
+    }
+
+    @Test
+    @DisplayName("Lotes: el detalle también rechaza días por vencer negativos")
+    void detalleValidaLosDiasPorVencer() {
+        var p = crearProducto(false);
+        entrada(p.id(), 5, null, "DETALLE").esperando(201);
+        long loteId = lotes("?productoId=" + p.id()).get(0).path("id").asLong();
+
+        assertThat(get("/api/lotes/" + loteId + "?diasPorVencer=-1", bodeguero().token()).esperando(422).campo())
+                .isEqualTo("diasPorVencer");
+        get("/api/lotes/" + loteId + "?diasPorVencer=0", bodeguero().token()).esperando(200);
     }
 }

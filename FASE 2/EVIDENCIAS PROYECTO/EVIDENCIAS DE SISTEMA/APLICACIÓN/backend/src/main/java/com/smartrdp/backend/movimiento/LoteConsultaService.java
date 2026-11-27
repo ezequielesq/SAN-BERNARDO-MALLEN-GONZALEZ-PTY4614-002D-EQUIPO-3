@@ -22,7 +22,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class LoteConsultaService {
 
-    public static final int DIAS_POR_VENCER = 7;
+    /** Umbral por defecto de «por vencer» (texto, para el {@code defaultValue} del controlador). */
+    public static final String DIAS_POR_VENCER_POR_DEFECTO = "7";
     private static final Set<String> ESTADOS = Set.of("AGOTADO", "VENCIDO", "POR_VENCER", "VIGENTE");
 
     private static final String SELECT_LOTES = """
@@ -58,9 +59,7 @@ public class LoteConsultaService {
         if (estado != null && !ESTADOS.contains(estado)) {
             throw new BusinessException("Estado de lote desconocido: " + estado + ".", "estado");
         }
-        if (diasPorVencer < 0) {
-            throw new BusinessException("Los días para «por vencer» no pueden ser negativos.", "diasPorVencer");
-        }
+        validarDiasPorVencer(diasPorVencer);
         boolean verAgotados = incluirAgotados || "AGOTADO".equals(estado);
         String buscado = texto == null || texto.isBlank() ? null : texto.trim();
         return consultar(null, productoId, categoriaId, proveedorId, buscado, diasPorVencer).stream()
@@ -70,6 +69,7 @@ public class LoteConsultaService {
 
     @Transactional(readOnly = true)
     public LoteDetalleResponse detalle(Long id, int diasPorVencer) {
+        validarDiasPorVencer(diasPorVencer);
         LoteResponse lote = consultar(id, null, null, null, null, diasPorVencer).stream().findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Lote", id));
         List<MovimientoLoteResponse> trazabilidad = new ArrayList<>();
@@ -101,6 +101,12 @@ public class LoteConsultaService {
                     return null;
                 }).list();
         return new LoteDetalleResponse(lote, trazabilidad);
+    }
+
+    private static void validarDiasPorVencer(int diasPorVencer) {
+        if (diasPorVencer < 0) {
+            throw new BusinessException("Los días para «por vencer» no pueden ser negativos.", "diasPorVencer");
+        }
     }
 
     /** Estado derivado: agotado, vencido (fecha pasada), por vencer (hasta N días, el día N incluido) o vigente. */

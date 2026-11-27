@@ -22,15 +22,16 @@ public class LoteController {
             @RequestParam(required = false) Long proveedorId,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String texto,
-            @RequestParam(defaultValue = "7") int diasPorVencer,
+            @RequestParam(defaultValue = LoteConsultaService.DIAS_POR_VENCER_POR_DEFECTO) int diasPorVencer,
             @RequestParam(defaultValue = "false") boolean incluirAgotados) {
         return loteConsultaService.listar(productoId, categoriaId, proveedorId, estado, texto, diasPorVencer,
                 incluirAgotados);
     }
 
     @GetMapping("/{id}")
-    public LoteDetalleResponse detalle(@PathVariable Long id,
-                                       @RequestParam(defaultValue = "7") int diasPorVencer) {
+    public LoteDetalleResponse detalle(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = LoteConsultaService.DIAS_POR_VENCER_POR_DEFECTO) int diasPorVencer) {
         return loteConsultaService.detalle(id, diasPorVencer);
     }
 }
