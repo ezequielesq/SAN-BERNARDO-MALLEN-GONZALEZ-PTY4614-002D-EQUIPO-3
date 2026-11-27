@@ -3,6 +3,9 @@ package com.smartrdp.backend.flujos;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
 
 import java.io.ByteArrayInputStream;
@@ -20,6 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PanelProveedorFlujoTest extends FlujoBase {
 
     private static final String PANEL = "/api/analitica/panel/";
+
+    @Autowired
+    private PlatformTransactionManager transacciones;
 
     /** Compra de un producto a un proveedor; con {@code dia} la operación se fecha ese día. Devuelve su id. */
     private long comprar(Prod producto, Prov proveedor, int cantidad, int costo, LocalDate vencimiento, LocalDate dia) {
@@ -153,6 +159,58 @@ class PanelProveedorFlujoTest extends FlujoBase {
         assertThat(productosDelExcel(base)).containsExactlyInAnyOrder(deA.nombre(), deB.nombre());
         assertThat(productosDelExcel(base + "&proveedorId=" + a.id())).containsExactly(deA.nombre());
         assertThat(productosDelExcel(base + "&proveedorId=" + b.id())).containsExactly(deB.nombre());
+    }
+
+    @Test
+    @DisplayName("HU-140 Gasto en compras por proveedor: valor, cantidad y compras de cada uno, de mayor a menor, con «Sin proveedor» para los lotes antiguos")
+    void comprasPorProveedor() {
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = crearProductoEn(categoria.id(), false);
+        Prov a = crearProveedor();
+        Prov b = crearProveedor();
+        comprar(producto, a, 10, 1_000, null, null);
+        comprar(producto, a, 2, 1_000, null, null);
+        comprar(producto, b, 5, 3_000, null, null);
+        // Un lote anterior a los proveedores: el libro es inmutable, así que se simula quitándole el proveedor en la base.
+        long antigua = comprar(producto, a, 4, 500, null, null);
+        quitarProveedorDeLosLotesDe(antigua);
+        String base = PANEL + "compras-por-proveedor?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id();
+
+        JsonNode filas = get(base, bodeguero().token()).esperando(200).json();
+
+        assertThat(filas).hasSize(3);
+        assertThat(filas.get(0).path("proveedorId").asLong()).isEqualTo(b.id());
+        assertThat(filas.get(0).path("nombre").asText()).isEqualTo(b.nombre());
+        assertThat(filas.get(0).path("valor").asLong()).isEqualTo(15_000);
+        assertThat(filas.get(0).path("cantidad").asLong()).isEqualTo(5);
+        assertThat(filas.get(0).path("compras").asInt()).isEqualTo(1);
+        assertThat(filas.get(1).path("proveedorId").asLong()).isEqualTo(a.id());
+        assertThat(filas.get(1).path("valor").asLong()).isEqualTo(12_000);
+        assertThat(filas.get(1).path("cantidad").asLong()).isEqualTo(12);
+        assertThat(filas.get(1).path("compras").asInt()).isEqualTo(2);
+        assertThat(filas.get(2).path("proveedorId").isNull()).isTrue();
+        assertThat(filas.get(2).path("nombre").asText()).isEqualTo("Sin proveedor");
+        assertThat(filas.get(2).path("valor").asLong()).isEqualTo(2_000);
+        assertThat(filas.get(2).path("cantidad").asLong()).isEqualTo(4);
+
+        // Con un proveedor elegido solo queda su fila; el acceso exige sesión.
+        JsonNode soloA = get(base + "&proveedorId=" + a.id(), bodeguero().token()).esperando(200).json();
+        assertThat(soloA).hasSize(1);
+        assertThat(soloA.get(0).path("proveedorId").asLong()).isEqualTo(a.id());
+        assertThat(soloA.get(0).path("valor").asLong()).isEqualTo(12_000);
+        assertThat(get(base, null).estado()).isEqualTo(401);
+    }
+
+    /** Deja sin proveedor los lotes de una operación, como los lotes anteriores a los proveedores. */
+    private void quitarProveedorDeLosLotesDe(long operacionId) {
+        new TransactionTemplate(transacciones).executeWithoutResult(estado -> {
+            jdbc.execute("ALTER TABLE lotes DISABLE TRIGGER trg_lotes_inmutable");
+            int filas = jdbc.update("UPDATE lotes SET proveedor_id = NULL "
+                    + "WHERE id IN (SELECT lote_id FROM movimientos WHERE operacion_id = ?)", operacionId);
+            jdbc.execute("ALTER TABLE lotes ENABLE TRIGGER trg_lotes_inmutable");
+            assertThat(filas).as("lotes sin proveedor").isPositive();
+        });
     }
 
     /** Consulta el resumen con un rango amplio (ayer a mañana) más los filtros extra indicados. */

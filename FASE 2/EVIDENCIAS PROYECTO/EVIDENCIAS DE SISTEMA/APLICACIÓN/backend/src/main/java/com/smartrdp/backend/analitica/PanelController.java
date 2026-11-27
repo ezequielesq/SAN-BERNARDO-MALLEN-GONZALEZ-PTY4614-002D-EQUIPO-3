@@ -1,5 +1,6 @@
 package com.smartrdp.backend.analitica;
 
+import com.smartrdp.backend.analitica.dto.CompraProveedorDto;
 import com.smartrdp.backend.analitica.dto.HistorialPreciosDto;
 import com.smartrdp.backend.analitica.dto.OpcionDto;
 import com.smartrdp.backend.analitica.dto.PedidosPorPersonaDto;
@@ -91,6 +92,19 @@ public class PanelController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long proveedorId) {
         return servicio.precios(productoId, desde, hasta, proveedorId);
+    }
+
+    @GetMapping("/compras-por-proveedor")
+    public List<CompraProveedorDto> comprasPorProveedor(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(required = false) Long proveedorId) {
+        return servicio.comprasPorProveedor(
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId, proveedorId));
     }
 
     @GetMapping("/solicitantes")

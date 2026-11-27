@@ -1,6 +1,7 @@
 package com.smartrdp.backend.analitica;
 
 import com.smartrdp.backend.analitica.dto.CompraDto;
+import com.smartrdp.backend.analitica.dto.CompraProveedorDto;
 import com.smartrdp.backend.analitica.dto.FilaPersonaDto;
 import com.smartrdp.backend.analitica.dto.HistorialPreciosDto;
 import com.smartrdp.backend.analitica.dto.ImporteDto;
@@ -219,6 +220,25 @@ public class PanelService {
                 compras.stream().mapToInt(CompraDto::costo).max().orElseThrow(),
                 redondear(compras.stream().mapToInt(CompraDto::costo).average().orElseThrow()),
                 redondear(ponderado), porProveedor);
+    }
+
+    // ------------------------------------------------------------------ compras por proveedor
+
+    /** Gasto en compras de cada proveedor en el rango (a costo de lote), de mayor a menor valor. */
+    @Transactional(readOnly = true)
+    public List<CompraProveedorDto> comprasPorProveedor(FiltroPanel f) {
+        // Los lotes sin proveedor comparten la clave nula: un LinkedHashMap la admite.
+        Map<Long, List<LineaPanel>> porProveedor = new LinkedHashMap<>();
+        for (LineaPanel l : lineas(f, List.of(TipoOperacion.COMPRA))) {
+            porProveedor.computeIfAbsent(l.proveedorId(), id -> new ArrayList<>()).add(l);
+        }
+        return porProveedor.entrySet().stream()
+                .map(e -> new CompraProveedorDto(e.getKey(),
+                        e.getKey() == null ? "Sin proveedor" : e.getValue().get(0).proveedorNombre(),
+                        valor(e.getValue()), cantidad(e.getValue()), e.getValue().size()))
+                .sorted(Comparator.comparingLong(CompraProveedorDto::valor).reversed()
+                        .thenComparing(CompraProveedorDto::nombre))
+                .toList();
     }
 
     /** Último costo, promedio ponderado por cantidad y número de compras de cada proveedor, por nombre. */
