@@ -1,0 +1,19 @@
+<div class="w3-bar">
+  <button type="button" class="w3-button w3-white w3-border w3-margin-right" (click)="usarMisProductos()">
+    <i class="fa-solid fa-star" aria-hidden="true"></i> Mis productos clave
+  </button>
+  <button
+    type="button"
+    class="w3-button w3-white w3-border"
+    [attr.aria-disabled]="guardando()"
+    (click)="guardarSeleccion()"
+  >
+    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Guardar selección como mis productos clave
+  </button>
+</div>
+@if (mensajeError() || claves.error()) {
+  <div class="w3-panel w3-pale-red w3-leftbar w3-border-red" role="alert">
+    <p>{{ mensajeError() ?? 'No se pudo cargar tu lista de productos clave.' }}</p>
+    <p><button type="button" class="w3-button w3-white w3-border" (click)="reintentar()">Reintentar</button></p>
+  </div>
+}

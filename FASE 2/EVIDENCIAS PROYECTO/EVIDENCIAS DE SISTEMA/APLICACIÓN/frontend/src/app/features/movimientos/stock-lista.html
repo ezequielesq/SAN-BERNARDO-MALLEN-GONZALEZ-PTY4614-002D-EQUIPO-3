@@ -20,6 +20,11 @@
               <p><app-estado-badge [estado]="estadoBadge(p.estado)" /></p>
               <p>Stock actual: {{ p.stockActual }}</p>
               <p>Valor: {{ p.valorTotal !== null ? '$' + p.valorTotal : '—' }}</p>
+              <p>
+                <a [routerLink]="['/movimientos/lotes']" [queryParams]="paramsVerLotes(p.productoId, p.estado)">
+                  Ver lotes <span class="visualmente-oculto">de {{ p.productoNombre }}</span>
+                </a>
+              </p>
             </article>
           </li>
         }
@@ -48,6 +53,7 @@
             <th appThOrden [orden]="orden" columna="valorTotal">Valor total</th>
             <th appThOrden [orden]="orden" columna="estado">Estado</th>
             <th appThOrden [orden]="orden" columna="fechaVencimientoProximo">Próximo vencimiento</th>
+            <th scope="col">Lotes</th>
           </tr>
         </thead>
         <tbody>
@@ -59,6 +65,11 @@
               <td>{{ p.valorTotal !== null ? '$' + p.valorTotal : '—' }}</td>
               <td><app-estado-badge [estado]="estadoBadge(p.estado)" /></td>
               <td>{{ p.fechaVencimientoProximo || '—' }}</td>
+              <td>
+                <a [routerLink]="['/movimientos/lotes']" [queryParams]="paramsVerLotes(p.productoId, p.estado)">
+                  Ver lotes <span class="visualmente-oculto">de {{ p.productoNombre }}</span>
+                </a>
+              </td>
             </tr>
           }
         </tbody>

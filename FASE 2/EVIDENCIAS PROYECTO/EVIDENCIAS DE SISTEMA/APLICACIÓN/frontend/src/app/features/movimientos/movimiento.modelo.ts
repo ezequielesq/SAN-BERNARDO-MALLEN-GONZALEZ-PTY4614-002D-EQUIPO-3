@@ -60,6 +60,7 @@ export interface LineaEntrada {
   fechaVencimiento: string | null;
   numeroLote: string | null;
   costoUnitario: number | null;
+  proveedorId: number | null;
 }
 
 export interface EntradaRequest {
@@ -102,9 +103,13 @@ export interface FilaEntrada {
   fechaVencimiento: string | null;
   cantidad: number | null;
   costoUnitario: number | null;
+  /** RUT escrito en el Excel; el servidor lo resuelve a `proveedorId` y `proveedorNombre`. */
+  proveedorRut: string | null;
+  proveedorId: number | null;
+  proveedorNombre: string | null;
 }
 
-/** `errores` va por campo (`codigo`, `numeroLote`, `fechaVencimiento`, `cantidad`, `costoUnitario`); vacío = la fila se puede cargar. */
+/** `errores` va por campo (`codigo`, `numeroLote`, `fechaVencimiento`, `cantidad`, `costoUnitario`, `proveedorRut`); vacío = la fila se puede cargar. */
 export interface FilaEntradaValidada {
   datos: FilaEntrada;
   errores: Record<string, string>;

@@ -1,0 +1,74 @@
+<section class="w3-container w3-border w3-margin w3-padding w3-light-grey" aria-labelledby="precios-titulo">
+  <h2 id="precios-titulo" class="w3-large w3-margin-left">Historial de precios de compra</h2>
+  @if (productoId() === null) {
+    <p>Elige exactamente un producto en los filtros para ver cómo cambió su precio de compra.</p>
+  } @else {
+    <app-estado-vista
+      [cargando]="historial.isLoading()"
+      [error]="historial.error()"
+      [vacio]="historial.hasValue() && puntos().length === 0"
+      mensajeVacio="Este producto no tiene compras con costo en el rango."
+      (reintentar)="historial.reload()"
+    >
+      @if (h(); as h) {
+        <h3 class="w3-medium">{{ h.nombre }} ({{ h.unidad }})</h3>
+        <app-grafico-linea [puntos]="puntos()" [descripcion]="descripcion()" [formatear]="formatear" />
+        @if (estadisticos(); as e) {
+          <ul class="tarjetas">
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Último</h4><p class="tarjeta-kpi__valor">{{ e.ultimo }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Anterior</h4><p class="tarjeta-kpi__valor">{{ e.anterior }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Variación</h4><p class="tarjeta-kpi__valor">{{ e.variacion }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Mínimo / máximo</h4><p class="tarjeta-kpi__valor">{{ e.rango }}</p></li>
+            <li class="tarjeta-kpi w3-card w3-white w3-padding"><h4 class="w3-medium">Promedio</h4><p class="tarjeta-kpi__valor">{{ e.promedio }}</p><p class="w3-small">Ponderado por cantidad: {{ e.ponderado }}</p></li>
+          </ul>
+        } @else {
+          <p class="w3-small">Hace falta más de una compra en el rango para calcular estadísticos.</p>
+        }
+        @if (proveedores().length > 0) {
+          <h3 id="precios-proveedores-titulo" class="w3-medium">Comparación por proveedor</h3>
+          <p class="w3-small">Compara a todos los proveedores del producto, aunque haya uno elegido.</p>
+          <div class="w3-responsive">
+            <table class="w3-table-all w3-small" aria-labelledby="precios-proveedores-titulo">
+              <thead>
+                <tr>
+                  <th scope="col">Proveedor</th>
+                  <th scope="col">Compras</th>
+                  <th scope="col">Último costo</th>
+                  <th scope="col">Promedio ponderado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of proveedores(); track p.nombre) {
+                  <tr><td>{{ p.nombre }}</td><td>{{ p.compras }}</td><td>{{ p.ultimo }}</td><td>{{ p.ponderado }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (compras().length > 0) {
+          <details class="w3-margin-top">
+            <summary><b>Compras del rango con su proveedor</b></summary>
+            <div class="w3-responsive">
+              <table class="w3-table-all w3-small">
+                <caption class="visualmente-oculto">Compras de {{ h.nombre }} con su proveedor</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Proveedor</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Costo unitario</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of compras(); track $index) {
+                    <tr><td>{{ c.fecha }}</td><td>{{ c.proveedor }}</td><td>{{ c.cantidad }}</td><td>{{ c.costo }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </details>
+        }
+      }
+    </app-estado-vista>
+  }
+</section>

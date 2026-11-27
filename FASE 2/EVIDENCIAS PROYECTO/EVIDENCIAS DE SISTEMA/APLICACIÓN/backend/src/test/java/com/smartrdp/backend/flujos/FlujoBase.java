@@ -1,5 +1,6 @@
 package com.smartrdp.backend.flujos;
 
+import com.smartrdp.backend.catalogo.Rut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -7,16 +8,21 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.MissingNode;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,15 +47,23 @@ abstract class FlujoBase {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final AtomicLong CODIGOS = new AtomicLong(7_000_000);
+    private static final AtomicLong RUTS = new AtomicLong(60_000_000);
 
     // Datos compartidos por todas las pruebas, creados una sola vez por corrida.
     private static String tokenAdmin;
     private static Cuenta bodegueroCompartido;
     private static Long categoriaComun;
     private static Long unidadComun;
+    private static Long proveedorComun;
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    protected JdbcTemplate jdbc;
+
+    @Autowired
+    private PlatformTransactionManager transacciones;
 
     @Value("${app.seed.admin-email}")
     protected String correoAdmin;
@@ -81,6 +95,8 @@ abstract class FlujoBase {
     protected record Cuenta(long id, String nombre, String email, String clave, String token) {}
 
     protected record Prod(long id, String nombre, String codigo) {}
+
+    protected record Prov(long id, String rut, String nombre) {}
 
     protected record Stock(int cantidad, String estado, LocalDate proximoVencimiento) {}
 
@@ -265,6 +281,26 @@ abstract class FlujoBase {
         return new Prod(r.json().path("id").asLong(), nombre, codigo);
     }
 
+    /** RUT válido que ninguna otra prueba de la corrida usa. */
+    protected static String rutUnico() {
+        String cuerpo = Long.toString(RUTS.incrementAndGet());
+        return cuerpo + "-" + Rut.digitoVerificador(cuerpo);
+    }
+
+    /** Proveedor propio de la prueba (RUT y nombre únicos), creado por el bodeguero compartido. */
+    protected Prov crearProveedor() {
+        String rut = rutUnico();
+        String nombre = "Proveedor " + unico();
+        var r = post("/api/proveedores", bodeguero().token(), objeto("rut", rut, "nombre", nombre)).esperando(201);
+        return new Prov(r.json().path("id").asLong(), rut, nombre);
+    }
+
+    /** Proveedor compartido por las compras de las pruebas que no se ocupan del proveedor. */
+    protected synchronized long proveedorComun() {
+        if (proveedorComun == null) proveedorComun = crearProveedor().id();
+        return proveedorComun;
+    }
+
     /** Código numérico que ningún otro producto de la corrida usa. */
     protected static String siguienteCodigo() {
         return Long.toString(CODIGOS.incrementAndGet());
@@ -298,9 +334,10 @@ abstract class FlujoBase {
 
     // ------------------------------------------------------------------ entradas, salidas y stock
 
-    protected static Map<String, Object> lineaEntrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
+    protected Map<String, Object> lineaEntrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
         return objeto("productoId", productoId, "cantidad", cantidad,
-                "fechaVencimiento", vencimiento == null ? null : vencimiento.toString(), "numeroLote", lote);
+                "fechaVencimiento", vencimiento == null ? null : vencimiento.toString(), "numeroLote", lote,
+                "costoUnitario", 1000, "proveedorId", proveedorComun());
     }
 
     protected Respuesta entrada(long productoId, int cantidad, LocalDate vencimiento, String lote) {
@@ -409,5 +446,93 @@ abstract class FlujoBase {
     protected final Respuesta devolver(Cuenta empleado, long pedidoId, Map<String, Object>... items) {
         return post("/api/publico/devoluciones", null, objeto("empleadoId", empleado.id(),
                 "password", empleado.clave(), "solicitudOrigenId", pedidoId, "items", List.of(items)));
+    }
+
+    // ------------------------------------------------------------------ fechas del libro
+
+    /**
+     * Mueve la fecha de una operación al pasado. El libro es inmutable (trigger trg_operaciones_inmutable), así
+     * que el trigger se desactiva y se vuelve a activar dentro de una sola transacción: si algo falla, la
+     * transacción deshace también el cambio del trigger.
+     */
+    protected void fecharOperacion(long operacionId, LocalDateTime fecha) {
+        fecharOperaciones("id = ?", operacionId, fecha);
+    }
+
+    /** Fecha las operaciones de una solicitud (la entrega de un pedido o la devolución). */
+    protected void fecharOperacionesDeSolicitud(long solicitudId, LocalDateTime fecha) {
+        fecharOperaciones("solicitud_id = ?", solicitudId, fecha);
+    }
+
+    private void fecharOperaciones(String condicion, long valor, LocalDateTime fecha) {
+        new TransactionTemplate(transacciones).executeWithoutResult(estado -> {
+            jdbc.execute("ALTER TABLE operaciones DISABLE TRIGGER trg_operaciones_inmutable");
+            int filas = jdbc.update("UPDATE operaciones SET created_at = ? WHERE " + condicion,
+                    Timestamp.valueOf(fecha), valor);
+            jdbc.execute("ALTER TABLE operaciones ENABLE TRIGGER trg_operaciones_inmutable");
+            assertThat(filas).as("operaciones fechadas con %s", condicion).isPositive();
+        });
+    }
+
+    /** Producto no perecible de la categoría, con una entrada inicial (costo de referencia 1000). */
+    protected Prod productoConEntrada(Catalogo categoria, int stockInicial) {
+        Prod producto = crearProductoEn(categoria.id(), false);
+        entrada(producto.id(), stockInicial, null, "L-" + unico()).esperando(201);
+        return producto;
+    }
+
+    /** Producto con la unidad indicada (costo de referencia 1000), sin entradas. */
+    protected Prod crearProductoConUnidad(Catalogo categoria, Catalogo unidad) {
+        String nombre = "Producto " + unico();
+        String codigo = siguienteCodigo();
+        var r = post("/api/productos", bodeguero().token(), objeto(
+                "codigo", codigo, "nombre", nombre,
+                "categoriaId", categoria.id(), "unidadMedidaId", unidad.id(),
+                "esPerecible", false, "stockMinimo", 5, "stockCritico", 2,
+                "costoUnitario", 1000)).esperando(201);
+        return new Prod(r.json().path("id").asLong(), nombre, codigo);
+    }
+
+    /**
+     * Producto sin costo de referencia: sus lotes de inventario inicial nacen sin costo, como los lotes antiguos.
+     * La API exige el costo al crear el producto, así que se crea con 0 y se anula directo en la base.
+     */
+    protected Prod crearProductoSinCosto(Catalogo categoria) {
+        String nombre = "Producto " + unico();
+        String codigo = siguienteCodigo();
+        var r = post("/api/productos", bodeguero().token(), objeto(
+                "codigo", codigo, "nombre", nombre,
+                "categoriaId", categoria.id(), "unidadMedidaId", unidadComun(),
+                "esPerecible", false, "stockMinimo", 5, "stockCritico", 2,
+                "costoUnitario", 0)).esperando(201);
+        long id = r.json().path("id").asLong();
+        jdbc.update("UPDATE productos SET costo_unitario = NULL WHERE id = ?", id);
+        return new Prod(id, nombre, codigo);
+    }
+
+    /** Entrada de un tipo cualquiera (COMPRA, INVENTARIO_INICIAL, AJUSTE_ENTRADA) con costo opcional. */
+    protected Respuesta entradaDeTipo(String tipo, long productoId, int cantidad, Integer costo) {
+        var linea = objeto("productoId", productoId, "cantidad", cantidad, "costoUnitario", costo);
+        if ("COMPRA".equals(tipo)) linea.put("proveedorId", proveedorComun());
+        return post("/api/movimientos/entradas", bodeguero().token(), objeto("tipo", tipo, "lineas", List.of(linea)));
+    }
+
+    /** Compra con el costo unitario indicado (queda como precio de compra del lote). */
+    protected Respuesta compra(long productoId, int cantidad, int costo) {
+        return entradaDeTipo("COMPRA", productoId, cantidad, costo);
+    }
+
+    /** Salida manual de un tipo cualquiera (CONSUMO_INTERNO, MERMA, VENCIMIENTO, AJUSTE_SALIDA). */
+    protected Respuesta salidaDeTipo(Cuenta bodeguero, String tipo, long productoId, int cantidad) {
+        return post("/api/movimientos/salidas", bodeguero.token(), objeto("tipo", tipo,
+                "lineas", List.of(objeto("productoId", productoId, "cantidad", cantidad))));
+    }
+
+    /** Pedido aprobado completo, con su entrega fechada al mediodía de {@code dia}. Devuelve el id del pedido. */
+    protected long entregar(Cuenta bodeguero, Cuenta empleado, long productoId, int cantidad, LocalDate dia) {
+        long pedido = pedirOk(empleado, productoId, cantidad);
+        aprobar(bodeguero, pedido).esperando(200);
+        fecharOperacionesDeSolicitud(pedido, dia.atTime(12, 0));
+        return pedido;
     }
 }

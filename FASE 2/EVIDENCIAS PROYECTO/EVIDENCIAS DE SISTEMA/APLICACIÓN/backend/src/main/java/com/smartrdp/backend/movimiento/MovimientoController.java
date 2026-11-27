@@ -53,7 +53,7 @@ public class MovimientoController {
     /** Revalida filas editadas en la vista previa; no guarda nada. */
     @PostMapping("/entradas/importar/validar")
     public List<FilaEntradaValidada> validarEntradas(@Valid @RequestBody ImportacionEntradaRequest request) {
-        return entradaImportacionService.validar(request.filas());
+        return entradaImportacionService.validar(request.filas(), request.tipo());
     }
 
     @PostMapping("/entradas/importar")

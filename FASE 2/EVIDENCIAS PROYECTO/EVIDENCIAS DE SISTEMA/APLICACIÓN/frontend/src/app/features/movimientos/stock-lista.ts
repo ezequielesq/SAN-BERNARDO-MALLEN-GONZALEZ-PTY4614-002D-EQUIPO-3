@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { EstadoBadge, TipoEstado } from '../../shared/estado-badge/estado-badge';
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { OpcionOrden, SelectorOrden } from '../../shared/ordenamiento/selector-orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../shared/paginacion/paginacion';
+import { paramsVerLotes } from './lotes/lote-estado';
 import { StockStatus } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
 
@@ -34,7 +36,7 @@ const OPCIONES_TARJETAS: readonly OpcionOrden[] = [
 
 @Component({
   selector: 'app-stock-lista',
-  imports: [EstadoVista, EstadoBadge, ThOrden, SelectorOrden, Paginacion],
+  imports: [RouterLink, EstadoVista, EstadoBadge, ThOrden, SelectorOrden, Paginacion],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './stock-lista.html',
 })
@@ -76,6 +78,8 @@ export class StockLista {
     this.tamanoTarjetas.set(tamano);
     this.paginaTarjetas.set(1);
   }
+
+  protected readonly paramsVerLotes = paramsVerLotes;
 
   protected estadoBadge(estado: string): TipoEstado {
     return estado.toLowerCase() as TipoEstado;

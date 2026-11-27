@@ -1,0 +1,69 @@
+<section
+  class="w3-container w3-border w3-margin w3-padding w3-light-grey"
+  aria-labelledby="personas-titulo"
+>
+  <h2 id="personas-titulo" class="w3-large w3-margin-left">Pedidos por persona</h2>
+  @if (decision().aviso; as aviso) {
+    <p class="w3-panel w3-pale-yellow w3-leftbar w3-border-yellow">{{ aviso }}</p>
+  }
+  <p class="w3-small">
+    «Solicitado» es referencial: se valoriza con el costo de referencia del producto.
+    @if (!muestraSolicitado()) {
+      No aplica al filtrar por proveedor: un pedido no se asigna a un proveedor.
+    }
+  </p>
+  <app-estado-vista
+    [cargando]="resultado.isLoading()"
+    [error]="resultado.error()"
+    [vacio]="resultado.hasValue() && filas().length === 0"
+    mensajeVacio="No hay pedidos con estos filtros."
+    (reintentar)="resultado.reload()"
+  >
+    <div class="w3-responsive">
+      <table class="w3-table-all">
+        <caption class="visualmente-oculto">
+          Pedidos, entregas y devoluciones por persona
+        </caption>
+        <thead>
+          <tr class="w3-light-grey">
+            <th appThOrden [orden]="orden" columna="nombre">Persona</th>
+            <th appThOrden [orden]="orden" columna="pedidos">Pedidos</th>
+            @if (muestraSolicitado()) {
+              <th appThOrden [orden]="orden" columna="solicitado">Solicitado</th>
+            } @else {
+              <th scope="col">Solicitado</th>
+            }
+            <th appThOrden [orden]="orden" columna="entregado">Entregado</th>
+            <th appThOrden [orden]="orden" columna="devuelto">Devuelto</th>
+            <th appThOrden [orden]="orden" columna="neto">Neto</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filasPaginadas(); track f.usuarioId) {
+            <tr>
+              <td>{{ f.nombre }}</td>
+              <td>{{ f.pedidos }}</td>
+              <td>{{ muestraSolicitado() ? importe(f.solicitado) : '—' }}</td>
+              <td>{{ importe(f.entregado) }}</td>
+              <td>{{ importe(f.devuelto) }}</td>
+              <td>
+                <b>{{ importe(f.neto) }}</b>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (hayPaginas()) {
+      <app-paginacion
+        [pagina]="paginaActual()"
+        [totalItems]="filas().length"
+        [tamanoPagina]="tamano()"
+        [opcionesTamano]="opcionesTamano"
+        idTamano="personas-tamano"
+        (paginaCambiada)="pagina.set($event)"
+        (tamanoPaginaCambiado)="cambiarTamano($event)"
+      />
+    }
+  </app-estado-vista>
+</section>

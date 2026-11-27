@@ -1,5 +1,6 @@
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
   <h2 class="w3-large w3-margin-left">Próximos a vencer</h2>
+  <p class="w3-small w3-margin-left">Usa la categoría y los productos elegidos en los filtros.</p>
   <div class="w3-row">
     <div class="w3-col s12 m3 w3-padding">
       <label for="vencimientos-umbral"><b>Días de umbral</b></label>
@@ -15,28 +16,18 @@
         (change)="cambiarUmbral(campoUmbral.value)"
       />
     </div>
-    <div class="w3-col s12 m3 w3-padding">
-      <label for="vencimientos-umbral-categoria"><b>Categoría</b></label>
-      <select
-        #selectCategoriaUmbral
-        id="vencimientos-umbral-categoria"
-        class="w3-select"
-        (change)="cambiarCategoriaUmbral(selectCategoriaUmbral.value)"
-      >
-        <option value="">Todas</option>
-        @for (c of categorias(); track c.id) {
-          <option [value]="c.id">{{ c.nombre }}</option>
-        }
-      </select>
-    </div>
   </div>
 
-  @if (filasTarjetas().length === 0) {
-    <p>Sin productos próximos a vencer o vencidos.</p>
-  } @else {
+  <app-estado-vista
+    [cargando]="tarjetas.isLoading()"
+    [error]="tarjetas.error()"
+    [vacio]="filasTarjetas().length === 0"
+    mensajeVacio="Sin productos próximos a vencer o vencidos."
+    (reintentar)="tarjetas.reload()"
+  >
     <app-selector-orden idCampo="orden-vencimientos-tarjetas" [orden]="ordenTarjetas" [opciones]="opcionesTarjetas" />
     <ul class="grilla-tarjetas">
-      @for (v of tarjetasOrdenadas(); track v.productoId) {
+      @for (v of tarjetasPaginadas(); track $index) {
         <li>
           <article class="w3-card w3-white w3-padding w3-border">
             <h3 class="w3-medium"><b>{{ v.nombre }}</b></h3>
@@ -47,7 +38,19 @@
         </li>
       }
     </ul>
-  }
+    @if (hayPaginasTarjetas()) {
+      <app-paginacion
+        [pagina]="paginaTarjetasActual()"
+        [totalItems]="tarjetasOrdenadas().length"
+        [tamanoPagina]="tamanoTarjetas()"
+        [opcionesTamano]="opcionesTamanoTarjetas"
+        etiquetaTamano="Tarjetas por página"
+        idTamano="vencimientos-tarjetas-tamano"
+        (paginaCambiada)="paginaTarjetas.set($event)"
+        (tamanoPaginaCambiado)="cambiarTamanoTarjetas($event)"
+      />
+    }
+  </app-estado-vista>
 </div>
 
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
@@ -80,51 +83,54 @@
             (change)="cambiarHasta(campoHasta.value)"
           />
         </div>
-        <div class="w3-col s12 m4 w3-padding">
-          <label for="vencimientos-rango-categoria"><b>Categoría</b></label>
-          <select
-            #selectCategoriaRango
-            id="vencimientos-rango-categoria"
-            class="w3-select"
-            (change)="cambiarCategoriaRango(selectCategoriaRango.value)"
-          >
-            <option value="">Todas</option>
-            @for (c of categorias(); track c.id) {
-              <option [value]="c.id">{{ c.nombre }}</option>
-            }
-          </select>
-        </div>
       </div>
     </div>
   </div>
 </div>
 
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
-  <div class="w3-responsive">
-    <table class="w3-table-all">
-      <caption class="visualmente-oculto">Vencimientos en el rango seleccionado</caption>
-      <thead>
-        <tr class="w3-light-grey">
-          <th scope="col">Producto</th>
-          <th scope="col">Cantidad en riesgo</th>
-          <th scope="col">Fecha de vencimiento</th>
-          <th scope="col">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (v of filasDetalle(); track v.productoId) {
-          <tr>
-            <td>{{ v.nombre }}</td>
-            <td>{{ v.cantidadEnRiesgo }}</td>
-            <td>{{ v.fechaVencimiento | date: 'dd-MM-yyyy' }}</td>
-            <td><app-estado-badge [estado]="estadoBadge(v.vencido)" /></td>
+  <app-estado-vista
+    [cargando]="detalle.isLoading()"
+    [error]="detalle.error()"
+    (reintentar)="detalle.reload()"
+  >
+    <div class="w3-responsive">
+      <table class="w3-table-all">
+        <caption class="visualmente-oculto">Vencimientos en el rango seleccionado</caption>
+        <thead>
+          <tr class="w3-light-grey">
+            <th scope="col">Producto</th>
+            <th scope="col">Cantidad en riesgo</th>
+            <th scope="col">Fecha de vencimiento</th>
+            <th scope="col">Estado</th>
           </tr>
-        } @empty {
-          <tr>
-            <td colspan="4">No hay vencimientos en el rango seleccionado.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          @for (v of detallePaginado(); track $index) {
+            <tr>
+              <td>{{ v.nombre }}</td>
+              <td>{{ v.cantidadEnRiesgo }}</td>
+              <td>{{ v.fechaVencimiento | date: 'dd-MM-yyyy' }}</td>
+              <td><app-estado-badge [estado]="estadoBadge(v.vencido)" /></td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4">No hay vencimientos en el rango seleccionado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (hayPaginasDetalle()) {
+      <app-paginacion
+        [pagina]="paginaDetalleActual()"
+        [totalItems]="filasDetalle().length"
+        [tamanoPagina]="tamanoDetalle()"
+        [opcionesTamano]="opcionesTamanoDetalle"
+        idTamano="vencimientos-detalle-tamano"
+        (paginaCambiada)="paginaDetalle.set($event)"
+        (tamanoPaginaCambiado)="cambiarTamanoDetalle($event)"
+      />
+    }
+  </app-estado-vista>
 </div>

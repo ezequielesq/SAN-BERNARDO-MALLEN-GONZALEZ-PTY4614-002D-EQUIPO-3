@@ -2,6 +2,8 @@ import { HttpClient, HttpResourceRef, httpResource } from '@angular/common/http'
 import { Injectable, Signal, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { FiltroLotes, Lote, LoteDetalle } from './lote.modelo';
+import { paramsLotes } from './lotes/lote-estado';
 import {
   AlertaVencimiento,
   EntradaRequest,
@@ -101,5 +103,21 @@ export class MovimientoService {
       () => ({ url: `${this.url}/alertas/vencimiento`, params: { dias: dias() } }),
       { defaultValue: [] },
     );
+  }
+
+  /** Llamar desde un inicializador de campo del componente (requiere contexto de inyección). */
+  listarLotes(filtro: Signal<FiltroLotes>): HttpResourceRef<Lote[]> {
+    return httpResource<Lote[]>(
+      () => ({ url: `${environment.apiUrl}/lotes`, params: paramsLotes(filtro()) }),
+      { defaultValue: [] },
+    );
+  }
+
+  /** Llamar desde un inicializador de campo del componente (requiere contexto de inyección). */
+  detalleLote(id: Signal<number>, diasPorVencer: Signal<number>): HttpResourceRef<LoteDetalle | undefined> {
+    return httpResource<LoteDetalle>(() => ({
+      url: `${environment.apiUrl}/lotes/${id()}`,
+      params: { diasPorVencer: diasPorVencer() },
+    }));
   }
 }

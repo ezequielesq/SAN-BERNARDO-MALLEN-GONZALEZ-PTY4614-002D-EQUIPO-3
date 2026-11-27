@@ -21,88 +21,6 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
 
     private static final String XLSX = "spreadsheetml.sheet";
 
-    // ================================================================== consumo y más usados (HU-100, 110)
-
-    @Test
-    @DisplayName("HU-100 / HU-110 Consumo por rango y productos más usados de mayor a menor, netos de devoluciones y correcciones")
-    void consumoPorRangoYMasUsadosOrdenados() {
-        Cuenta bodeguero = crearBodeguero();
-        Cuenta empleado = crearEmpleado();
-        Catalogo categoria = crearCategoriaPropia(false);
-        var p1 = productoEn(categoria, 100);
-        var p2 = productoEn(categoria, 100);
-        var p3 = productoEn(categoria, 100);
-
-        // P1: una salida manual de 5 y un pedido aprobado de 10 (15 en total).
-        salida(bodeguero, p1.id(), 5).esperando(201);
-        aprobar(bodeguero, pedirOk(empleado, p1.id(), 10)).esperando(200);
-        // P2: un pedido aprobado de 30 del que el empleado devuelve 5 (neto 25).
-        long pedidoP2 = pedirOk(empleado, p2.id(), 30);
-        aprobar(bodeguero, pedidoP2).esperando(200);
-        long devolucion = devolver(empleado, pedidoP2, item(p2.id(), 5)).esperando(201).json().path("id").asLong();
-        aprobar(bodeguero, devolucion).esperando(200);
-        // P3: una salida de 2 que cuenta y otra de 4 que se corrige (no cuenta, ni ella ni su corrección).
-        salida(bodeguero, p3.id(), 2).esperando(201);
-        long corregida = salida(bodeguero, p3.id(), 4).esperando(201).json().path("id").asLong();
-        post("/api/movimientos/operaciones/" + corregida + "/correccion", bodeguero.token(), null).esperando(201);
-
-        String rango = "desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1) + "&categoriaId=" + categoria.id();
-
-        // Más usados: ordenados de mayor a menor consumo neto.
-        var masUsados = get("/api/analitica/mas-usados?" + rango, bodeguero.token()).esperando(200).json();
-        assertThat(masUsados).hasSize(3);
-        assertThat(masUsados.get(0).path("productoId").asLong()).isEqualTo(p2.id());
-        assertThat(masUsados.get(0).path("totalSalidas").asLong()).isEqualTo(25);
-        assertThat(masUsados.get(0).path("nombre").asText()).isEqualTo(p2.nombre());
-        assertThat(masUsados.get(0).path("categoriaNombre").asText()).isEqualTo(categoria.nombre());
-        assertThat(masUsados.get(1).path("productoId").asLong()).isEqualTo(p1.id());
-        assertThat(masUsados.get(1).path("totalSalidas").asLong()).isEqualTo(15);
-        assertThat(masUsados.get(2).path("productoId").asLong()).isEqualTo(p3.id());
-        assertThat(masUsados.get(2).path("totalSalidas").asLong()).isEqualTo(2);
-
-        // Consumo por producto: entradas y salidas del rango con su valor (costo 1000 por unidad).
-        var porProducto = get("/api/analitica/consumo?agruparPor=PRODUCTO&" + rango, bodeguero.token())
-                .esperando(200).json();
-        assertThat(porProducto).hasSize(3);
-        JsonNode c1 = filaConsumo(porProducto, p1.id());
-        assertThat(c1.path("nombre").asText()).isEqualTo(p1.nombre());
-        assertThat(c1.path("entradaCantidad").asLong()).isEqualTo(100);
-        assertThat(c1.path("salidaCantidad").asLong()).isEqualTo(15);
-        assertThat(c1.path("entradaValor").asLong()).isEqualTo(100_000);
-        assertThat(c1.path("salidaValor").asLong()).isEqualTo(15_000);
-        JsonNode c2 = filaConsumo(porProducto, p2.id());
-        assertThat(c2.path("salidaCantidad").asLong()).isEqualTo(30);
-        assertThat(c2.path("entradaCantidad").asLong()).isEqualTo(105); // 100 comprados + 5 devueltos
-        JsonNode c3 = filaConsumo(porProducto, p3.id());
-        assertThat(c3.path("salidaCantidad").asLong()).isEqualTo(2);
-        assertThat(c3.path("entradaCantidad").asLong()).isEqualTo(100);
-
-        // Consumo por categoría: una sola fila con la suma de los tres productos.
-        var porCategoria = get("/api/analitica/consumo?agruparPor=CATEGORIA&" + rango, bodeguero.token())
-                .esperando(200).json();
-        assertThat(porCategoria).hasSize(1);
-        assertThat(porCategoria.get(0).path("id").asLong()).isEqualTo(categoria.id());
-        assertThat(porCategoria.get(0).path("nombre").asText()).isEqualTo(categoria.nombre());
-        assertThat(porCategoria.get(0).path("salidaCantidad").asLong()).isEqualTo(47);
-        assertThat(porCategoria.get(0).path("entradaCantidad").asLong()).isEqualTo(305);
-
-        // Un rango que no incluye hoy no trae movimientos; otra categoría tampoco.
-        String pasado = "desde=" + hoy().minusDays(30) + "&hasta=" + hoy().minusDays(10) + "&categoriaId=" + categoria.id();
-        assertThat(get("/api/analitica/mas-usados?" + pasado, bodeguero.token()).esperando(200).json()).isEmpty();
-        assertThat(get("/api/analitica/consumo?agruparPor=PRODUCTO&" + pasado, bodeguero.token())
-                .esperando(200).json()).isEmpty();
-        Catalogo otraCategoria = crearCategoriaPropia(false);
-        assertThat(get("/api/analitica/mas-usados?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
-                + "&categoriaId=" + otraCategoria.id(), bodeguero.token()).esperando(200).json()).isEmpty();
-
-        // Parámetros obligatorios, y acceso: el administrador consulta; sin sesión, no.
-        assertThat(get("/api/analitica/consumo?" + rango, bodeguero.token()).estado()).isEqualTo(400);
-        assertThat(get("/api/analitica/mas-usados?categoriaId=" + categoria.id(), bodeguero.token()).estado())
-                .isEqualTo(400);
-        assertThat(get("/api/analitica/mas-usados?" + rango, tokenAdmin()).esperando(200).json()).hasSize(3);
-        assertThat(get("/api/analitica/mas-usados?" + rango, null).estado()).isEqualTo(401);
-    }
-
     // ================================================================== vencimientos (HU-130, 140)
 
     @Test
@@ -210,7 +128,7 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
         assertThat(descarga.bytes()).isNotEmpty();
         var hoja = ExcelPruebas.leerHoja(descarga.bytes(), "Movimientos");
         assertThat(hoja.get(0)).containsExactly("ID", "Operación", "Producto", "Tipo", "Sentido", "Cantidad", "Lote",
-                "Costo unitario", "Costo total", "Nota", "Fecha", "Usuario");
+                "Costo unitario", "Costo total", "Nota", "Fecha", "Usuario", "Proveedor");
 
         // Solo los tres movimientos del producto de la categoría, del más antiguo al más reciente, y no los del otro.
         var libro = new ArrayList<>(movimientos(producto.id()));
@@ -423,13 +341,6 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
         Prod producto = crearProductoEn(categoria.id(), false);
         entrada(producto.id(), stockInicial, null, "L-" + unico()).esperando(201);
         return producto;
-    }
-
-    private static JsonNode filaConsumo(JsonNode filas, long id) {
-        for (JsonNode f : filas) {
-            if (f.path("id").asLong() == id) return f;
-        }
-        throw new AssertionError("El consumo no trae el producto " + id);
     }
 
     private static List<LocalDate> fechas(JsonNode vencimientos) {

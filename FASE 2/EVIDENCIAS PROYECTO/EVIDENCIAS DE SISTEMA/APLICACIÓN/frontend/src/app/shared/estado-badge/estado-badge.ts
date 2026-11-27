@@ -14,6 +14,7 @@ export type TipoEstado =
   | 'salida'
   | 'vencido'
   | 'proximo'
+  | 'vigente'
   | 'solicitado'
   | 'devolucion'
   | 'pedido';
@@ -38,6 +39,7 @@ const BADGES: Record<TipoEstado, ConfigBadge> = {
   salida: { clase: 'w3-crimson', icono: 'fa-arrow-up', texto: 'Salida' },
   vencido: { clase: 'w3-crimson', icono: 'fa-times-circle', texto: 'Vencido' },
   proximo: { clase: 'w3-amber', icono: 'fa-exclamation-triangle', texto: 'Próximo a vencer' },
+  vigente: { clase: 'w3-emerald', icono: 'fa-check-circle', texto: 'Vigente' },
   solicitado: { clase: 'w3-info', icono: 'fa-arrow-up', texto: 'Solicitado' },
   devolucion: { clase: 'w3-emerald', icono: 'fa-rotate-left', texto: 'Devolución' },
   pedido: { clase: 'w3-light-grey', icono: 'fa-cart-shopping', texto: 'Pedido' },

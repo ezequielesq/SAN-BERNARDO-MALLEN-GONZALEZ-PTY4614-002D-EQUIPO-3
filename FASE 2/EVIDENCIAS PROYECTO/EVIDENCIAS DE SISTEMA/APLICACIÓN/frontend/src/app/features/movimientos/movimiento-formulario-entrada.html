@@ -86,7 +86,7 @@
   </div>
 
   <div class="w3-section">
-    <label for="entrada-costo"><b>Costo unitario (opcional)</b></label>
+    <label for="entrada-costo"><b>Costo unitario {{ costoObligatorio() ? '' : '(opcional)' }}</b></label>
     <input
       id="entrada-costo"
       class="w3-input"
@@ -99,7 +99,32 @@
       [attr.aria-describedby]="enviado() && form.controls.costoUnitario.invalid ? 'error-entrada-costo' : null"
     />
     @if (enviado() && form.controls.costoUnitario.invalid) {
-      <p class="texto-error" id="error-entrada-costo"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Ingresa un costo entero de 0 o más.</p>
+      <p class="texto-error" id="error-entrada-costo">
+        <i class="fa-solid fa-exclamation" aria-hidden="true"></i>
+        {{ form.controls.costoUnitario.errors?.['required'] ? 'Ingresa el costo de la compra.' : 'Ingresa un costo entero de 0 o más.' }}
+      </p>
+    }
+  </div>
+
+  <div class="w3-section">
+    <label for="entrada-proveedor"><b>Proveedor{{ proveedorRequerido() ? ' (obligatorio en compras)' : '' }}</b></label>
+    <select
+      id="entrada-proveedor"
+      class="w3-select"
+      formControlName="proveedorId"
+      [attr.aria-invalid]="enviado() && form.controls.proveedorId.invalid ? 'true' : null"
+      [attr.aria-describedby]="enviado() && form.controls.proveedorId.invalid ? 'error-entrada-proveedor' : null"
+    >
+      <option [ngValue]="null">{{ proveedorRequerido() ? 'Elige un proveedor' : 'Sin proveedor' }}</option>
+      @for (p of opcionesProveedor(); track p.id) {
+        <option [ngValue]="p.id">{{ p.nombre }} ({{ p.rut }})</option>
+      }
+    </select>
+    @if (enviado() && form.controls.proveedorId.invalid) {
+      <p class="texto-error" id="error-entrada-proveedor"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige el proveedor de la compra.</p>
+    }
+    @if (proveedores.hasValue() && opcionesProveedor().length === 0) {
+      <p class="w3-small">No hay proveedores registrados. <a routerLink="/administracion/proveedores">Créalos en Administración</a>.</p>
     }
   </div>
 

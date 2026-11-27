@@ -22,6 +22,9 @@ public class TipoOperacion extends BaseEntity {
     public static final String DEVOLUCION = "DEVOLUCION";
     public static final String CORRECCION_AUMENTA = "CORRECCION_AUMENTA";
     public static final String CORRECCION_DISMINUYE = "CORRECCION_DISMINUYE";
+    public static final String COMPRA = "COMPRA";
+    public static final String MERMA = "MERMA";
+    public static final String VENCIMIENTO = "VENCIMIENTO";
 
     @EqualsAndHashCode.Include
     @Column(name = "codigo", nullable = false, unique = true, length = 30)

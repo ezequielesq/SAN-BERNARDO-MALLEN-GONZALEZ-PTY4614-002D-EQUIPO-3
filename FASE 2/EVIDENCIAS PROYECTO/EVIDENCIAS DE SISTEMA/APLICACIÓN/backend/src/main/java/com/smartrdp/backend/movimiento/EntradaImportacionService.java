@@ -1,5 +1,8 @@
 package com.smartrdp.backend.movimiento;
 
+import com.smartrdp.backend.catalogo.Proveedor;
+import com.smartrdp.backend.catalogo.ProveedorRepository;
+import com.smartrdp.backend.catalogo.Rut;
 import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.movimiento.dto.EntradaRequest;
 import com.smartrdp.backend.movimiento.dto.FilaEntrada;
@@ -48,7 +51,8 @@ public class EntradaImportacionService {
     private static final int CANTIDAD_MAXIMA = 1_000_000;
     private static final int LOTE_MAXIMO = 50;
 
-    private static final String[] COLUMNAS = {"Código", "N° lote", "Fecha vencimiento", "Cantidad", "Costo unitario"};
+    private static final String[] COLUMNAS = {"Código", "N° lote", "Fecha vencimiento", "Cantidad", "Costo unitario",
+            "Proveedor (RUT)"};
 
     /** Encabezado normalizado (sin tildes ni símbolos) → campo interno. */
     private static final Map<String, String> ALIAS = Map.ofEntries(
@@ -58,7 +62,9 @@ public class EntradaImportacionService {
             Map.entry("lote", "numeroLote"),
             Map.entry("fechavencimiento", "fechaVencimiento"), Map.entry("vencimiento", "fechaVencimiento"),
             Map.entry("cantidad", "cantidad"),
-            Map.entry("costounitario", "costoUnitario"), Map.entry("costo", "costoUnitario"));
+            Map.entry("costounitario", "costoUnitario"), Map.entry("costo", "costoUnitario"),
+            Map.entry("proveedorrut", "proveedorRut"), Map.entry("rutproveedor", "proveedorRut"),
+            Map.entry("proveedor", "proveedorRut"), Map.entry("rut", "proveedorRut"));
 
     private static final Map<String, String> ETIQUETA_OBLIGATORIA = new LinkedHashMap<>();
 
@@ -68,6 +74,7 @@ public class EntradaImportacionService {
     }
 
     private final ProductoRepository productoRepository;
+    private final ProveedorRepository proveedorRepository;
     private final MovimientoService movimientoService;
 
     /** Una fila leída del Excel junto con los problemas de formato que se detectaron al leerla. */
@@ -104,10 +111,13 @@ public class EntradaImportacionService {
                     "4. N° lote: opcional.",
                     "5. Fecha vencimiento: obligatoria para los productos perecibles. Usa el formato dd-mm-aaaa.",
                     "6. Cantidad: número entero mayor o igual a 1. Es obligatoria.",
-                    "7. Costo unitario: opcional. Si no lo indicas, se usa el costo de referencia del producto.",
-                    "8. Cada fila crea un lote nuevo. Máximo " + MAXIMO_FILAS + " filas por archivo.",
-                    "9. El tipo de entrada (por ejemplo, compra) y la nota se eligen en pantalla, no en el archivo.",
-                    "10. Todo o nada: antes de cargar verás una lista para revisar y corregir; si una fila tiene errores, "
+                    "7. Costo unitario: obligatorio en las compras. En los demás tipos es opcional y, si no lo indicas, "
+                            + "se usa el costo de referencia del producto.",
+                    "8. Proveedor (RUT): obligatorio en las compras; debe estar registrado en "
+                            + "Administración → Proveedores. En los demás tipos es opcional.",
+                    "9. Cada fila crea un lote nuevo. Máximo " + MAXIMO_FILAS + " filas por archivo.",
+                    "10. El tipo de entrada (por ejemplo, compra) y la nota se eligen en pantalla, no en el archivo.",
+                    "11. Todo o nada: antes de cargar verás una lista para revisar y corregir; si una fila tiene errores, "
                             + "no se carga ninguna.",
             }) {
                 ayuda.createRow(fila++).createCell(0).setCellValue(linea);
@@ -129,7 +139,7 @@ public class EntradaImportacionService {
         List<FilaLeida> leidas = leerFilas(archivo);
         Map<Integer, Map<String, String>> erroresDeLectura = new HashMap<>();
         leidas.forEach(l -> erroresDeLectura.put(l.datos().fila(), l.errores()));
-        return validarFilas(leidas.stream().map(FilaLeida::datos).toList(), erroresDeLectura);
+        return validarFilas(leidas.stream().map(FilaLeida::datos).toList(), erroresDeLectura, false, false);
     }
 
     private List<FilaLeida> leerFilas(InputStream archivo) {
@@ -195,7 +205,10 @@ public class EntradaImportacionService {
                         LectorExcel.texto(celdas.get("numeroLote")),
                         fechaVencimiento,
                         LectorExcel.entero(celdas.get("cantidad"), "cantidad", errores),
-                        LectorExcel.entero(celdas.get("costoUnitario"), "costoUnitario", errores));
+                        LectorExcel.entero(celdas.get("costoUnitario"), "costoUnitario", errores),
+                        LectorExcel.texto(celdas.get("proveedorRut")),
+                        null,
+                        null);
                 filas.add(new FilaLeida(datos, errores));
             }
             if (filas.isEmpty()) {
@@ -213,14 +226,16 @@ public class EntradaImportacionService {
 
     /** Revalida filas ya editadas (sin Excel). */
     @Transactional(readOnly = true)
-    public List<FilaEntradaValidada> validar(List<FilaEntrada> filas) {
-        return validarFilas(filas, Map.of());
+    public List<FilaEntradaValidada> validar(List<FilaEntrada> filas, String tipo) {
+        boolean esCompra = TipoOperacion.COMPRA.equals(tipo);
+        return validarFilas(filas, Map.of(), esCompra, esCompra);
     }
 
     /** Registra todas las entradas o ninguna: una fila con error cancela la carga completa. */
     @Transactional
     public OperacionResponse importar(ImportacionEntradaRequest request) {
-        List<FilaEntradaValidada> validadas = validarFilas(request.filas(), Map.of());
+        boolean esCompra = TipoOperacion.COMPRA.equals(request.tipo());
+        List<FilaEntradaValidada> validadas = validarFilas(request.filas(), Map.of(), esCompra, esCompra);
         long conError = validadas.stream().filter(f -> !f.errores().isEmpty()).count();
         if (conError > 0) {
             throw new BusinessException("Hay " + conError + (conError == 1 ? " fila con errores" : " filas con errores")
@@ -229,14 +244,17 @@ public class EntradaImportacionService {
         List<EntradaRequest.Linea> lineas = validadas.stream()
                 .map(FilaEntradaValidada::datos)
                 .map(f -> new EntradaRequest.Linea(f.productoId(), f.cantidad(), f.fechaVencimiento(),
-                        f.numeroLote(), f.costoUnitario()))
+                        f.numeroLote(), f.costoUnitario(), f.proveedorId()))
                 .toList();
         return movimientoService.registrarIngreso(new EntradaRequest(request.tipo(), request.nota(), lineas));
     }
 
     private List<FilaEntradaValidada> validarFilas(List<FilaEntrada> filas,
-                                                   Map<Integer, Map<String, String>> erroresDeLectura) {
+                                                   Map<Integer, Map<String, String>> erroresDeLectura,
+                                                   boolean exigirCosto,
+                                                   boolean exigirProveedor) {
         Map<String, Optional<Producto>> porCodigo = new HashMap<>();
+        Map<String, Optional<Proveedor>> porRut = new HashMap<>();
         List<FilaEntradaValidada> resultado = new ArrayList<>();
         for (int i = 0; i < filas.size(); i++) {
             FilaEntrada f = filas.get(i);
@@ -270,14 +288,39 @@ public class EntradaImportacionService {
             if (f.costoUnitario() != null && f.costoUnitario() < 0) {
                 errores.putIfAbsent("costoUnitario", "El costo no puede ser negativo.");
             }
+            if (exigirCosto && f.costoUnitario() == null) {
+                errores.putIfAbsent("costoUnitario", "Una compra necesita el costo unitario.");
+            }
             if (producto != null && producto.isEsPerecible() && f.fechaVencimiento() == null) {
                 errores.putIfAbsent("fechaVencimiento", "El producto es perecible: indica su fecha de vencimiento.");
+            }
+
+            Proveedor proveedor = null;
+            String rutTexto = LectorExcel.limpiar(f.proveedorRut());
+            String rutMostrado = rutTexto;
+            if (rutTexto == null) {
+                if (exigirProveedor) errores.putIfAbsent("proveedorRut", "Una compra necesita el proveedor (RUT).");
+            } else {
+                try {
+                    String rut = Rut.normalizar(rutTexto);
+                    rutMostrado = rut;
+                    proveedor = porRut.computeIfAbsent(rut, proveedorRepository::findByRut).orElse(null);
+                    if (proveedor == null) {
+                        errores.putIfAbsent("proveedorRut", "No existe un proveedor con ese RUT; créalo en Administración.");
+                    } else if (!proveedor.isActivo()) {
+                        errores.putIfAbsent("proveedorRut", "El proveedor '" + proveedor.getNombre() + "' está deshabilitado.");
+                    }
+                } catch (BusinessException e) {
+                    errores.putIfAbsent("proveedorRut", e.getMessage());
+                }
             }
 
             var datos = new FilaEntrada(numero, codigo,
                     producto != null ? producto.getId() : null,
                     producto != null ? producto.getNombre() : null,
-                    numeroLote, f.fechaVencimiento(), f.cantidad(), f.costoUnitario());
+                    numeroLote, f.fechaVencimiento(), f.cantidad(), f.costoUnitario(),
+                    rutMostrado, proveedor != null ? proveedor.getId() : null,
+                    proveedor != null ? proveedor.getNombre() : null);
             resultado.add(new FilaEntradaValidada(datos, errores));
         }
         return resultado;

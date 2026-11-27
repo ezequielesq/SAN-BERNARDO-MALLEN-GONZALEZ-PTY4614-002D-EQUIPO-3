@@ -46,18 +46,24 @@ public class SecurityConfig {
                 .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'"))
                 .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            // 401 = sin sesión válida; 403 = sesión válida sin permiso. El 403 se fija directamente en la respuesta
+            // (sin sendError): con sendError el contenedor reenvía la petición a /error, donde ya no hay usuario
+            // autenticado, y el entry point la convertía en 401 (el frontend lo toma por sesión caducada).
+            .exceptionHandling(e -> e
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                .accessDeniedHandler((request, response, denied) -> response.setStatus(HttpStatus.FORBIDDEN.value())))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 .requestMatchers("/api/publico/**").permitAll()
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,
                         "/api/categorias/**", "/api/unidades-medida/**",
-                        "/api/productos/**", "/api/movimientos/**").hasAnyRole("ADMIN", "BODEGUERO")
+                        "/api/productos/**", "/api/movimientos/**", "/api/eventos/**",
+                        "/api/proveedores/**", "/api/lotes/**").hasAnyRole("ADMIN", "BODEGUERO")
                 .requestMatchers(
                         "/api/categorias/**", "/api/unidades-medida/**",
                         "/api/productos/**", "/api/movimientos/**",
-                        "/api/solicitudes/**", "/api/eventos/**").hasRole("BODEGUERO")
+                        "/api/solicitudes/**", "/api/eventos/**", "/api/proveedores/**").hasRole("BODEGUERO")
                 .requestMatchers("/api/analitica/**", "/api/auditoria/**").hasAnyRole("ADMIN", "BODEGUERO")
                 .anyRequest().authenticated()
             )

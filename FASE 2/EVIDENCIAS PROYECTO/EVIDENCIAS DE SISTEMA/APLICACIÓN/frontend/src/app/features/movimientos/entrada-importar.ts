@@ -30,9 +30,10 @@ type Columna =
   | 'numeroLote'
   | 'fechaVencimiento'
   | 'cantidad'
-  | 'costoUnitario';
+  | 'costoUnitario'
+  | 'proveedor';
 
-type CampoTexto = 'codigo' | 'numeroLote' | 'fechaVencimiento';
+type CampoTexto = 'codigo' | 'numeroLote' | 'fechaVencimiento' | 'proveedorRut';
 type CampoNumero = 'cantidad' | 'costoUnitario';
 type Campo = CampoTexto | CampoNumero;
 type Vista = 'todas' | 'errores';
@@ -145,6 +146,7 @@ export class EntradaImportar implements OnInit {
     fechaVencimiento: (f) => f.datos.fechaVencimiento,
     cantidad: (f) => f.datos.cantidad,
     costoUnitario: (f) => f.datos.costoUnitario,
+    proveedor: (f) => f.datos.proveedorNombre ?? f.datos.proveedorRut,
   };
 
   constructor() {
@@ -153,6 +155,8 @@ export class EntradaImportar implements OnInit {
       const tipos = this.opcionesTipo();
       if (tipos.length > 0 && this.tipo() === '') {
         this.tipo.set((tipos.find((t) => t.codigo === TIPO_POR_DEFECTO) ?? tipos[0]).codigo);
+        // La lectura del Excel no sabe el tipo: al conocerlo se revalida (en una compra el costo es obligatorio).
+        untracked(() => this.revalidar());
       }
     });
 
@@ -205,6 +209,11 @@ export class EntradaImportar implements OnInit {
       this.idsMostrados.set(this.idsIdeales());
       this.pagina.set(1);
     });
+  }
+
+  protected cambiarTipo(codigo: string): void {
+    this.tipo.set(codigo);
+    this.revalidar();
   }
 
   protected cambiarVista(valor: string): void {
@@ -324,7 +333,9 @@ export class EntradaImportar implements OnInit {
         if (f.datos.fila !== fila) return f;
         const { [campo]: _descartado, ...lectura } = f.lectura;
         if (errorLectura) lectura[campo] = errorLectura;
-        return { ...f, datos: { ...f.datos, [campo]: valor }, lectura };
+        // El proveedor resuelto depende del RUT: al editarlo se descarta hasta que el servidor lo vuelva a resolver.
+        const resuelto = campo === 'proveedorRut' ? { proveedorId: null, proveedorNombre: null } : {};
+        return { ...f, datos: { ...f.datos, [campo]: valor, ...resuelto }, lectura };
       }),
     );
     this.revalidar();
@@ -332,7 +343,7 @@ export class EntradaImportar implements OnInit {
 
   /**
    * Aplica el resultado del servidor: reemplaza los errores y el producto resuelto (que depende del código y
-   * lo calcula el servidor), sin pisar lo que el usuario siguió editando mientras tanto.
+   * lo calcula el servidor) y el proveedor resuelto a partir del RUT, sin pisar lo que el usuario siguió editando mientras tanto.
    */
   private aplicarValidacion(resultado: FilaEntradaValidada[]): void {
     const porFila = new Map(resultado.map((r) => [r.datos.fila, r]));
@@ -343,7 +354,13 @@ export class EntradaImportar implements OnInit {
         return {
           ...f,
           servidor: r.errores,
-          datos: { ...f.datos, productoId: r.datos.productoId, productoNombre: r.datos.productoNombre },
+          datos: {
+            ...f.datos,
+            productoId: r.datos.productoId,
+            productoNombre: r.datos.productoNombre,
+            proveedorId: r.datos.proveedorId,
+            proveedorNombre: r.datos.proveedorNombre,
+          },
         };
       }),
     );

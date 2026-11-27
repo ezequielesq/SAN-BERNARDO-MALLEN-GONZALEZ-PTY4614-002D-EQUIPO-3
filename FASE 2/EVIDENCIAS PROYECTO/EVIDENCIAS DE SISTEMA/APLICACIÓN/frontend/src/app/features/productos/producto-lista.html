@@ -58,19 +58,17 @@
       }
     </select>
   </div>
-  @if (puedeGestionar()) {
-    <div class="w3-col m3 w3-padding-small w3-padding-24">
-      <input
-        #checkDeshabilitados
-        id="mostrar-deshabilitados"
-        class="w3-check"
-        type="checkbox"
-        [checked]="!soloActivos()"
-        (change)="soloActivos.set(!checkDeshabilitados.checked)"
-      />
-      <label for="mostrar-deshabilitados"> Mostrar deshabilitados</label>
-    </div>
-  }
+  <div class="w3-col m3 w3-padding-small w3-padding-24">
+    <input
+      #checkDeshabilitados
+      id="mostrar-deshabilitados"
+      class="w3-check"
+      type="checkbox"
+      [checked]="!soloActivos()"
+      (change)="soloActivos.set(!checkDeshabilitados.checked)"
+    />
+    <label for="mostrar-deshabilitados"> Mostrar deshabilitados</label>
+  </div>
 </div>
 
 <div class="w3-container w3-border w3-margin w3-light-grey">

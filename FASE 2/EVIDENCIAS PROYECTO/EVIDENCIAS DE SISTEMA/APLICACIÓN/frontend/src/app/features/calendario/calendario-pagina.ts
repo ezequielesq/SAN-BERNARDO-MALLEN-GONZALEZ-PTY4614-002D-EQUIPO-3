@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, switchMap } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { CalendarioMes, MarcaCalendario } from '../../shared/calendario-mes/calendario-mes';
@@ -57,6 +58,9 @@ export class CalendarioPagina {
   private readonly confirmacion = inject(ConfirmacionService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly destroyRef = inject(DestroyRef);
+
+  /** Solo el bodeguero crea, edita o elimina eventos; la administradora los consulta. */
+  protected readonly puedeEscribir = inject(AuthService).puedeEscribir;
 
   protected readonly leyenda = LEYENDA;
 

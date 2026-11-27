@@ -33,6 +33,11 @@
             <p><app-estado-badge [estado]="a.vencido ? 'vencido' : 'proximo'" /></p>
             <p>Lote: {{ a.numeroLote || '—' }} · Cantidad: {{ a.cantidadDisponible }}</p>
             <p>Vence: {{ a.fechaVencimiento | date: 'dd-MM-yyyy' }}</p>
+            <p>
+              <a [routerLink]="['/movimientos/lotes', a.loteId]" [queryParams]="{ diasPorVencer: diasUmbral() }">
+                Ver lote <span class="visualmente-oculto">de {{ a.productoNombre }}</span>
+              </a>
+            </p>
           </article>
         </li>
       }

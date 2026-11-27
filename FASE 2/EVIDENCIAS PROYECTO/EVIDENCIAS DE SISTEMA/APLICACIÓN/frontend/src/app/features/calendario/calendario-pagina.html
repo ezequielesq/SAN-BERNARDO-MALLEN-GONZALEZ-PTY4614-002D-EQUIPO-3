@@ -1,8 +1,10 @@
-<p>
-  <button type="button" class="w3-button w3-info w3-round w3-margin-left" (click)="modalEvento.set('nuevo')">
-    <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo evento
-  </button>
-</p>
+@if (puedeEscribir()) {
+  <p>
+    <button type="button" class="w3-button w3-info w3-round w3-margin-left" (click)="modalEvento.set('nuevo')">
+      <i class="fa-solid fa-plus" aria-hidden="true"></i> Nuevo evento
+    </button>
+  </p>
+}
 
 <!-- Contenedor 1: calendario + filtros, mismo patrón que Movimientos -->
 <div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
@@ -95,7 +97,9 @@
                 <th appThOrden [orden]="orden" columna="titulo">Título</th>
                 <th appThOrden [orden]="orden" columna="descripcion">Descripción</th>
                 <th appThOrden [orden]="orden" columna="creadoPorNombre">Creado por</th>
-                <th scope="col">Acciones</th>
+                @if (puedeEscribir()) {
+                  <th scope="col">Acciones</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -106,27 +110,29 @@
                   <td>{{ e.titulo }}</td>
                   <td style="white-space: pre-line; overflow-wrap: anywhere">{{ e.descripcion || '—' }}</td>
                   <td>{{ e.creadoPorNombre }}</td>
-                  <td>
-                    <button
-                      type="button"
-                      class="w3-button w3-small w3-warning w3-round"
-                      (click)="modalEvento.set(e)"
-                    >
-                      <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto">
-                        {{ e.titulo }}</span
+                  @if (puedeEscribir()) {
+                    <td>
+                      <button
+                        type="button"
+                        class="w3-button w3-small w3-warning w3-round"
+                        (click)="modalEvento.set(e)"
                       >
-                    </button>
-                    <button
-                      type="button"
-                      class="w3-button w3-small w3-border w3-border-red w3-round"
-                      [attr.aria-disabled]="procesandoId() === e.id"
-                      (click)="eliminar(e)"
-                    >
-                      <i class="fa fa-trash" aria-hidden="true"></i> Eliminar<span class="visualmente-oculto">
-                        {{ e.titulo }}</span
+                        <i class="fa fa-pencil" aria-hidden="true"></i> Editar<span class="visualmente-oculto">
+                          {{ e.titulo }}</span
+                        >
+                      </button>
+                      <button
+                        type="button"
+                        class="w3-button w3-small w3-border w3-border-red w3-round"
+                        [attr.aria-disabled]="procesandoId() === e.id"
+                        (click)="eliminar(e)"
                       >
-                    </button>
-                  </td>
+                        <i class="fa fa-trash" aria-hidden="true"></i> Eliminar<span class="visualmente-oculto">
+                          {{ e.titulo }}</span
+                        >
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>

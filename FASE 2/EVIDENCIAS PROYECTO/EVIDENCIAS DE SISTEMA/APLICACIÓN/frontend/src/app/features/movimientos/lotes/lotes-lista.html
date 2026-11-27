@@ -1,0 +1,175 @@
+<div class="w3-container w3-border w3-margin w3-padding w3-light-grey">
+  <div class="w3-row">
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="filtro-lote-producto"><b>Producto</b></label>
+      <select
+        #selectProducto
+        id="filtro-lote-producto"
+        class="w3-select"
+        (change)="cambiarProducto(selectProducto.value)"
+      >
+        <option value="" [selected]="productoId() === null">Todos</option>
+        @for (p of opcionesProducto(); track p.id) {
+          <option [value]="p.id" [selected]="productoId() === p.id">
+            {{ p.nombre }}{{ p.activo ? '' : ' (deshabilitado)' }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="filtro-lote-categoria"><b>Categoría</b></label>
+      <select
+        #selectCategoria
+        id="filtro-lote-categoria"
+        class="w3-select"
+        (change)="cambiarCategoria(selectCategoria.value)"
+      >
+        <option value="" [selected]="categoriaId() === null">Todas</option>
+        @for (c of opcionesCategoria(); track c.id) {
+          <option [value]="c.id" [selected]="categoriaId() === c.id">
+            {{ c.nombre }}{{ c.activo ? '' : ' (deshabilitada)' }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="filtro-lote-proveedor"><b>Proveedor</b></label>
+      <select
+        #selectProveedor
+        id="filtro-lote-proveedor"
+        class="w3-select"
+        (change)="cambiarProveedor(selectProveedor.value)"
+      >
+        <option value="" [selected]="proveedorId() === null">Todos</option>
+        @for (v of opcionesProveedor(); track v.id) {
+          <option [value]="v.id" [selected]="proveedorId() === v.id">
+            {{ v.nombre }}{{ v.activo ? '' : ' (deshabilitado)' }}
+          </option>
+        }
+      </select>
+    </div>
+  </div>
+  <div class="w3-row">
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="filtro-lote-estado"><b>Estado</b></label>
+      <select
+        #selectEstado
+        id="filtro-lote-estado"
+        class="w3-select"
+        (change)="cambiarEstado(selectEstado.value)"
+      >
+        <option value="" [selected]="estado() === null">Todos</option>
+        @for (e of estados; track e) {
+          <option [value]="e" [selected]="estado() === e">{{ etiquetaEstado(e) }}</option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="filtro-lote-numero"><b>N.º de lote</b></label>
+      <input
+        #campoTexto
+        id="filtro-lote-numero"
+        class="w3-input"
+        type="search"
+        [value]="texto()"
+        (input)="escribirTexto(campoTexto.value)"
+        (change)="cambiarTexto(campoTexto.value)"
+      />
+    </div>
+    <div class="w3-col s12 m4 w3-padding">
+      <label for="filtro-lote-dias"><b>Por vencer en N días</b></label>
+      <input
+        #campoDias
+        id="filtro-lote-dias"
+        class="w3-input"
+        type="number"
+        min="0"
+        step="1"
+        inputmode="numeric"
+        [value]="diasPorVencer()"
+        [attr.aria-invalid]="diasInvalido()"
+        [attr.aria-describedby]="diasInvalido() ? 'filtro-lote-dias-error' : null"
+        (change)="cambiarUmbral(campoDias)"
+      />
+      @if (diasInvalido()) {
+        <p id="filtro-lote-dias-error" class="w3-text-red w3-small" role="alert">
+          Ingresa un número entero de 0 o más. Se mantiene el umbral de {{ diasPorVencer() }} días.
+        </p>
+      }
+    </div>
+  </div>
+  <p class="w3-padding">
+    <input
+      #casillaAgotados
+      id="filtro-lote-agotados"
+      class="w3-check"
+      type="checkbox"
+      [checked]="incluirAgotados()"
+      (change)="cambiarIncluirAgotados(casillaAgotados.checked)"
+    />
+    <label for="filtro-lote-agotados"> Incluir agotados</label>
+  </p>
+</div>
+
+<div class="w3-container w3-border w3-margin w3-light-grey w3-padding">
+  <app-estado-vista
+    [cargando]="lotes.status() === 'loading'"
+    [error]="lotes.error()"
+    [vacio]="todos().length === 0"
+    mensajeCarga="Cargando lotes…"
+    mensajeVacio="No hay lotes con esos filtros."
+    (reintentar)="lotes.reload()"
+  >
+    <div class="w3-responsive">
+      <table class="w3-table-all">
+        <caption class="visualmente-oculto">Lotes de la bodega</caption>
+        <thead>
+          <tr class="w3-light-grey">
+            <th appThOrden [orden]="orden" columna="productoNombre">Producto</th>
+            <th scope="col">N.º de lote</th>
+            <th scope="col">Proveedor</th>
+            <th scope="col">Ingreso</th>
+            <th appThOrden [orden]="orden" columna="fechaVencimiento">Vencimiento</th>
+            <th appThOrden [orden]="orden" columna="saldo">Saldo / inicial</th>
+            <th scope="col">Costo unitario</th>
+            <th scope="col">Valor en stock</th>
+            <th appThOrden [orden]="orden" columna="estado">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of paginados(); track l.id) {
+            <tr>
+              <td>{{ l.productoNombre }}</td>
+              <td>
+                <a [routerLink]="['/movimientos/lotes', l.id]" [queryParams]="{ diasPorVencer: diasPorVencer() }">
+                  {{ l.numeroLote || '#' + l.id }}
+                  <span class="visualmente-oculto">: ver detalle del lote de {{ l.productoNombre }}</span>
+                </a>
+              </td>
+              <td>{{ l.proveedorNombre || 'Sin proveedor' }}</td>
+              <td>{{ l.fechaIngreso | date: 'dd-MM-yyyy' }}</td>
+              <td>
+                @if (l.fechaVencimiento) {
+                  {{ l.fechaVencimiento | date: 'dd-MM-yyyy' }}<br />
+                }
+                <span class="w3-small">{{ etiquetaDias(l.diasParaVencer) }}</span>
+              </td>
+              <td>{{ l.saldo }} / {{ l.cantidadInicial }}</td>
+              <td>{{ l.costoUnitario !== null ? '$' + l.costoUnitario : '—' }}</td>
+              <td>{{ l.valorEnStock !== null ? '$' + l.valorEnStock : '—' }}</td>
+              <td><app-estado-badge [estado]="tipoBadge(l.estado)" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-paginacion
+      [pagina]="paginaActual()"
+      [totalItems]="ordenados().length"
+      [tamanoPagina]="tamanoPagina()"
+      [opcionesTamano]="opcionesTamano"
+      (paginaCambiada)="cambiarPagina($event)"
+      (tamanoPaginaCambiado)="cambiarTamanoPagina($event)"
+    />
+  </app-estado-vista>
+</div>

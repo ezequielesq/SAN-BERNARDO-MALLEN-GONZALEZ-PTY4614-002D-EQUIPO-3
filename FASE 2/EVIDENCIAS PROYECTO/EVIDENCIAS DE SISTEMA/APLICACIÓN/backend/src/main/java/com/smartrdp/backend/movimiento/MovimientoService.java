@@ -1,5 +1,7 @@
 package com.smartrdp.backend.movimiento;
 
+import com.smartrdp.backend.catalogo.Proveedor;
+import com.smartrdp.backend.catalogo.ProveedorRepository;
 import com.smartrdp.backend.exception.BusinessException;
 import com.smartrdp.backend.exception.ResourceNotFoundException;
 import com.smartrdp.backend.movimiento.dto.*;
@@ -33,6 +35,7 @@ public class MovimientoService {
     private final OperacionRepository operacionRepository;
     private final TipoOperacionRepository tipoOperacionRepository;
     private final ProductoRepository productoRepository;
+    private final ProveedorRepository proveedorRepository;
     private final VistasInventario vistas;
     private final UsuarioActual usuarioActual;
 
@@ -48,17 +51,41 @@ public class MovimientoService {
                 throw new BusinessException("'" + producto.getNombre()
                         + "' es perecible: indica su fecha de vencimiento.", "fechaVencimiento");
             }
+            if (TipoOperacion.COMPRA.equals(tipo.getCodigo()) && linea.costoUnitario() == null) {
+                throw new BusinessException("Una compra necesita el costo unitario de '" + producto.getNombre()
+                        + "': sin él no se puede seguir el precio.", "costoUnitario");
+            }
+            Proveedor proveedor = proveedorDeLinea(tipo, linea, producto);
             Lote lote = new Lote();
             lote.setProducto(producto);
             lote.setNumeroLote(linea.numeroLote());
             lote.setFechaVencimiento(linea.fechaVencimiento());
             // El costo del producto es solo una referencia: el lote guarda el costo con que entró.
             lote.setCostoUnitario(linea.costoUnitario() != null ? linea.costoUnitario() : producto.getCostoUnitario());
+            lote.setProveedor(proveedor);
             loteRepository.save(lote);
             operacion.agregarMovimiento(lote, linea.cantidad());
         }
         operacionRepository.saveAndFlush(operacion);
         return aRespuesta(operacion);
+    }
+
+    /** La compra exige proveedor; en los demás tipos es opcional, pero si viene debe existir y estar activo. */
+    private Proveedor proveedorDeLinea(TipoOperacion tipo, EntradaRequest.Linea linea, Producto producto) {
+        if (linea.proveedorId() == null) {
+            if (TipoOperacion.COMPRA.equals(tipo.getCodigo())) {
+                throw new BusinessException("Una compra necesita el proveedor de '" + producto.getNombre() + "'.",
+                        "proveedorId");
+            }
+            return null;
+        }
+        Proveedor proveedor = proveedorRepository.findById(linea.proveedorId())
+                .orElseThrow(() -> new BusinessException("El proveedor indicado no existe.", "proveedorId"));
+        if (!proveedor.isActivo()) {
+            throw new BusinessException("El proveedor '" + proveedor.getNombre() + "' está deshabilitado.",
+                    "proveedorId");
+        }
+        return proveedor;
     }
 
     @Transactional

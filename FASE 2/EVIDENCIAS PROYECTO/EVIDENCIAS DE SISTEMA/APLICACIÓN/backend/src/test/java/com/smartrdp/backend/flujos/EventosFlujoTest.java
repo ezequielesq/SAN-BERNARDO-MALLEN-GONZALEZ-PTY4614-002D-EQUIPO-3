@@ -131,7 +131,7 @@ class EventosFlujoTest extends FlujoBase {
     }
 
     @Test
-    @DisplayName("HU-250 Solo el Bodeguero usa la agenda: el administrador y quien no tiene sesión reciben error")
+    @DisplayName("HU-250/HU-310 La Administradora consulta la agenda; solo el Bodeguero la modifica")
     void soloElBodegueroUsaLaAgenda() {
         Cuenta bodeguero = crearBodeguero();
         LocalDate dia = diaPropio();
@@ -139,8 +139,8 @@ class EventosFlujoTest extends FlujoBase {
                 .esperando(201).json().path("id").asLong();
         String rango = "?desde=" + dia + "&hasta=" + dia;
 
-        // Administrador: 403 en todo, y no logra tocar el evento.
-        assertThat(get("/api/eventos" + rango, tokenAdmin()).estado()).isEqualTo(403);
+        // Administrador: lee la agenda (el calendario es de solo lectura para él) pero no logra crear, editar ni borrar.
+        assertThat(get("/api/eventos" + rango, tokenAdmin()).estado()).isEqualTo(200);
         assertThat(post("/api/eventos", tokenAdmin(), objeto("titulo", "Del admin", "fecha", dia.toString()))
                 .estado()).isEqualTo(403);
         assertThat(put("/api/eventos/" + id, tokenAdmin(), objeto("titulo", "Cambiado", "fecha", dia.toString()))

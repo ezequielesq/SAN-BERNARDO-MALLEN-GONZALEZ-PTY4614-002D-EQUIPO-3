@@ -14,16 +14,18 @@ export interface GrupoNavegacion {
 }
 
 export const NAVEGACION: readonly ItemNavegacion[] = [
-  { etiqueta: 'Productos', ruta: '/productos', roles: ['BODEGUERO'] },
-  { etiqueta: 'Movimientos', ruta: '/movimientos', roles: ['BODEGUERO'] },
-  { etiqueta: 'Estado de stock', ruta: '/movimientos/stock', roles: ['BODEGUERO'] },
-  { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['BODEGUERO'] },
+  { etiqueta: 'Productos', ruta: '/productos', roles: ['ADMIN', 'BODEGUERO'] },
+  { etiqueta: 'Movimientos', ruta: '/movimientos', roles: ['ADMIN', 'BODEGUERO'] },
+  { etiqueta: 'Estado de stock', ruta: '/movimientos/stock', roles: ['ADMIN', 'BODEGUERO'] },
+  { etiqueta: 'Lotes', ruta: '/movimientos/lotes', roles: ['ADMIN', 'BODEGUERO'] },
+  { etiqueta: 'Alertas de vencimiento', ruta: '/movimientos/alertas', roles: ['ADMIN', 'BODEGUERO'] },
   { etiqueta: 'Solicitudes', ruta: '/solicitudes', roles: ['BODEGUERO'] },
-  { etiqueta: 'Calendario', ruta: '/calendario', roles: ['BODEGUERO'] },
+  { etiqueta: 'Calendario', ruta: '/calendario', roles: ['ADMIN', 'BODEGUERO'] },
   { etiqueta: 'Analítica', ruta: '/analitica', roles: ['ADMIN', 'BODEGUERO'] },
   { etiqueta: 'Usuarios', ruta: '/usuarios', roles: ['ADMIN'] },
   { etiqueta: 'Categorías', ruta: '/administracion/categorias', roles: ['BODEGUERO'], grupo: 'Administración' },
   { etiqueta: 'Unidades de medida', ruta: '/administracion/unidades-medida', roles: ['BODEGUERO'], grupo: 'Administración' },
+  { etiqueta: 'Proveedores', ruta: '/administracion/proveedores', roles: ['BODEGUERO'], grupo: 'Administración' },
 ];
 
 export const ETIQUETA_ROL: Record<Rol, string> = {

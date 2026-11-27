@@ -10,14 +10,17 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { traducirError } from '../../core/errores/traducir-error';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
+import { ProveedorService } from '../../shared/proveedor/proveedor.service';
 import { ProductoService } from '../productos/producto.service';
 import { EntradaRequest } from './movimiento.modelo';
 import { MovimientoService } from './movimiento.service';
+import { proveedorObligatorio } from './proveedor-entrada';
 
-/** El costo es opcional, pero si se ingresa debe ser un entero (el mínimo de 0 lo valida Validators.min). */
+/** El costo es opcional (salvo en compras, donde lo exige Validators.required), pero si se ingresa debe ser un entero (el mínimo de 0 lo valida Validators.min). */
 function costoEntero(control: AbstractControl): ValidationErrors | null {
   const valor = control.value;
   return valor === null || valor === '' || Number.isInteger(valor) ? null : { entero: true };
@@ -25,7 +28,7 @@ function costoEntero(control: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-movimiento-formulario-entrada',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './movimiento-formulario-entrada.html',
 })
@@ -36,12 +39,18 @@ export class MovimientoFormularioEntrada {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly movimientoService = inject(MovimientoService);
   private readonly productoService = inject(ProductoService);
+  private readonly proveedorService = inject(ProveedorService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly injector = inject(Injector);
 
   protected readonly productos = this.productoService.listar(signal(true));
   protected readonly opcionesProducto = computed(() =>
     this.productos.hasValue() ? this.productos.value() : [],
+  );
+
+  protected readonly proveedores = this.proveedorService.listar(true);
+  protected readonly opcionesProveedor = computed(() =>
+    this.proveedores.hasValue() ? this.proveedores.value() : [],
   );
 
   private readonly tipos = this.movimientoService.listarTipos(1);
@@ -54,6 +63,7 @@ export class MovimientoFormularioEntrada {
     fechaVencimiento: [''],
     numeroLote: ['', Validators.maxLength(50)],
     costoUnitario: this.fb.control<number | null>(null, [Validators.min(0), costoEntero]),
+    proveedorId: this.fb.control<number | null>(null),
     nota: ['', Validators.maxLength(300)],
   });
 
@@ -70,6 +80,15 @@ export class MovimientoFormularioEntrada {
   private readonly productoIdSeleccionado = toSignal(this.form.controls.productoId.valueChanges, {
     initialValue: this.form.controls.productoId.value,
   });
+
+  // Mismo motivo que productoIdSeleccionado: el tipo elegido debe ser una señal real.
+  private readonly tipoSeleccionado = toSignal(this.form.controls.tipo.valueChanges, {
+    initialValue: this.form.controls.tipo.value,
+  });
+
+  protected readonly costoObligatorio = computed(() => this.tipoSeleccionado() === 'COMPRA');
+
+  protected readonly proveedorRequerido = computed(() => proveedorObligatorio(this.tipoSeleccionado()));
 
   protected readonly productoSeleccionado = computed(() => {
     const id = this.productoIdSeleccionado();
@@ -101,6 +120,28 @@ export class MovimientoFormularioEntrada {
       }
       control.updateValueAndValidity({ emitEvent: false });
     });
+
+    // En una compra el costo es obligatorio: de ahí sale el historial de precios. En los demás tipos sigue siendo opcional.
+    effect(() => {
+      const control = this.form.controls.costoUnitario;
+      if (this.costoObligatorio()) {
+        control.addValidators(Validators.required);
+      } else {
+        control.removeValidators(Validators.required);
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    });
+
+    // En una compra hay que saber a quién se le compró; en los demás tipos el proveedor es opcional.
+    effect(() => {
+      const control = this.form.controls.proveedorId;
+      if (this.proveedorRequerido()) {
+        control.addValidators(Validators.required);
+      } else {
+        control.removeValidators(Validators.required);
+      }
+      control.updateValueAndValidity({ emitEvent: false });
+    });
   }
 
   protected guardar(): void {
@@ -124,6 +165,7 @@ export class MovimientoFormularioEntrada {
           fechaVencimiento: v.fechaVencimiento.trim() === '' ? null : v.fechaVencimiento,
           numeroLote: v.numeroLote.trim() === '' ? null : v.numeroLote.trim(),
           costoUnitario: v.costoUnitario,
+          proveedorId: v.proveedorId,
         },
       ],
     };
@@ -150,6 +192,7 @@ export class MovimientoFormularioEntrada {
           { id: 'entrada-cantidad', invalido: this.form.controls.cantidad.invalid },
           { id: 'entrada-vencimiento', invalido: this.form.controls.fechaVencimiento.invalid },
           { id: 'entrada-costo', invalido: this.form.controls.costoUnitario.invalid },
+          { id: 'entrada-proveedor', invalido: this.form.controls.proveedorId.invalid },
         ];
         const primero = orden.find((c) => c.invalido);
         if (primero) document.getElementById(primero.id)?.focus();

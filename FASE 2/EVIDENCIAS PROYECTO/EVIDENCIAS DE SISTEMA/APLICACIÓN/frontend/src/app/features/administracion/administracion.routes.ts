@@ -23,5 +23,10 @@ export const ADMINISTRACION_ROUTES: Routes = [
     data: { ...unidades },
     loadComponent: () => import('../../shared/catalogo/catalogo-mantenedor').then(m => m.CatalogoMantenedor),
   },
+  {
+    path: 'proveedores',
+    title: 'Proveedores · Smart RDP',
+    loadComponent: () => import('./proveedor-mantenedor').then(m => m.ProveedorMantenedor),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'categorias' },
 ];
