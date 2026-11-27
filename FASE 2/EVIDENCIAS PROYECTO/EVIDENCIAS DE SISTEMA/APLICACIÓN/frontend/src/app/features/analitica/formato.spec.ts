@@ -1,4 +1,12 @@
-import { contar, descripcionTop, filaCompra, filaProveedor, formatearVariacion } from './formato';
+import {
+  contar,
+  descripcionComprasProveedor,
+  descripcionTop,
+  filaCompra,
+  filaProveedor,
+  formatearVariacion,
+  itemsComprasProveedor,
+} from './formato';
 
 describe('formatearVariacion', () => {
   it('sin dato muestra una raya', () => {
@@ -66,5 +74,28 @@ describe('filaCompra', () => {
 
   it('una compra sin proveedor dice «Sin proveedor»', () => {
     expect(filaCompra({ fecha: '2026-11-03', costo: 1000, cantidad: 1, proveedorNombre: null }).proveedor).toBe('Sin proveedor');
+  });
+});
+
+describe('itemsComprasProveedor', () => {
+  it('convierte cada proveedor en una barra con el gasto en pesos, conservando el orden', () => {
+    const items = itemsComprasProveedor([
+      { proveedorId: 1, nombre: 'Distribuidora Sur', valor: 50000, cantidad: 40, compras: 3 },
+      { proveedorId: null, nombre: 'Sin proveedor', valor: 1200, cantidad: 2, compras: 1 },
+    ]);
+    expect(items.map((i) => i.etiqueta)).toEqual(['Distribuidora Sur', 'Sin proveedor']);
+    expect(items.map((i) => i.valor)).toEqual([50000, 1200]);
+    expect(items[0].texto).toMatch(/50\.000/);
+  });
+
+  it('sin proveedores no hay barras', () => {
+    expect(itemsComprasProveedor([])).toEqual([]);
+  });
+});
+
+describe('descripcionComprasProveedor', () => {
+  it('usa singular y plural según el número de proveedores', () => {
+    expect(descripcionComprasProveedor(1)).toContain('1 proveedor');
+    expect(descripcionComprasProveedor(3)).toContain('3 proveedores');
   });
 });

@@ -1,0 +1,12 @@
+<section class="w3-container w3-border w3-margin w3-padding w3-light-grey" aria-labelledby="compras-proveedor-titulo">
+  <h2 id="compras-proveedor-titulo" class="w3-large w3-margin-left">Compras por proveedor</h2>
+  <app-estado-vista
+    [cargando]="compras.isLoading()"
+    [error]="compras.error()"
+    [vacio]="compras.hasValue() && lista().length === 0"
+    mensajeVacio="No hay compras con estos filtros."
+    (reintentar)="compras.reload()"
+  >
+    <app-grafico-barras-horizontales [items]="items()" [descripcion]="descripcion()" />
+  </app-estado-vista>
+</section>

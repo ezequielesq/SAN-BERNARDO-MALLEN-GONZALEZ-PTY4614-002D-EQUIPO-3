@@ -46,6 +46,15 @@ export interface ProductoTop {
   valor: number;
 }
 
+/** Gasto en compras a un proveedor; los lotes sin proveedor vienen con `proveedorId` nulo. */
+export interface CompraProveedor {
+  proveedorId: number | null;
+  nombre: string;
+  valor: number;
+  cantidad: number;
+  compras: number;
+}
+
 export interface Importe {
   valor: number;
   cantidad: number | null;

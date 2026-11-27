@@ -1,4 +1,5 @@
-import { Agrupacion, Compra, ProveedorPrecio } from './analitica.modelo';
+import { Agrupacion, Compra, CompraProveedor, ProveedorPrecio } from './analitica.modelo';
+import type { ItemBarra } from './graficos/grafico-barras-horizontales';
 
 const PESOS = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const NUMERO = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 });
@@ -58,4 +59,14 @@ export function filaCompra(c: Compra): { fecha: string; proveedor: string; canti
     cantidad: NUMERO.format(c.cantidad),
     costo: formatearPesos(c.costo),
   };
+}
+
+/** Una barra por proveedor con lo gastado en pesos (las unidades de los productos no se pueden sumar). */
+export function itemsComprasProveedor(lista: readonly CompraProveedor[]): ItemBarra[] {
+  return lista.map((p) => ({ etiqueta: p.nombre, valor: p.valor, texto: formatearPesos(p.valor) }));
+}
+
+/** Texto accesible del gráfico de compras por proveedor. */
+export function descripcionComprasProveedor(n: number): string {
+  return `Gráfico de barras horizontales con el gasto en compras de ${contar(n, 'proveedor', 'proveedores')} del período.`;
 }

@@ -3,6 +3,7 @@ import { Injectable, Signal, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  CompraProveedor,
   FiltroPanel,
   HistorialPrecios,
   Opcion,
@@ -47,6 +48,10 @@ export class AnaliticaService {
 
   productosTop(filtro: Signal<FiltroPanel | null>, limite = 7): HttpResourceRef<ProductoTop[] | undefined> {
     return httpResource<ProductoTop[]>(() => this.pedido('productos-top', filtro(), { limite }));
+  }
+
+  comprasPorProveedor(filtro: Signal<FiltroPanel | null>): HttpResourceRef<CompraProveedor[] | undefined> {
+    return httpResource<CompraProveedor[]>(() => this.pedido('compras-por-proveedor', filtro()));
   }
 
   pedidosPorPersona(filtro: Signal<FiltroPanel | null>): HttpResourceRef<PedidosPorPersona | undefined> {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime } from 'rxjs';
+import { AnaliticaComprasProveedor } from './analitica-compras-proveedor';
 import { AnaliticaConsumoPeriodo } from './analitica-consumo-periodo';
 import { AnaliticaFiltros } from './analitica-filtros';
 import { AnaliticaPedidosPersona } from './analitica-pedidos-persona';
@@ -18,6 +19,7 @@ import { EstadoFiltros } from './panel-estado';
     AnaliticaTarjetas,
     AnaliticaConsumoPeriodo,
     AnaliticaTopProductos,
+    AnaliticaComprasProveedor,
     AnaliticaPedidosPersona,
     AnaliticaVencimientos,
     AnaliticaPrecios,
