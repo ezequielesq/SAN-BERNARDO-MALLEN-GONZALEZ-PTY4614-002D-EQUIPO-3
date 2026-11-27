@@ -128,7 +128,7 @@ class AnaliticaAuditoriaFlujoTest extends FlujoBase {
         assertThat(descarga.bytes()).isNotEmpty();
         var hoja = ExcelPruebas.leerHoja(descarga.bytes(), "Movimientos");
         assertThat(hoja.get(0)).containsExactly("ID", "Operación", "Producto", "Tipo", "Sentido", "Cantidad", "Lote",
-                "Costo unitario", "Costo total", "Nota", "Fecha", "Usuario");
+                "Costo unitario", "Costo total", "Nota", "Fecha", "Usuario", "Proveedor");
 
         // Solo los tres movimientos del producto de la categoría, del más antiguo al más reciente, y no los del otro.
         var libro = new ArrayList<>(movimientos(producto.id()));

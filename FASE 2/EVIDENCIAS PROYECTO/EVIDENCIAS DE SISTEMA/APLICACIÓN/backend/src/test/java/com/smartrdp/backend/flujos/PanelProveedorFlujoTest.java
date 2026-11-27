@@ -162,6 +162,42 @@ class PanelProveedorFlujoTest extends FlujoBase {
     }
 
     @Test
+    @DisplayName("HU-120 La exportación de movimientos incluye el proveedor del lote (vacío si el lote no tiene)")
+    void exportarIncluyeElProveedor() throws Exception {
+        Cuenta bodeguero = crearBodeguero();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod deA = crearProductoEn(categoria.id(), false);
+        Prod sinProveedor = crearProductoEn(categoria.id(), false);
+        Prov a = crearProveedor();
+        comprar(deA, a, 5, 1_000, null, null);
+        var inicial = objeto("productoId", sinProveedor.id(), "cantidad", 3, "costoUnitario", 500);
+        post("/api/movimientos/entradas", bodeguero.token(), objeto("tipo", "INVENTARIO_INICIAL", "lineas", List.of(inicial)))
+                .esperando(201);
+        String url = "/api/analitica/exportar-movimientos?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id();
+
+        Descarga descarga = descargar(url, tokenAdmin()).esperando(200);
+
+        try (var libro = new XSSFWorkbook(new ByteArrayInputStream(descarga.bytes()))) {
+            var hoja = libro.getSheet("Movimientos");
+            var encabezado = hoja.getRow(0);
+            int columna = -1;
+            for (int i = 0; i < encabezado.getLastCellNum(); i++) {
+                if ("Proveedor".equals(encabezado.getCell(i).getStringCellValue())) columna = i;
+            }
+            assertThat(columna).as("columna «Proveedor»").isPositive();
+            java.util.Map<String, String> proveedorPorProducto = new java.util.HashMap<>();
+            for (int i = 1; i <= hoja.getLastRowNum(); i++) {
+                proveedorPorProducto.put(hoja.getRow(i).getCell(2).getStringCellValue(),
+                        hoja.getRow(i).getCell(columna).getStringCellValue());
+            }
+            assertThat(proveedorPorProducto).containsOnlyKeys(deA.nombre(), sinProveedor.nombre())
+                    .containsEntry(deA.nombre(), a.nombre())
+                    .containsEntry(sinProveedor.nombre(), "");
+        }
+    }
+
+    @Test
     @DisplayName("HU-140 Gasto en compras por proveedor: valor, cantidad y compras de cada uno, de mayor a menor, con «Sin proveedor» para los lotes antiguos")
     void comprasPorProveedor() {
         Catalogo categoria = crearCategoriaPropia(false);

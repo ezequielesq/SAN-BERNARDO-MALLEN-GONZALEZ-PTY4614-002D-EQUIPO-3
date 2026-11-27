@@ -30,7 +30,7 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
         SELECT m FROM Movimiento m
         JOIN FETCH m.operacion o JOIN FETCH o.tipo JOIN FETCH o.usuario
         JOIN FETCH m.lote l JOIN FETCH l.producto p
-        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u LEFT JOIN l.proveedor pr
+        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u LEFT JOIN FETCH l.proveedor pr
         WHERE o.createdAt >= :desde AND o.createdAt < :hasta
         AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
         AND (:todosLosProductos = true OR p.id IN :productoIds)

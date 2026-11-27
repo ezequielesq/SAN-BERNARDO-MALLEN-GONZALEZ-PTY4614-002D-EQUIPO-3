@@ -64,7 +64,7 @@ public class AnaliticaService {
             Sheet sheet = wb.createSheet("Movimientos");
             Row header = sheet.createRow(0);
             String[] cols = {"ID", "Operación", "Producto", "Tipo", "Sentido", "Cantidad", "Lote",
-                    "Costo unitario", "Costo total", "Nota", "Fecha", "Usuario"};
+                    "Costo unitario", "Costo total", "Nota", "Fecha", "Usuario", "Proveedor"};
             for (int i = 0; i < cols.length; i++) header.createCell(i).setCellValue(cols[i]);
 
             int rowIdx = 1;
@@ -86,6 +86,7 @@ public class AnaliticaService {
                 row.createCell(9).setCellValue(operacion.getNota() != null ? operacion.getNota() : "");
                 row.createCell(10).setCellValue(operacion.getCreatedAt() != null ? operacion.getCreatedAt().toString() : "");
                 row.createCell(11).setCellValue(operacion.getUsuario().getEmail());
+                row.createCell(12).setCellValue(lote.getProveedor() != null ? lote.getProveedor().getNombre() : "");
             }
             wb.write(out);
             return out.toByteArray();
