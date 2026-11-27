@@ -115,7 +115,7 @@
       [attr.aria-invalid]="enviado() && form.controls.proveedorId.invalid ? 'true' : null"
       [attr.aria-describedby]="enviado() && form.controls.proveedorId.invalid ? 'error-entrada-proveedor' : null"
     >
-      <option [ngValue]="null">Sin proveedor</option>
+      <option [ngValue]="null">{{ proveedorRequerido() ? 'Elige un proveedor' : 'Sin proveedor' }}</option>
       @for (p of opcionesProveedor(); track p.id) {
         <option [ngValue]="p.id">{{ p.nombre }} ({{ p.rut }})</option>
       }
@@ -123,7 +123,7 @@
     @if (enviado() && form.controls.proveedorId.invalid) {
       <p class="texto-error" id="error-entrada-proveedor"><i class="fa-solid fa-exclamation" aria-hidden="true"></i> Elige el proveedor de la compra.</p>
     }
-    @if (opcionesProveedor().length === 0 && !proveedores.isLoading()) {
+    @if (proveedores.hasValue() && opcionesProveedor().length === 0) {
       <p class="w3-small">No hay proveedores registrados. <a routerLink="/administracion/proveedores">Créalos en Administración</a>.</p>
     }
   </div>
