@@ -118,3 +118,49 @@ export function paramsVerLotes(productoId: number, estadoStock: string): Record<
 export function esVueltaALotes(urlPrevia: string | null): boolean {
   return urlPrevia !== null && urlPrevia.split(/[?#]/)[0] === '/movimientos/lotes';
 }
+
+/** Columnas por las que se puede ordenar la lista de lotes. */
+export const COLUMNAS_ORDEN_LOTE = ['productoNombre', 'fechaVencimiento', 'saldo', 'estado'] as const;
+export type ColumnaOrdenLote = (typeof COLUMNAS_ORDEN_LOTE)[number];
+
+/** Tamaños de página que ofrece la lista. */
+export const TAMANOS_PAGINA_LOTE = [10, 15, 20, 50] as const;
+
+/** Cómo se ve la lista: orden, página y tamaño de página (los filtros van aparte, en `FiltroLotes`). */
+export interface VistaLotes {
+  /** Sin columna se conserva el orden del servidor (primero lo que vence antes). */
+  columna: ColumnaOrdenLote | null;
+  direccion: 'asc' | 'desc';
+  pagina: number;
+  tamano: number;
+}
+
+export const VISTA_POR_DEFECTO: VistaLotes = { columna: null, direccion: 'asc', pagina: 1, tamano: 15 };
+
+/** Orden, página y tamaño leídos de la URL; lo ausente o inválido vuelve a su valor por defecto. */
+export function vistaDesdeParams(params: ParametrosLeibles): VistaLotes {
+  const orden = params.get('orden');
+  const columna =
+    orden !== null && (COLUMNAS_ORDEN_LOTE as readonly string[]).includes(orden) ? (orden as ColumnaOrdenLote) : null;
+  const pagina = params.get('pagina');
+  const tamano = params.get('tamano');
+  const tamanoLeido = tamano !== null && /^\d+$/.test(tamano) ? Number(tamano) : NaN;
+  return {
+    columna,
+    direccion: columna !== null && params.get('dir') === 'desc' ? 'desc' : 'asc',
+    pagina: pagina !== null && /^\d+$/.test(pagina) && Number(pagina) >= 1 ? Number(pagina) : 1,
+    tamano: (TAMANOS_PAGINA_LOTE as readonly number[]).includes(tamanoLeido) ? tamanoLeido : VISTA_POR_DEFECTO.tamano,
+  };
+}
+
+/** Parámetros de la URL para la vista: solo lo que se aparta del valor por defecto (inverso de `vistaDesdeParams`). */
+export function paramsDesdeVista(v: VistaLotes): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  if (v.columna !== null) {
+    params['orden'] = v.columna;
+    if (v.direccion === 'desc') params['dir'] = 'desc';
+  }
+  if (v.pagina > 1) params['pagina'] = v.pagina;
+  if (v.tamano !== VISTA_POR_DEFECTO.tamano) params['tamano'] = v.tamano;
+  return params;
+}

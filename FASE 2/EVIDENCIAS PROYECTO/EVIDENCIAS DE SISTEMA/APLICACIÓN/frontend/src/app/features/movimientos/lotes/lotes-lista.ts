@@ -9,13 +9,18 @@ import { EstadoVista } from '../../../shared/estado-vista/estado-vista';
 import { Extractores, Orden, ordenar } from '../../../shared/ordenamiento/orden';
 import { ThOrden } from '../../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../../shared/paginacion/paginacion';
+import { paginaAjustada } from '../../../shared/paginacion/paginar';
 import { ProveedorService } from '../../../shared/proveedor/proveedor.service';
 import { ProductoService } from '../../productos/producto.service';
 import { EstadoLote, FiltroLotes, Lote } from '../lote.modelo';
 import { MovimientoService } from '../movimiento.service';
 import {
+  ColumnaOrdenLote,
   ESTADOS_LOTE,
+  TAMANOS_PAGINA_LOTE,
   UMBRAL_POR_DEFECTO,
+  VISTA_POR_DEFECTO,
+  VistaLotes,
   estadoLoteValido,
   etiquetaDias,
   etiquetaEstado,
@@ -23,11 +28,11 @@ import {
   idDeParametro,
   normalizarDias,
   paramsDesdeFiltro,
+  paramsDesdeVista,
   rangoEstado,
   tipoBadge,
+  vistaDesdeParams,
 } from './lote-estado';
-
-type ColumnaOrdenLote = 'productoNombre' | 'fechaVencimiento' | 'saldo' | 'estado';
 
 const EXTRACTORES_LOTE: Extractores<Lote, ColumnaOrdenLote> = {
   productoNombre: (l) => l.productoNombre,
@@ -63,11 +68,12 @@ export class LotesLista {
   protected readonly diasInvalido = signal(false);
   protected readonly incluirAgotados = signal(false);
 
-  protected readonly paginaActual = signal(1);
-  protected readonly tamanoPagina = signal(15);
-  protected readonly opcionesTamano = [10, 15, 20, 50] as const;
+  /** Página pedida (de la URL); `paginaActual` la lleva al rango válido cuando los datos son menos. */
+  protected readonly pagina = signal(VISTA_POR_DEFECTO.pagina);
+  protected readonly tamanoPagina = signal(VISTA_POR_DEFECTO.tamano);
+  protected readonly opcionesTamano = TAMANOS_PAGINA_LOTE;
   /** Sin columna activa conserva el orden del servidor (primero lo que vence antes). */
-  protected readonly orden = new Orden<ColumnaOrdenLote>(null, () => this.paginaActual.set(1));
+  protected readonly orden = new Orden<ColumnaOrdenLote>(null, () => this.aplicar({}));
 
   protected readonly estados = ESTADOS_LOTE;
   protected readonly etiquetaEstado = etiquetaEstado;
@@ -94,6 +100,9 @@ export class LotesLista {
   protected readonly lotes = this.movimientoService.listarLotes(this.filtro);
   protected readonly todos = computed(() => (this.lotes.hasValue() ? this.lotes.value() : []));
   protected readonly ordenados = computed(() => ordenar(this.todos(), this.orden, EXTRACTORES_LOTE));
+  protected readonly paginaActual = computed(() =>
+    paginaAjustada(this.pagina(), this.ordenados().length, this.tamanoPagina()),
+  );
   protected readonly paginados = computed(() => {
     const inicio = (this.paginaActual() - 1) * this.tamanoPagina();
     return this.ordenados().slice(inicio, inicio + this.tamanoPagina());
@@ -115,18 +124,35 @@ export class LotesLista {
       if (f.diasPorVencer !== this.diasPorVencer()) this.diasInvalido.set(false);
       this.diasPorVencer.set(f.diasPorVencer);
       this.incluirAgotados.set(f.incluirAgotados);
-      this.paginaActual.set(1);
+      // El orden y la página también vienen de la URL, así que «Volver» y el botón Atrás los restituyen.
+      const v = vistaDesdeParams(params);
+      this.orden.columna.set(v.columna);
+      this.orden.direccion.set(v.direccion);
+      this.pagina.set(v.pagina);
+      this.tamanoPagina.set(v.tamano);
     });
     this.textoEscrito
       .pipe(debounceTime(ESPERA_TEXTO_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe((valor) => this.cambiarTexto(valor));
   }
 
-  /** Escribe los filtros en la URL (sin sumar una entrada al historial); la suscripción de arriba los aplica. */
-  private aplicar(cambio: Partial<FiltroLotes>): void {
+  /**
+   * Escribe filtros, orden, página y tamaño en la URL (sin sumar una entrada al historial); la suscripción de arriba
+   * los aplica. Cualquier cambio vuelve a la página 1 salvo que se pida otra (`cambiarPagina`).
+   */
+  private aplicar(filtro: Partial<FiltroLotes>, vista: Partial<VistaLotes> = {}): void {
+    const actual: VistaLotes = {
+      columna: this.orden.columna(),
+      direccion: this.orden.direccion(),
+      pagina: 1,
+      tamano: this.tamanoPagina(),
+    };
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: paramsDesdeFiltro({ ...this.filtro(), ...cambio }),
+      queryParams: {
+        ...paramsDesdeFiltro({ ...this.filtro(), ...filtro }),
+        ...paramsDesdeVista({ ...actual, ...vista }),
+      },
       replaceUrl: true,
     });
   }
@@ -168,11 +194,10 @@ export class LotesLista {
   }
 
   protected cambiarPagina(pagina: number): void {
-    this.paginaActual.set(pagina);
+    this.aplicar({}, { pagina });
   }
 
   protected cambiarTamanoPagina(tamano: number): void {
-    this.tamanoPagina.set(tamano);
-    this.paginaActual.set(1);
+    this.aplicar({}, { tamano });
   }
 }

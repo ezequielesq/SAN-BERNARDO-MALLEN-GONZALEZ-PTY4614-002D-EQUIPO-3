@@ -3,6 +3,8 @@ import { FiltroLotes } from '../lote.modelo';
 import {
   ESTADOS_LOTE,
   UMBRAL_POR_DEFECTO,
+  VISTA_POR_DEFECTO,
+  VistaLotes,
   esVueltaALotes,
   estadoLoteValido,
   etiquetaDias,
@@ -11,10 +13,12 @@ import {
   idDeParametro,
   normalizarDias,
   paramsDesdeFiltro,
+  paramsDesdeVista,
   paramsLotes,
   paramsVerLotes,
   rangoEstado,
   tipoBadge,
+  vistaDesdeParams,
 } from './lote-estado';
 
 describe('lote-estado', () => {
@@ -146,5 +150,66 @@ describe('filtros de lotes en la URL', () => {
     expect(esVueltaALotes('/movimientos/alertas')).toBe(false);
     expect(esVueltaALotes('/movimientos/stock?x=/movimientos/lotes')).toBe(false);
     expect(esVueltaALotes(null)).toBe(false);
+  });
+});
+
+describe('orden, página y tamaño en la URL', () => {
+  const desde = (consulta: string) => vistaDesdeParams(new URLSearchParams(consulta));
+
+  it('sin parámetros devuelve el orden del servidor, la página 1 y el tamaño por defecto', () => {
+    expect(desde('')).toEqual({ columna: null, direccion: 'asc', pagina: 1, tamano: 15 });
+    expect(VISTA_POR_DEFECTO).toEqual({ columna: null, direccion: 'asc', pagina: 1, tamano: 15 });
+  });
+
+  it('lee columna, dirección, página y tamaño', () => {
+    expect(desde('orden=productoNombre&dir=desc&pagina=2&tamano=20')).toEqual({
+      columna: 'productoNombre', direccion: 'desc', pagina: 2, tamano: 20,
+    });
+    expect(desde('orden=saldo')).toEqual({ ...VISTA_POR_DEFECTO, columna: 'saldo' });
+  });
+
+  it('descarta valores inválidos y cae al valor por defecto', () => {
+    expect(desde('orden=constructor&dir=desc')).toEqual(VISTA_POR_DEFECTO);
+    expect(desde('orden=toString')).toEqual(VISTA_POR_DEFECTO);
+    expect(desde('orden=saldo&dir=sideways').direccion).toBe('asc');
+    for (const mala of ['0', '-1', '1.5', 'abc', '1e1', '']) expect(desde(`pagina=${mala}`).pagina).toBe(1);
+    for (const malo of ['5', '15.0', '100', 'abc', '']) expect(desde(`tamano=${malo}`).tamano).toBe(15);
+    for (const bueno of [10, 15, 20, 50]) expect(desde(`tamano=${bueno}`).tamano).toBe(bueno);
+  });
+
+  it('la dirección sin columna se ignora', () => {
+    expect(desde('dir=desc')).toEqual(VISTA_POR_DEFECTO);
+  });
+
+  it('deja fuera de la URL lo que está en su valor por defecto', () => {
+    expect(paramsDesdeVista(VISTA_POR_DEFECTO)).toEqual({});
+    expect(paramsDesdeVista({ columna: 'estado', direccion: 'asc', pagina: 1, tamano: 15 })).toEqual({ orden: 'estado' });
+    expect(paramsDesdeVista({ columna: null, direccion: 'desc', pagina: 1, tamano: 15 })).toEqual({});
+  });
+
+  it('escribe lo que se aparta del valor por defecto', () => {
+    expect(paramsDesdeVista({ columna: 'productoNombre', direccion: 'desc', pagina: 2, tamano: 50 })).toEqual({
+      orden: 'productoNombre', dir: 'desc', pagina: 2, tamano: 50,
+    });
+  });
+
+  it('ida y vuelta: lo que se escribe en la URL se lee igual', () => {
+    const vistas: VistaLotes[] = [
+      VISTA_POR_DEFECTO,
+      { columna: 'fechaVencimiento', direccion: 'desc', pagina: 7, tamano: 10 },
+      { columna: 'saldo', direccion: 'asc', pagina: 3, tamano: 20 },
+      { columna: null, direccion: 'asc', pagina: 4, tamano: 50 },
+    ];
+    for (const vista of vistas) {
+      const consulta = new URLSearchParams(Object.entries(paramsDesdeVista(vista)).map(([k, v]) => [k, String(v)]));
+      expect(vistaDesdeParams(consulta)).toEqual(vista);
+    }
+  });
+
+  it('los parámetros de la vista no pisan los de los filtros', () => {
+    const filtro = paramsDesdeFiltro({ productoId: 4, categoriaId: null, proveedorId: null, estado: null, texto: '',
+      diasPorVencer: 7, incluirAgotados: false });
+    const vista = paramsDesdeVista({ columna: 'saldo', direccion: 'desc', pagina: 2, tamano: 10 });
+    expect(Object.keys({ ...filtro, ...vista })).toHaveLength(Object.keys(filtro).length + Object.keys(vista).length);
   });
 });
