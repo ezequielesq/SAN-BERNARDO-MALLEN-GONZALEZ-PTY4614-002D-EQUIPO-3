@@ -10,9 +10,10 @@
 //   - Cuentas de ejemplo (bodeguero y empleados): usan DEMO_PASSWORD si la defines; si no, se genera
 //     una contrasena aleatoria y se muestra UNA vez al final, solo en esta consola.
 //
-// Crea: 1 bodeguero y 3 empleados, 12 productos, entradas con lotes de distintos vencimientos (para ver
-// FEFO y alertas), una salida de consumo y 4 solicitudes (aprobada, aprobada parcial, rechazada, pendiente).
-// Las fechas se calculan desde hoy.
+// Crea: 1 bodeguero y 3 empleados, 4 proveedores, 12 productos, entradas de compra con lotes de distintos
+// vencimientos y proveedor (para ver FEFO, alertas y la comparación de precios; la leche y el aceite se compran
+// a dos proveedores con costos distintos), una salida de consumo y 4 solicitudes (aprobada, aprobada parcial,
+// rechazada, pendiente). Si los proveedores ya existen (mismo RUT), se reutilizan. Las fechas se calculan desde hoy.
 
 import readline from "node:readline";
 import { randomBytes } from "node:crypto";
@@ -96,32 +97,53 @@ const dias = (n) => { const d = new Date(Date.UTC(hoy.getFullYear(), hoy.getMont
     const p = await call("POST", "/productos", { codigo, nombre, categoriaId: cat(c), unidadMedidaId: uni(u), esPerecible: per, stockMinimo: min, stockCritico: crit, costoUnitario: costo }, bod);
     ids[codigo] = p.id;
   }
+  // Proveedores (RUT ficticios pero válidos, con dígito verificador correcto). Si ya existen por RUT, se reutilizan.
+  const proveedoresDemo = [
+    ["76123456-0", "Distribuidora Norte (demo)"],
+    ["77234567-4", "Frutas y Verduras Andes (demo)"],
+    ["78345678-8", "Abarrotes del Sur (demo)"],
+    ["79456789-1", "Carnes Selectas (demo)"],
+  ];
+  const yaCargados = await call("GET", "/proveedores?soloActivos=false", null, bod);
+  const prov = [];
+  for (const [rut, nombre] of proveedoresDemo) {
+    let p = yaCargados.find((x) => x.rut === rut);
+    if (!p) p = await call("POST", "/proveedores", { rut, nombre }, bod);
+    else if (!p.activo) await call("PUT", `/proveedores/${p.id}/reactivar`, null, bod);
+    prov.push(p.id);
+  }
+  const [norte, andes, sur, carnes] = prov;
+
   const tipoEntrada = tipos.find((t) => t.codigo === "COMPRA");
   const tipoSalida = tipos.find((t) => t.codigo === "CONSUMO_INTERNO");
   const E = tipoEntrada.codigo ?? tipoEntrada.nombre;
   const S = tipoSalida.codigo ?? tipoSalida.nombre;
 
-  // Entradas: lotes con distintos vencimientos para mostrar FEFO y alertas.
+  // Entradas: lotes con distintos vencimientos para mostrar FEFO y alertas. Cada línea de compra lleva su proveedor.
+  // El aceite y la leche se compran a dos proveedores con costos distintos, para la comparación de precios.
   await call("POST", "/movimientos/entradas", { tipo: E, nota: "Compra semanal de abarrotes", lineas: [
-    { productoId: ids["1001"], cantidad: 12, numeroLote: "AC-2610", fechaVencimiento: dias(240), costoUnitario: 6900 },
-    { productoId: ids["1002"], cantidad: 8, numeroLote: "HA-2611", fechaVencimiento: dias(150), costoUnitario: 21500 },
-    { productoId: ids["1003"], cantidad: 40, numeroLote: "AR-2609", fechaVencimiento: dias(300), costoUnitario: 1450 },
-    { productoId: ids["5001"], cantidad: 4, numeroLote: "DT-2610", costoUnitario: 7800 },
+    { productoId: ids["1001"], cantidad: 12, numeroLote: "AC-2610", fechaVencimiento: dias(240), costoUnitario: 6900, proveedorId: norte },
+    { productoId: ids["1002"], cantidad: 8, numeroLote: "HA-2611", fechaVencimiento: dias(150), costoUnitario: 21500, proveedorId: norte },
+    { productoId: ids["1003"], cantidad: 40, numeroLote: "AR-2609", fechaVencimiento: dias(300), costoUnitario: 1450, proveedorId: sur },
+    { productoId: ids["5001"], cantidad: 4, numeroLote: "DT-2610", costoUnitario: 7800, proveedorId: sur },
+  ] }, bod);
+  await call("POST", "/movimientos/entradas", { tipo: E, nota: "Aceite a otro proveedor (más barato)", lineas: [
+    { productoId: ids["1001"], cantidad: 6, numeroLote: "AC-2611", fechaVencimiento: dias(260), costoUnitario: 6500, proveedorId: sur },
   ] }, bod);
   await call("POST", "/movimientos/entradas", { tipo: E, nota: "Compra de lácteos (lote antiguo)", lineas: [
-    { productoId: ids["2001"], cantidad: 20, numeroLote: "LE-1101", fechaVencimiento: dias(6), costoUnitario: 980 },
-    { productoId: ids["2002"], cantidad: 12, numeroLote: "CR-1102", fechaVencimiento: dias(12), costoUnitario: 3200 },
-    { productoId: ids["2003"], cantidad: 6, numeroLote: "QM-1103", fechaVencimiento: dias(20), costoUnitario: 8900 },
+    { productoId: ids["2001"], cantidad: 20, numeroLote: "LE-1101", fechaVencimiento: dias(6), costoUnitario: 980, proveedorId: norte },
+    { productoId: ids["2002"], cantidad: 12, numeroLote: "CR-1102", fechaVencimiento: dias(12), costoUnitario: 3200, proveedorId: carnes },
+    { productoId: ids["2003"], cantidad: 6, numeroLote: "QM-1103", fechaVencimiento: dias(20), costoUnitario: 8900, proveedorId: carnes },
   ] }, bod);
   await call("POST", "/movimientos/entradas", { tipo: E, nota: "Reposición de lácteos (lote nuevo)", lineas: [
-    { productoId: ids["2001"], cantidad: 30, numeroLote: "LE-1115", fechaVencimiento: dias(25), costoUnitario: 980 },
+    { productoId: ids["2001"], cantidad: 30, numeroLote: "LE-1115", fechaVencimiento: dias(25), costoUnitario: 1040, proveedorId: sur },
   ] }, bod);
   await call("POST", "/movimientos/entradas", { tipo: E, nota: "Feria y bebidas", lineas: [
-    { productoId: ids["3001"], cantidad: 25, numeroLote: "TO-1117", fechaVencimiento: dias(5), costoUnitario: 1900 },
-    { productoId: ids["3002"], cantidad: 9, numeroLote: "PA-1117", fechaVencimiento: dias(4), costoUnitario: 5400 },
-    { productoId: ids["3003"], cantidad: 14, numeroLote: "LI-1117", fechaVencimiento: dias(9), costoUnitario: 1700 },
-    { productoId: ids["4001"], cantidad: 96, numeroLote: "AG-2610", fechaVencimiento: dias(400), costoUnitario: 520 },
-    { productoId: ids["4002"], cantidad: 30, numeroLote: "CO-2611", fechaVencimiento: dias(180), costoUnitario: 640 },
+    { productoId: ids["3001"], cantidad: 25, numeroLote: "TO-1117", fechaVencimiento: dias(5), costoUnitario: 1900, proveedorId: andes },
+    { productoId: ids["3002"], cantidad: 9, numeroLote: "PA-1117", fechaVencimiento: dias(4), costoUnitario: 5400, proveedorId: andes },
+    { productoId: ids["3003"], cantidad: 14, numeroLote: "LI-1117", fechaVencimiento: dias(9), costoUnitario: 1700, proveedorId: andes },
+    { productoId: ids["4001"], cantidad: 96, numeroLote: "AG-2610", fechaVencimiento: dias(400), costoUnitario: 520, proveedorId: norte },
+    { productoId: ids["4002"], cantidad: 30, numeroLote: "CO-2611", fechaVencimiento: dias(180), costoUnitario: 640, proveedorId: norte },
   ] }, bod);
   // Salida manual (consumo): reparte por FEFO.
   await call("POST", "/movimientos/salidas", { tipo: S, nota: "Consumo de cocina", lineas: [

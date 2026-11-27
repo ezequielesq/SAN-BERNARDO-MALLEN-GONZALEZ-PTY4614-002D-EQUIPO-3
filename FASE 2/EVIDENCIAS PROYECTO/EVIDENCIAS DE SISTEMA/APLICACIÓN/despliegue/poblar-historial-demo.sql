@@ -2,7 +2,10 @@
 -- Uso (base LOCAL de desarrollo; no ejecutar en producción):
 --   psql -h localhost -U <usuario> -d smartrdp -v ON_ERROR_STOP=1 -f poblar-historial-demo.sql
 -- Es idempotente a medias: si la categoría «Demo analítica» ya existe, se detiene sin tocar nada.
--- Requiere un usuario con rol BODEGUERO. Las fechas pasadas se fijan al INSERTAR (created_at):
+-- Requiere un usuario con rol BODEGUERO y el esquema con la migración V5 (proveedores). Crea 4 proveedores de
+-- ejemplo (si ya existen por RUT, se reutilizan) y asigna uno a cada lote de compra; la harina se compra
+-- alternando dos proveedores, y «Abarrotes del Sur» cobra un 7 % menos, para que el panel compare precios.
+-- Los lotes de inventario inicial no llevan proveedor. Las fechas pasadas se fijan al INSERTAR (created_at):
 -- el libro es inmutable por triggers y no admite UPDATE.
 
 BEGIN;
@@ -35,6 +38,11 @@ DECLARE
     v_cant       integer;
     v_entregada  integer;
     v_pid        bigint;
+    v_prov       bigint[] := '{}';   -- 1 Norte, 2 Andes, 3 Sur, 4 Carnes
+    v_rut        text[]   := ARRAY['76123456-0', '77234567-4', '78345678-8', '79456789-1'];
+    v_pnombre    text[]   := ARRAY['Distribuidora Norte (demo)', 'Frutas y Verduras Andes (demo)', 'Abarrotes del Sur (demo)', 'Carnes Selectas (demo)'];
+    v_pv         bigint;
+    v_factor     numeric;
 BEGIN
     SELECT u.id INTO v_bod FROM usuarios u JOIN roles r ON r.id = u.rol_id
      WHERE r.codigo = 'BODEGUERO' AND u.activo ORDER BY u.id LIMIT 1;
@@ -73,6 +81,12 @@ BEGIN
         v_emp := v_emp || (SELECT id FROM usuarios WHERE email = 'empleado.demo' || v_i || '@example.test');
     END LOOP;
 
+    -- Proveedores de ejemplo (RUT ficticios con dígito verificador válido).
+    FOR v_i IN 1..4 LOOP
+        INSERT INTO proveedores (rut, nombre) VALUES (v_rut[v_i], v_pnombre[v_i]) ON CONFLICT (rut) DO NOTHING;
+        v_prov := v_prov || (SELECT id FROM proveedores WHERE rut = v_rut[v_i]);
+    END LOOP;
+
     -- Productos: los cuatro primeros en kg, los dos últimos por unidad; el aceite es perecible.
     FOR v_p IN 1..6 LOOP
         INSERT INTO productos (categoria_id, unidad_medida_id, nombre, es_perecible, stock_minimo, stock_critico, costo_unitario)
@@ -94,12 +108,18 @@ BEGIN
     FOR v_semana IN 0..11 LOOP
         -- Compras: una por producto cada semana, con un costo que sube un poco y se mueve según el producto.
         FOR v_p IN 1..6 LOOP
+            -- Proveedor de la compra: la harina alterna Norte (semanas pares) y Sur (impares); Sur cobra un 7 % menos.
+            v_pv := CASE v_p WHEN 1 THEN CASE WHEN v_semana % 2 = 0 THEN v_prov[1] ELSE v_prov[3] END
+                             WHEN 2 THEN v_prov[3] WHEN 3 THEN v_prov[2] WHEN 4 THEN v_prov[3]
+                             WHEN 5 THEN v_prov[1] ELSE v_prov[4] END;
+            v_factor := CASE WHEN v_pv = v_prov[3] THEN 0.93 ELSE 1 END;
             v_fecha := (v_lunes + 7 * v_semana)::timestamp + interval '1 day' + time '10:00';
             INSERT INTO operaciones (created_at, tipo_id, usuario_id, nota) VALUES (v_fecha, t_compra, v_bod, 'Compra demo') RETURNING id INTO v_op;
-            INSERT INTO lotes (created_at, producto_id, numero_lote, fecha_vencimiento, costo_unitario)
+            INSERT INTO lotes (created_at, producto_id, numero_lote, fecha_vencimiento, costo_unitario, proveedor_id)
             VALUES (v_fecha, v_prod[v_p], 'C' || v_semana || '-' || v_p,
                     CASE WHEN v_perecible[v_p] THEN v_fecha::date + 25 + (v_semana % 3) * 10 END,
-                    round(v_costo[v_p] * (1 + 0.015 * v_semana + 0.04 * ((v_semana + v_p) % 3)))::integer)
+                    round(v_costo[v_p] * (1 + 0.015 * v_semana + 0.04 * ((v_semana + v_p) % 3)) * v_factor)::integer,
+                    v_pv)
             RETURNING id INTO v_lote;
             INSERT INTO movimientos (created_at, operacion_id, lote_id, cantidad) VALUES (v_fecha, v_op, v_lote, 120 + 10 * v_p);
         END LOOP;
