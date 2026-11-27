@@ -83,7 +83,7 @@ describe('lote-estado', () => {
 
   it('lee un id de la URL solo si es un entero positivo', () => {
     expect(idDeParametro('7')).toBe(7);
-    for (const malo of [null, '', '0', '-2', '1.5', 'abc']) expect(idDeParametro(malo)).toBeNull();
+    for (const malo of [null, '', '0', '-2', '1.5', 'abc', '1e3', '0x10', ' 7 ', '+7']) expect(idDeParametro(malo)).toBeNull();
   });
 });
 

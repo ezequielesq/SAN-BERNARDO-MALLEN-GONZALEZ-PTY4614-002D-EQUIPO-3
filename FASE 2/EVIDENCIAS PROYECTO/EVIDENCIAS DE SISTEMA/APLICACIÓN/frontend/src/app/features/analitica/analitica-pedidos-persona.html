@@ -28,7 +28,11 @@
           <tr class="w3-light-grey">
             <th appThOrden [orden]="orden" columna="nombre">Persona</th>
             <th appThOrden [orden]="orden" columna="pedidos">Pedidos</th>
-            <th appThOrden [orden]="orden" columna="solicitado">Solicitado</th>
+            @if (muestraSolicitado()) {
+              <th appThOrden [orden]="orden" columna="solicitado">Solicitado</th>
+            } @else {
+              <th scope="col">Solicitado</th>
+            }
             <th appThOrden [orden]="orden" columna="entregado">Entregado</th>
             <th appThOrden [orden]="orden" columna="devuelto">Devuelto</th>
             <th appThOrden [orden]="orden" columna="neto">Neto</th>

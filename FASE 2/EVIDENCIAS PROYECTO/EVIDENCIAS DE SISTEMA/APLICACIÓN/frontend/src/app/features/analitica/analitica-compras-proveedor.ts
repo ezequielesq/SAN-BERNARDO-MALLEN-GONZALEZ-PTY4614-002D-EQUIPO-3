@@ -20,6 +20,9 @@ export class AnaliticaComprasProveedor {
   protected readonly compras = this.service.comprasPorProveedor(this.filtro);
   protected readonly lista = computed(() => (this.compras.hasValue() ? this.compras.value() : []));
 
+  /** El servidor ignora la persona en este bloque: las compras no se asignan a personas. */
+  protected readonly conPersona = computed(() => this.filtro()?.solicitanteId != null);
+
   protected readonly items = computed(() => itemsComprasProveedor(this.lista()));
   protected readonly descripcion = computed(() => descripcionComprasProveedor(this.lista().length));
 }

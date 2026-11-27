@@ -70,7 +70,7 @@ export const UMBRAL_POR_DEFECTO = 7;
 
 /** Id numérico de un parámetro de URL; null si falta o no es un entero positivo. */
 export function idDeParametro(valor: string | null): number | null {
-  const n = valor === null ? NaN : Number(valor);
+  const n = valor !== null && /^\d+$/.test(valor) ? Number(valor) : NaN;
   return Number.isInteger(n) && n > 0 ? n : null;
 }
 
