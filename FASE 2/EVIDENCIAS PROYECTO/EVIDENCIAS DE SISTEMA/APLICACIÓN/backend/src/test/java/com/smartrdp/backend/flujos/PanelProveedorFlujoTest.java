@@ -202,6 +202,24 @@ class PanelProveedorFlujoTest extends FlujoBase {
         assertThat(get(base, null).estado()).isEqualTo(401);
     }
 
+    @Test
+    @DisplayName("HU-140 Compras por proveedor ignoran el filtro de persona: las compras no tienen solicitante")
+    void comprasPorProveedorIgnoraLaPersona() {
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = crearProductoEn(categoria.id(), false);
+        Prov a = crearProveedor();
+        comprar(producto, a, 10, 1_000, null, null);
+        String base = PANEL + "compras-por-proveedor?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1)
+                + "&categoriaId=" + categoria.id();
+
+        JsonNode filas = get(base + "&solicitanteId=" + empleado.id(), bodeguero().token()).esperando(200).json();
+
+        assertThat(filas).hasSize(1);
+        assertThat(filas.get(0).path("proveedorId").asLong()).isEqualTo(a.id());
+        assertThat(filas.get(0).path("valor").asLong()).isEqualTo(10_000);
+    }
+
     /** Deja sin proveedor los lotes de una operación, como los lotes anteriores a los proveedores. */
     private void quitarProveedorDeLosLotesDe(long operacionId) {
         new TransactionTemplate(transacciones).executeWithoutResult(estado -> {

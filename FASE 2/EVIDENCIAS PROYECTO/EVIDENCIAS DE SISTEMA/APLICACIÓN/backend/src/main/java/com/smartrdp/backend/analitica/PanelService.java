@@ -224,9 +224,14 @@ public class PanelService {
 
     // ------------------------------------------------------------------ compras por proveedor
 
-    /** Gasto en compras de cada proveedor en el rango (a costo de lote), de mayor a menor valor. */
+    /**
+     * Gasto en compras de cada proveedor en el rango (a costo de lote), de mayor a menor valor. Las compras no
+     * tienen solicitud ni solicitante, por lo que el filtro de persona se ignora (con él el bloque quedaría vacío).
+     */
     @Transactional(readOnly = true)
-    public List<CompraProveedorDto> comprasPorProveedor(FiltroPanel f) {
+    public List<CompraProveedorDto> comprasPorProveedor(FiltroPanel filtro) {
+        FiltroPanel f = new FiltroPanel(filtro.desde(), filtro.hasta(), filtro.agrupar(), filtro.categoriaId(),
+                filtro.productoIds(), null, filtro.proveedorId());
         // Los lotes sin proveedor comparten la clave nula: un LinkedHashMap la admite.
         Map<Long, List<LineaPanel>> porProveedor = new LinkedHashMap<>();
         for (LineaPanel l : lineas(f, List.of(TipoOperacion.COMPRA))) {
