@@ -60,7 +60,7 @@ public class ProveedorService {
     }
 
     private BusinessException rutRepetido(String rut) {
-        return new BusinessException("Ya existe un proveedor con el RUT " + rut + ".", "rut");
+        return new BusinessException("Ya existe un proveedor con el RUT " + Rut.conFormato(rut) + ".", "rut");
     }
 
     private BusinessException nombreRepetido(String nombre) {

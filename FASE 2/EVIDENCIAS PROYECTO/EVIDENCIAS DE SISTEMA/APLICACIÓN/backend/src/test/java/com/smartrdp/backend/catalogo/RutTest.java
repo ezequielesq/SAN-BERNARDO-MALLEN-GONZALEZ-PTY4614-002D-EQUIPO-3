@@ -23,6 +23,12 @@ class RutTest {
     }
 
     @Test
+    void daFormatoConPuntosYGuion() {
+        assertThat(Rut.conFormato("12345678-5")).isEqualTo("12.345.678-5");
+        assertThat(Rut.conFormato("1000005-K")).isEqualTo("1.000.005-K");
+    }
+
+    @Test
     void rechazaDigitoVerificadorIncorrecto() {
         assertThatThrownBy(() -> Rut.normalizar("12345678-9"))
                 .isInstanceOf(BusinessException.class)

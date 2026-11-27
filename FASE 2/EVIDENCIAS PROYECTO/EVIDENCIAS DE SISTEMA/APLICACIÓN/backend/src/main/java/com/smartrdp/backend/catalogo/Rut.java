@@ -31,6 +31,14 @@ public final class Rut {
         return cuerpo + "-" + dv;
     }
 
+    /** «12345678-5» → «12.345.678-5»: el RUT como lo escribe una persona (recibe uno ya normalizado). */
+    public static String conFormato(String normalizado) {
+        int guion = normalizado.indexOf('-');
+        String cuerpo = new StringBuilder(normalizado.substring(0, guion)).reverse()
+                .toString().replaceAll("(\\d{3})(?=\\d)", "$1.");
+        return new StringBuilder(cuerpo).reverse() + normalizado.substring(guion);
+    }
+
     /** Dígito verificador (módulo 11) de un cuerpo numérico. */
     public static String digitoVerificador(String cuerpo) {
         int suma = 0;

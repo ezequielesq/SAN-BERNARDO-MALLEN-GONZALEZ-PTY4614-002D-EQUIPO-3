@@ -64,6 +64,8 @@ class ProveedoresFlujoTest extends FlujoBase {
         var mismoRut = post("/api/proveedores", bodeguero().token(),
                 objeto("rut", existente.rut(), "nombre", "Otro " + unico())).esperando(422);
         assertThat(mismoRut.campo()).isEqualTo("rut");
+        // el mensaje muestra el RUT como lo escribe una persona, no el normalizado
+        assertThat(mismoRut.mensaje()).contains(conPuntos(existente.rut()));
 
         var mismoNombre = post("/api/proveedores", bodeguero().token(),
                 objeto("rut", rutUnico(), "nombre", existente.nombre().toUpperCase())).esperando(422);
