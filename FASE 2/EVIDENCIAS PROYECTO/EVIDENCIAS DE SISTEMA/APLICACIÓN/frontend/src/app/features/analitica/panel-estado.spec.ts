@@ -16,6 +16,7 @@ describe('EstadoFiltros', () => {
     estado.categoriaId.set(3);
     estado.productoIds.set([5, 8]);
     estado.solicitanteId.set(12);
+    estado.proveedorId.set(4);
     expect(estado.errorRango()).toBeNull();
     expect(estado.filtro()).toEqual({
       desde: '2026-10-26',
@@ -24,7 +25,22 @@ describe('EstadoFiltros', () => {
       categoriaId: 3,
       productoIds: [5, 8],
       solicitanteId: 12,
+      proveedorId: 4,
     });
+  });
+
+  it('sin proveedor elegido el filtro lleva proveedorId nulo', () => {
+    const estado = new EstadoFiltros(hoy);
+    expect(estado.proveedorId()).toBeNull();
+    expect(estado.filtro()?.proveedorId).toBeNull();
+  });
+
+  it('elegir un proveedor cambia el filtro y quitarlo lo devuelve a nulo', () => {
+    const estado = new EstadoFiltros(hoy);
+    estado.proveedorId.set(9);
+    expect(estado.filtro()?.proveedorId).toBe(9);
+    estado.proveedorId.set(null);
+    expect(estado.filtro()?.proveedorId).toBeNull();
   });
 
   it('con fechas invertidas no hay filtro y se explica el error', () => {

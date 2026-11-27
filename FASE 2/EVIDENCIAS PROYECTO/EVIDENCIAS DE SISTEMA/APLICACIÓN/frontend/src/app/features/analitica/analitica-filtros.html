@@ -65,7 +65,7 @@
   }
 
   <div class="w3-row">
-    <div class="w3-col s12 m4 w3-padding">
+    <div class="w3-col s12 m3 w3-padding">
       <label for="panel-categoria"><b>Categoría</b></label>
       <select #selectCategoria id="panel-categoria" class="w3-select" (change)="cambiarCategoria(selectCategoria.value)">
         <option value="">Todas</option>
@@ -74,7 +74,18 @@
         }
       </select>
     </div>
-    <div class="w3-col s12 m4 w3-padding">
+    <div class="w3-col s12 m3 w3-padding">
+      <label for="panel-proveedor"><b>Proveedor</b></label>
+      <select #selectProveedor id="panel-proveedor" class="w3-select" (change)="cambiarProveedor(selectProveedor.value)">
+        <option value="" [selected]="estado().proveedorId() === null">Todos</option>
+        @for (v of opcionesProveedor(); track v.id) {
+          <option [value]="v.id" [selected]="estado().proveedorId() === v.id">
+            {{ v.nombre }}{{ v.activo ? '' : ' (deshabilitado)' }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="w3-col s12 m3 w3-padding">
       <label for="panel-persona"><b>Persona</b></label>
       <select #selectPersona id="panel-persona" class="w3-select" (change)="cambiarPersona(selectPersona.value)">
         <option value="">Todas</option>
@@ -83,7 +94,7 @@
         }
       </select>
     </div>
-    <div class="w3-col s12 m4 w3-padding">
+    <div class="w3-col s12 m3 w3-padding">
       <p class="sin-margen"><b>Productos elegidos:</b> {{ estado().productoIds().length }} (máx. {{ maximoProductos }})</p>
       <p class="w3-small sin-margen" role="status">
         @if (limiteProductos()) {

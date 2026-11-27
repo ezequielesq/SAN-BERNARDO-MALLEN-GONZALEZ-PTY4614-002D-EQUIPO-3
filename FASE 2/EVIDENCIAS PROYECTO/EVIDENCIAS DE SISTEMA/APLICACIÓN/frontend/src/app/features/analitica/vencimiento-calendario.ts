@@ -39,7 +39,7 @@ export class VencimientoCalendario {
   private readonly hoy = new Date();
   private readonly rango = signal(rangoDelMes(this.hoy.getFullYear(), this.hoy.getMonth()));
 
-  private readonly filtro = computed(() => ({ ...this.rango(), categoriaId: null }));
+  private readonly filtro = computed(() => ({ ...this.rango(), categoriaId: null, proveedorId: null }));
 
   protected readonly vencimientos = this.analiticaService.vencimientosRango(this.filtro);
 

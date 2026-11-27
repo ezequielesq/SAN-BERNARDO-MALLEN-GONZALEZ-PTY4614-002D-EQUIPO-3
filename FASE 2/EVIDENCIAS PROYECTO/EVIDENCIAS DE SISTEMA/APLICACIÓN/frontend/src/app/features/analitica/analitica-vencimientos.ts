@@ -62,6 +62,7 @@ export class AnaliticaVencimientos {
     () => ({
       dias: this.diasUmbral(),
       categoriaId: this.filtro()?.categoriaId ?? null,
+      proveedorId: this.filtro()?.proveedorId ?? null,
       productoIds: this.filtro()?.productoIds ?? [],
     }),
     { equal: sonIguales },
@@ -98,6 +99,7 @@ export class AnaliticaVencimientos {
       desde: this.desdeFiltro(),
       hasta: this.hastaFiltro(),
       categoriaId: this.filtro()?.categoriaId ?? null,
+      proveedorId: this.filtro()?.proveedorId ?? null,
       productoIds: this.filtro()?.productoIds ?? [],
     }),
     { equal: sonIguales },

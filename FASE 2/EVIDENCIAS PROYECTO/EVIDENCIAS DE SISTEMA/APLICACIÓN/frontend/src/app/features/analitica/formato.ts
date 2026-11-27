@@ -1,4 +1,4 @@
-import { Agrupacion } from './analitica.modelo';
+import { Agrupacion, Compra, ProveedorPrecio } from './analitica.modelo';
 
 const PESOS = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const NUMERO = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 1 });
@@ -42,4 +42,20 @@ export function contar(n: number, singular: string, plural: string): string {
 export function descripcionTop(n: number): string {
   const productos = n === 1 ? 'el producto más usado' : `los ${n} productos más usados`;
   return `Gráfico de barras horizontales con ${productos} del período.`;
+}
+
+/** Fila de la comparación por proveedor ya formateada; sin dato, «—». */
+export function filaProveedor(p: ProveedorPrecio): { nombre: string; compras: string; ultimo: string; ponderado: string } {
+  const pesos = (n: number | null) => (n === null ? '—' : formatearPesos(n));
+  return { nombre: p.nombre, compras: String(p.compras), ultimo: pesos(p.ultimo), ponderado: pesos(p.promedioPonderado) };
+}
+
+/** Fila del listado de compras ya formateada; una compra sin proveedor lo dice. */
+export function filaCompra(c: Compra): { fecha: string; proveedor: string; cantidad: string; costo: string } {
+  return {
+    fecha: formatearFechaCorta(c.fecha),
+    proveedor: c.proveedorNombre ?? 'Sin proveedor',
+    cantidad: NUMERO.format(c.cantidad),
+    costo: formatearPesos(c.costo),
+  };
 }

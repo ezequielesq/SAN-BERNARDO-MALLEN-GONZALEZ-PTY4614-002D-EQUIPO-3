@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificacionService } from '../../core/notificaciones/notificacion.service';
 import { descargarArchivo } from '../../shared/utils/descargar-archivo';
+import { ProveedorService } from '../../shared/proveedor/proveedor.service';
 import { ProductoService } from '../productos/producto.service';
 import { Agrupacion, Medida } from './analitica.modelo';
 import { AnaliticaProductosClave } from './analitica-productos-clave';
@@ -15,7 +16,7 @@ interface OpcionCategoria {
   nombre: string;
 }
 
-/** Barra de filtros compartidos: fechas, agrupación, categoría, productos, persona, medida y exportación. */
+/** Barra de filtros compartidos: fechas, agrupación, categoría, proveedor, productos, persona, medida y exportación. */
 @Component({
   selector: 'app-analitica-filtros',
   imports: [AnaliticaProductosClave],
@@ -27,6 +28,7 @@ export class AnaliticaFiltros {
 
   private readonly service = inject(AnaliticaService);
   private readonly productoService = inject(ProductoService);
+  private readonly proveedorService = inject(ProveedorService);
   private readonly notificaciones = inject(NotificacionService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -44,6 +46,9 @@ export class AnaliticaFiltros {
 
   protected readonly productos = this.productoService.listar(signal(true));
   protected readonly solicitantes = this.service.solicitantes();
+  /** Incluye los deshabilitados: el historial de compras puede referirse a proveedores que ya no están activos. */
+  protected readonly proveedores = this.proveedorService.listar(false);
+  protected readonly opcionesProveedor = computed(() => (this.proveedores.hasValue() ? this.proveedores.value() : []));
   protected readonly busquedaProducto = signal('');
   protected readonly exportando = signal(false);
   protected readonly maximoProductos = MAXIMO_PRODUCTOS;
@@ -87,6 +92,10 @@ export class AnaliticaFiltros {
     if (this.productos.hasValue()) {
       estado.productoIds.update((actuales) => conservarDeCategoria(actuales, this.productos.value(), categoriaId));
     }
+  }
+
+  protected cambiarProveedor(valor: string): void {
+    this.estado().proveedorId.set(valor === '' ? null : Number(valor));
   }
 
   protected cambiarPersona(valor: string): void {

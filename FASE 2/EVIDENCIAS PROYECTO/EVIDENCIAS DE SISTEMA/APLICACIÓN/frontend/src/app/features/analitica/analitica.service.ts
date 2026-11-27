@@ -13,10 +13,12 @@ import {
   SerieConsumo,
   VencimientoDto,
 } from './analitica.modelo';
+import { Parametros, parametrosPanel, parametrosPrecios } from './panel-filtros';
 
 export interface FiltroVencimientosUmbral {
   dias: number;
   categoriaId: number | null;
+  proveedorId: number | null;
   productoIds?: number[];
 }
 
@@ -24,10 +26,9 @@ export interface FiltroVencimientosRango {
   desde: string;
   hasta: string;
   categoriaId: number | null;
+  proveedorId: number | null;
   productoIds?: number[];
 }
-
-type Parametros = Record<string, string | number>;
 
 @Injectable({ providedIn: 'root' })
 export class AnaliticaService {
@@ -60,7 +61,7 @@ export class AnaliticaService {
       const f = filtro();
       const id = productoId();
       if (f === null || id === null) return undefined;
-      return { url: `${this.panel}/precios/${id}`, params: { desde: f.desde, hasta: f.hasta } };
+      return { url: `${this.panel}/precios/${id}`, params: parametrosPrecios(f) };
     });
   }
 
@@ -82,6 +83,7 @@ export class AnaliticaService {
         const f = filtro();
         const params: Parametros = { dias: f.dias };
         if (f.categoriaId !== null) params['categoriaId'] = f.categoriaId;
+        if (f.proveedorId !== null) params['proveedorId'] = f.proveedorId;
         if (f.productoIds && f.productoIds.length > 0) params['productoIds'] = f.productoIds.join(',');
         return { url: `${this.url}/vencimientos`, params };
       },
@@ -95,6 +97,7 @@ export class AnaliticaService {
         const f = filtro();
         const params: Parametros = { desde: f.desde, hasta: f.hasta };
         if (f.categoriaId !== null) params['categoriaId'] = f.categoriaId;
+        if (f.proveedorId !== null) params['proveedorId'] = f.proveedorId;
         if (f.productoIds && f.productoIds.length > 0) params['productoIds'] = f.productoIds.join(',');
         return { url: `${this.url}/vencimientos/rango`, params };
       },
@@ -107,16 +110,13 @@ export class AnaliticaService {
     if (filtro.categoriaId !== null) params['categoriaId'] = filtro.categoriaId;
     if (filtro.productoIds.length > 0) params['productoIds'] = filtro.productoIds.join(',');
     if (filtro.solicitanteId !== null) params['solicitanteId'] = filtro.solicitanteId;
+    if (filtro.proveedorId !== null) params['proveedorId'] = filtro.proveedorId;
     return this.http.get(`${this.url}/exportar-movimientos`, { params, responseType: 'blob' });
   }
 
   /** Petición de un bloque del panel; sin filtro válido el recurso queda inactivo (no consulta). */
   private pedido(ruta: string, filtro: FiltroPanel | null, extra: Parametros = {}) {
     if (filtro === null) return undefined;
-    const params: Parametros = { desde: filtro.desde, hasta: filtro.hasta, agrupar: filtro.agrupar, ...extra };
-    if (filtro.categoriaId !== null) params['categoriaId'] = filtro.categoriaId;
-    if (filtro.productoIds.length > 0) params['productoIds'] = filtro.productoIds.join(',');
-    if (filtro.solicitanteId !== null) params['solicitanteId'] = filtro.solicitanteId;
-    return { url: `${this.panel}/${ruta}`, params };
+    return { url: `${this.panel}/${ruta}`, params: parametrosPanel(filtro, extra) };
   }
 }

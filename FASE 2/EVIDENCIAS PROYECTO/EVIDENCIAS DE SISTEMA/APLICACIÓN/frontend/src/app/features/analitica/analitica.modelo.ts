@@ -9,6 +9,7 @@ export interface FiltroPanel {
   categoriaId: number | null;
   productoIds: number[];
   solicitanteId: number | null;
+  proveedorId: number | null;
 }
 
 export interface ResumenPanel {
@@ -79,6 +80,16 @@ export interface Compra {
   fecha: string;
   costo: number;
   cantidad: number;
+  proveedorNombre: string | null;
+}
+
+/** Precios de compra de un producto a un proveedor en el rango. */
+export interface ProveedorPrecio {
+  proveedorId: number;
+  nombre: string;
+  ultimo: number | null;
+  promedioPonderado: number | null;
+  compras: number;
 }
 
 export interface HistorialPrecios {
@@ -93,6 +104,8 @@ export interface HistorialPrecios {
   maximo: number | null;
   promedio: number | null;
   promedioPonderado: number | null;
+  /** Compara a todos los proveedores del producto en el rango, aunque haya uno elegido. */
+  porProveedor: ProveedorPrecio[];
 }
 
 export interface VencimientoDto {

@@ -1,4 +1,4 @@
-import { ResumenPanel, VencimientoDto } from './analitica.modelo';
+import { FiltroPanel, ResumenPanel, VencimientoDto } from './analitica.modelo';
 import {
   MAXIMO_PRODUCTOS,
   alternarProducto,
@@ -8,6 +8,8 @@ import {
   diasDelRango,
   hayDatosEnResumen,
   limiteAlcanzado,
+  parametrosPanel,
+  parametrosPrecios,
   rangoDeAtajo,
   sonIguales,
   sugerirAgrupacion,
@@ -138,6 +140,13 @@ describe('sonIguales (filtros de vencimientos)', () => {
     expect(sonIguales(base, { ...base, dias: 7 })).toBe(false);
   });
 
+  it('dos filtros que difieren solo en el proveedor no son iguales', () => {
+    const base = { dias: 30, categoriaId: null, proveedorId: 3 as number | null, productoIds: [1] };
+    expect(sonIguales(base, { ...base })).toBe(true);
+    expect(sonIguales(base, { ...base, proveedorId: 4 })).toBe(false);
+    expect(sonIguales(base, { ...base, proveedorId: null })).toBe(false);
+  });
+
   it('con fechas distintas no son iguales', () => {
     const base = { desde: '2026-11-01', hasta: '2026-11-30', categoriaId: null, productoIds: [] as number[] };
     expect(sonIguales(base, { ...base, hasta: '2026-11-29' })).toBe(false);
@@ -181,5 +190,65 @@ describe('conservarDeCategoria', () => {
 
   it('un producto desconocido se quita al filtrar por categoría', () => {
     expect(conservarDeCategoria([1, 99], productos, 10)).toEqual([1]);
+  });
+});
+
+describe('parametrosPanel', () => {
+  const filtro: FiltroPanel = {
+    desde: '2026-11-01',
+    hasta: '2026-11-24',
+    agrupar: 'SEMANA',
+    categoriaId: null,
+    productoIds: [],
+    solicitanteId: null,
+    proveedorId: null,
+  };
+
+  it('con el filtro vacío envía solo rango y agrupación', () => {
+    expect(parametrosPanel(filtro)).toEqual({ desde: '2026-11-01', hasta: '2026-11-24', agrupar: 'SEMANA' });
+  });
+
+  it('envía proveedorId solo cuando hay un proveedor elegido', () => {
+    expect(parametrosPanel({ ...filtro, proveedorId: 7 })['proveedorId']).toBe(7);
+    expect('proveedorId' in parametrosPanel(filtro)).toBe(false);
+  });
+
+  it('envía categoría, productos y persona junto con el proveedor, y conserva los parámetros extra', () => {
+    expect(
+      parametrosPanel({ ...filtro, categoriaId: 2, productoIds: [5, 8], solicitanteId: 12, proveedorId: 7 }, { limite: 7 }),
+    ).toEqual({
+      desde: '2026-11-01',
+      hasta: '2026-11-24',
+      agrupar: 'SEMANA',
+      limite: 7,
+      categoriaId: 2,
+      productoIds: '5,8',
+      solicitanteId: 12,
+      proveedorId: 7,
+    });
+  });
+});
+
+describe('parametrosPrecios', () => {
+  const filtro: FiltroPanel = {
+    desde: '2026-11-01',
+    hasta: '2026-11-24',
+    agrupar: 'DIA',
+    categoriaId: 2,
+    productoIds: [5],
+    solicitanteId: 12,
+    proveedorId: null,
+  };
+
+  it('sin proveedor envía solo el rango', () => {
+    expect(parametrosPrecios(filtro)).toEqual({ desde: '2026-11-01', hasta: '2026-11-24' });
+  });
+
+  it('con proveedor lo envía junto al rango', () => {
+    expect(parametrosPrecios({ ...filtro, proveedorId: 7 })).toEqual({
+      desde: '2026-11-01',
+      hasta: '2026-11-24',
+      proveedorId: 7,
+    });
   });
 });

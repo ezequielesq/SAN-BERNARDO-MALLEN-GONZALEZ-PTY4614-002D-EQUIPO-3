@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { FiltroPanel } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
-import { formatearFechaCorta, formatearPesos, formatearVariacion } from './formato';
+import { filaCompra, filaProveedor, formatearFechaCorta, formatearPesos, formatearVariacion } from './formato';
 import { GraficoLinea, PuntoLinea } from './graficos/grafico-linea';
 
 @Component({
@@ -31,6 +31,14 @@ export class AnaliticaPrecios {
     () => `Gráfico de línea con el costo unitario de las compras de ${this.h()?.nombre ?? 'el producto'}.`,
   );
   protected readonly formatear = formatearPesos;
+
+  /** Comparación entre proveedores del producto; vacía (y sin tabla) cuando no hay compras con proveedor. */
+  protected readonly proveedores = computed(() => this.h()?.porProveedor.map(filaProveedor) ?? []);
+  /** Listado de compras con su proveedor; solo si alguna compra lo tiene. */
+  protected readonly compras = computed(() => {
+    const h = this.h();
+    return h !== null && h.compras.some((c) => c.proveedorNombre !== null) ? h.compras.map(filaCompra) : [];
+  });
 
   /** Estadísticos listos para mostrar; nulos cuando hay menos de dos compras (el servidor no los calcula). */
   protected readonly estadisticos = computed(() => {

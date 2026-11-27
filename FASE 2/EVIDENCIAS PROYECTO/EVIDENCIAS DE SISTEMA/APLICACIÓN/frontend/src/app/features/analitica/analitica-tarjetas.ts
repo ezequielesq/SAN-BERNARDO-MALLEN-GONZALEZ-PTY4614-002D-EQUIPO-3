@@ -29,6 +29,7 @@ export class AnaliticaTarjetas {
     () => ({
       dias: DIAS_TARJETA_VENCIMIENTOS,
       categoriaId: this.filtro()?.categoriaId ?? null,
+      proveedorId: this.filtro()?.proveedorId ?? null,
       productoIds: this.filtro()?.productoIds ?? [],
     }),
     { equal: sonIguales },

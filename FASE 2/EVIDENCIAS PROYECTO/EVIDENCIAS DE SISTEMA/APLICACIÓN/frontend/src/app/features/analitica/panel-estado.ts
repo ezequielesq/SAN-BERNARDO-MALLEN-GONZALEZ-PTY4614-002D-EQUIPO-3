@@ -11,6 +11,7 @@ export class EstadoFiltros {
   readonly hasta = signal('');
   readonly agrupar = signal<Agrupacion>('SEMANA');
   readonly categoriaId = signal<number | null>(null);
+  readonly proveedorId = signal<number | null>(null);
   readonly productoIds = signal<number[]>([]);
   readonly solicitanteId = signal<number | null>(null);
   readonly medida = signal<Medida>('valor');
@@ -27,6 +28,7 @@ export class EstadoFiltros {
           categoriaId: this.categoriaId(),
           productoIds: this.productoIds(),
           solicitanteId: this.solicitanteId(),
+          proveedorId: this.proveedorId(),
         },
   );
 

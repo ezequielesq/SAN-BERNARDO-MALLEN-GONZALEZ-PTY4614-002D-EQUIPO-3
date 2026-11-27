@@ -1,4 +1,4 @@
-import { Agrupacion, Medida, ResumenPanel, VencimientoDto } from './analitica.modelo';
+import { Agrupacion, FiltroPanel, Medida, ResumenPanel, VencimientoDto } from './analitica.modelo';
 
 export type Atajo = '7d' | '30d' | '90d' | 'mes';
 
@@ -135,4 +135,23 @@ export function sonIguales<T extends Record<string, ValorFiltro>>(a: T, b: T): b
     if (Array.isArray(x) && Array.isArray(y)) return x.length === y.length && x.every((v, i) => v === y[i]);
     return x === y;
   });
+}
+
+export type Parametros = Record<string, string | number>;
+
+/** Parámetros de consulta de un bloque del panel; los filtros vacíos (nulos o sin elementos) no se envían. */
+export function parametrosPanel(filtro: FiltroPanel, extra: Parametros = {}): Parametros {
+  const params: Parametros = { desde: filtro.desde, hasta: filtro.hasta, agrupar: filtro.agrupar, ...extra };
+  if (filtro.categoriaId !== null) params['categoriaId'] = filtro.categoriaId;
+  if (filtro.productoIds.length > 0) params['productoIds'] = filtro.productoIds.join(',');
+  if (filtro.solicitanteId !== null) params['solicitanteId'] = filtro.solicitanteId;
+  if (filtro.proveedorId !== null) params['proveedorId'] = filtro.proveedorId;
+  return params;
+}
+
+/** El historial de precios es de un producto: solo depende del rango y del proveedor elegido. */
+export function parametrosPrecios(filtro: FiltroPanel): Parametros {
+  const params: Parametros = { desde: filtro.desde, hasta: filtro.hasta };
+  if (filtro.proveedorId !== null) params['proveedorId'] = filtro.proveedorId;
+  return params;
 }
