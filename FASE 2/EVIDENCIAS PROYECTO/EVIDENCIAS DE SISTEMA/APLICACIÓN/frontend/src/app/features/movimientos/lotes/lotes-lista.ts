@@ -11,7 +11,7 @@ import { ThOrden } from '../../../shared/ordenamiento/th-orden';
 import { Paginacion } from '../../../shared/paginacion/paginacion';
 import { ProveedorService } from '../../../shared/proveedor/proveedor.service';
 import { ProductoService } from '../../productos/producto.service';
-import { FiltroLotes, Lote } from '../lote.modelo';
+import { EstadoLote, FiltroLotes, Lote } from '../lote.modelo';
 import { MovimientoService } from '../movimiento.service';
 import {
   ESTADOS_LOTE,
