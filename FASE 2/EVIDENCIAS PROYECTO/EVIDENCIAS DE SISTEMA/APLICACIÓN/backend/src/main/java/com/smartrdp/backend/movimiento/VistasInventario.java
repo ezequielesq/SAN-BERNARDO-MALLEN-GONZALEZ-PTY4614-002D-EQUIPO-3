@@ -160,6 +160,15 @@ public class VistasInventario {
      */
     public List<LoteConVencimiento> lotesConVencimiento(LocalDate desde, LocalDate hastaExcl, Long categoriaId,
                                                         Collection<Long> productoIds) {
+        return lotesConVencimiento(desde, hastaExcl, categoriaId, productoIds, null);
+    }
+
+    /**
+     * Igual que la anterior, y con {@code proveedorId} solo los lotes comprados a ese proveedor (los lotes sin
+     * proveedor quedan fuera). Nulo = sin filtro.
+     */
+    public List<LoteConVencimiento> lotesConVencimiento(LocalDate desde, LocalDate hastaExcl, Long categoriaId,
+                                                        Collection<Long> productoIds, Long proveedorId) {
         boolean todos = productoIds == null || productoIds.isEmpty();
         return jdbc.sql("""
                 SELECT s.lote_id, s.producto_id, p.nombre AS producto_nombre, l.numero_lote,
@@ -173,11 +182,13 @@ public class VistasInventario {
                    AND (CAST(:desde AS date) IS NULL OR s.fecha_vencimiento >= :desde)
                    AND (CAST(:categoria AS bigint) IS NULL OR p.categoria_id = :categoria)
                    AND (:todos OR s.producto_id IN (:productos))
+                   AND (CAST(:proveedor AS bigint) IS NULL OR l.proveedor_id = :proveedor)
                  ORDER BY s.fecha_vencimiento, s.lote_id
                 """)
                 .param("hasta", hastaExcl)
                 .param("desde", desde, Types.DATE)
                 .param("categoria", categoriaId, Types.BIGINT)
+                .param("proveedor", proveedorId, Types.BIGINT)
                 .param("todos", todos)
                 .param("productos", todos ? List.of(-1L) : productoIds)
                 .query(LoteConVencimiento.class).list();

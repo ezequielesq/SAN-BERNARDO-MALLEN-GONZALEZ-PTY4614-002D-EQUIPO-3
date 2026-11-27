@@ -28,18 +28,19 @@ public class AnaliticaService {
     private final VistasInventario vistas;
 
     @Transactional(readOnly = true)
-    public List<VencimientoDto> getVencimientos(int diasUmbral, Long categoriaId, List<Long> productoIds) {
+    public List<VencimientoDto> getVencimientos(int diasUmbral, Long categoriaId, List<Long> productoIds,
+                                                Long proveedorId) {
         // El límite de la consulta es exclusivo: se suma un día para que el lote que vence justo en N días entre.
         LocalDate limiteExclusivo = LocalDate.now().plusDays(diasUmbral + 1L);
-        return vistas.lotesConVencimiento(null, limiteExclusivo, categoriaId, productoIds).stream()
+        return vistas.lotesConVencimiento(null, limiteExclusivo, categoriaId, productoIds, proveedorId).stream()
                 .map(this::aVencimiento)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<VencimientoDto> getVencimientosPorRango(LocalDate desde, LocalDate hasta, Long categoriaId,
-                                                        List<Long> productoIds) {
-        return vistas.lotesConVencimiento(desde, hasta.plusDays(1), categoriaId, productoIds).stream()
+                                                        List<Long> productoIds, Long proveedorId) {
+        return vistas.lotesConVencimiento(desde, hasta.plusDays(1), categoriaId, productoIds, proveedorId).stream()
                 .map(this::aVencimiento)
                 .toList();
     }
@@ -51,11 +52,12 @@ public class AnaliticaService {
 
     @Transactional(readOnly = true)
     public byte[] exportarMovimientosExcel(LocalDate desde, LocalDate hasta, Long categoriaId,
-                                           List<Long> productoIds, Long solicitanteId) throws IOException {
+                                           List<Long> productoIds, Long solicitanteId, Long proveedorId)
+            throws IOException {
         boolean todos = productoIds == null || productoIds.isEmpty();
         var movimientos = new ArrayList<>(movimientoRepository.buscarParaExportar(desde.atStartOfDay(),
                 hasta.plusDays(1).atStartOfDay(), categoriaId, todos, todos ? List.of(-1L) : productoIds,
-                solicitanteId));
+                solicitanteId, proveedorId));
         Collections.reverse(movimientos); // la consulta viene de más reciente a más antigua
 
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {

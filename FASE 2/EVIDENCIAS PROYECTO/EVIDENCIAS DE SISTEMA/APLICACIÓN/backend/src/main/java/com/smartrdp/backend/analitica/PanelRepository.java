@@ -15,15 +15,16 @@ public interface PanelRepository extends Repository<Movimiento, Long> {
     @Query("""
         SELECT new com.smartrdp.backend.analitica.LineaPanel(
             o.id, o.createdAt, t.codigo, s.id, u.id, u.nombre,
-            p.id, p.nombre, um.id, um.nombre, m.cantidad, l.costoUnitario)
+            p.id, p.nombre, um.id, um.nombre, m.cantidad, l.costoUnitario, pr.id, pr.nombre)
         FROM Movimiento m
         JOIN m.operacion o JOIN o.tipo t JOIN m.lote l JOIN l.producto p JOIN p.unidadMedida um
-        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u
+        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u LEFT JOIN l.proveedor pr
         WHERE o.createdAt >= :desde AND o.createdAt < :hasta
         AND t.codigo IN :tipos
         AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
         AND (:todosLosProductos = true OR p.id IN :productoIds)
         AND (:solicitanteId IS NULL OR u.id = :solicitanteId)
+        AND (:proveedorId IS NULL OR pr.id = :proveedorId)
         AND NOT EXISTS (SELECT 1 FROM Operacion c WHERE c.operacionCorregida = o)
         ORDER BY o.createdAt, m.id
         """)
@@ -31,5 +32,6 @@ public interface PanelRepository extends Repository<Movimiento, Long> {
                             @Param("tipos") Collection<String> tipos, @Param("categoriaId") Long categoriaId,
                             @Param("todosLosProductos") boolean todosLosProductos,
                             @Param("productoIds") Collection<Long> productoIds,
-                            @Param("solicitanteId") Long solicitanteId);
+                            @Param("solicitanteId") Long solicitanteId,
+                            @Param("proveedorId") Long proveedorId);
 }

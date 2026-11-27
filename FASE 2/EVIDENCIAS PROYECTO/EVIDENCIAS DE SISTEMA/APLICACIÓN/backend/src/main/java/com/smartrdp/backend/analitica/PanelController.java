@@ -38,8 +38,10 @@ public class PanelController {
             @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) List<Long> productoIds,
-            @RequestParam(required = false) Long solicitanteId) {
-        return servicio.resumen(FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+            @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(required = false) Long proveedorId) {
+        return servicio.resumen(
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId, proveedorId));
     }
 
     @GetMapping("/consumo-periodo")
@@ -49,8 +51,10 @@ public class PanelController {
             @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) List<Long> productoIds,
-            @RequestParam(required = false) Long solicitanteId) {
-        return servicio.consumoPeriodo(FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+            @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(required = false) Long proveedorId) {
+        return servicio.consumoPeriodo(
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId, proveedorId));
     }
 
     @GetMapping("/productos-top")
@@ -61,9 +65,10 @@ public class PanelController {
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) List<Long> productoIds,
             @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(required = false) Long proveedorId,
             @RequestParam(defaultValue = "7") int limite) {
         return servicio.productosTop(
-                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId), limite);
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId, proveedorId), limite);
     }
 
     @GetMapping("/pedidos-por-persona")
@@ -73,17 +78,19 @@ public class PanelController {
             @RequestParam(defaultValue = "SEMANA") Agrupacion agrupar,
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) List<Long> productoIds,
-            @RequestParam(required = false) Long solicitanteId) {
+            @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(required = false) Long proveedorId) {
         return servicio.pedidosPorPersona(
-                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId));
+                FiltroPanel.de(desde, hasta, agrupar, categoriaId, productoIds, solicitanteId, proveedorId));
     }
 
     @GetMapping("/precios/{productoId}")
     public HistorialPreciosDto precios(
             @PathVariable Long productoId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        return servicio.precios(productoId, desde, hasta);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(required = false) Long proveedorId) {
+        return servicio.precios(productoId, desde, hasta, proveedorId);
     }
 
     @GetMapping("/solicitantes")

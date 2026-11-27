@@ -22,21 +22,26 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
     List<Movimiento> buscar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
                             @Param("productoId") Long productoId, @Param("categoriaId") Long categoriaId);
 
-    /** Líneas del libro para exportar: rango, categoría, productos y persona (solo operaciones de solicitudes). */
+    /**
+     * Líneas del libro para exportar: rango, categoría, productos, persona (solo operaciones de solicitudes) y
+     * proveedor del lote.
+     */
     @Query("""
         SELECT m FROM Movimiento m
         JOIN FETCH m.operacion o JOIN FETCH o.tipo JOIN FETCH o.usuario
         JOIN FETCH m.lote l JOIN FETCH l.producto p
-        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u
+        LEFT JOIN o.solicitud s LEFT JOIN s.solicitante u LEFT JOIN l.proveedor pr
         WHERE o.createdAt >= :desde AND o.createdAt < :hasta
         AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
         AND (:todosLosProductos = true OR p.id IN :productoIds)
         AND (:solicitanteId IS NULL OR u.id = :solicitanteId)
+        AND (:proveedorId IS NULL OR pr.id = :proveedorId)
         ORDER BY o.createdAt DESC, m.id DESC
         """)
     List<Movimiento> buscarParaExportar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta,
                                         @Param("categoriaId") Long categoriaId,
                                         @Param("todosLosProductos") boolean todosLosProductos,
                                         @Param("productoIds") java.util.Collection<Long> productoIds,
-                                        @Param("solicitanteId") Long solicitanteId);
+                                        @Param("solicitanteId") Long solicitanteId,
+                                        @Param("proveedorId") Long proveedorId);
 }

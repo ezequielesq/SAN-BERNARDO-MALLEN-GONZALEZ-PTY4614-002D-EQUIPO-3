@@ -21,8 +21,9 @@ public class AnaliticaController {
     public List<VencimientoDto> vencimientos(
             @RequestParam(defaultValue = "30") int dias,
             @RequestParam(required = false) Long categoriaId,
-            @RequestParam(required = false) List<Long> productoIds) {
-        return analiticaService.getVencimientos(dias, categoriaId, productoIds);
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) Long proveedorId) {
+        return analiticaService.getVencimientos(dias, categoriaId, productoIds, proveedorId);
     }
 
     @GetMapping("/vencimientos/rango")
@@ -30,8 +31,9 @@ public class AnaliticaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long categoriaId,
-            @RequestParam(required = false) List<Long> productoIds) {
-        return analiticaService.getVencimientosPorRango(desde, hasta, categoriaId, productoIds);
+            @RequestParam(required = false) List<Long> productoIds,
+            @RequestParam(required = false) Long proveedorId) {
+        return analiticaService.getVencimientosPorRango(desde, hasta, categoriaId, productoIds, proveedorId);
     }
 
     @GetMapping("/exportar-movimientos")
@@ -40,11 +42,12 @@ public class AnaliticaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) List<Long> productoIds,
-            @RequestParam(required = false) Long solicitanteId) throws IOException {
+            @RequestParam(required = false) Long solicitanteId,
+            @RequestParam(required = false) Long proveedorId) throws IOException {
         // Mismas reglas que el panel: rango, 366 días y 50 productos como máximo.
-        FiltroPanel filtro = FiltroPanel.de(desde, hasta, null, categoriaId, productoIds, solicitanteId);
+        FiltroPanel filtro = FiltroPanel.de(desde, hasta, null, categoriaId, productoIds, solicitanteId, proveedorId);
         byte[] data = analiticaService.exportarMovimientosExcel(filtro.desde(), filtro.hasta(), filtro.categoriaId(),
-                filtro.productoIds(), filtro.solicitanteId());
+                filtro.productoIds(), filtro.solicitanteId(), filtro.proveedorId());
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=movimientos.xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))

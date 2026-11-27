@@ -7,6 +7,7 @@ import com.smartrdp.backend.analitica.dto.ImporteDto;
 import com.smartrdp.backend.analitica.dto.OpcionDto;
 import com.smartrdp.backend.analitica.dto.PedidosPorPersonaDto;
 import com.smartrdp.backend.analitica.dto.ProductoTopDto;
+import com.smartrdp.backend.analitica.dto.ProveedorPrecioDto;
 import com.smartrdp.backend.analitica.dto.PuntoConsumoDto;
 import com.smartrdp.backend.analitica.dto.ResumenPanelDto;
 import com.smartrdp.backend.analitica.dto.SerieConsumoDto;
@@ -190,18 +191,22 @@ public class PanelService {
     // ------------------------------------------------------------------ historial de precios
 
     @Transactional(readOnly = true)
-    public HistorialPreciosDto precios(Long productoId, LocalDate desde, LocalDate hasta) {
+    public HistorialPreciosDto precios(Long productoId, LocalDate desde, LocalDate hasta, Long proveedorId) {
         Producto producto = productoRepository.findById(productoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto", productoId));
-        FiltroPanel f = FiltroPanel.de(desde, hasta, null, null, List.of(productoId), null);
-        List<LineaPanel> lineas = lineas(f, List.of(TipoOperacion.COMPRA)).stream()
+        // Se leen las compras de todos los proveedores: la comparación no depende del filtro.
+        FiltroPanel f = FiltroPanel.de(desde, hasta, null, null, List.of(productoId), null, null);
+        List<LineaPanel> todas = lineas(f, List.of(TipoOperacion.COMPRA)).stream()
                 .filter(l -> l.costo() != null).toList();
-        List<CompraDto> compras = lineas.stream()
-                .map(l -> new CompraDto(l.fecha().toLocalDate(), l.costo(), l.cantidad())).toList();
+        List<ProveedorPrecioDto> porProveedor = preciosPorProveedor(todas);
+        List<CompraDto> compras = todas.stream()
+                .filter(l -> proveedorId == null || proveedorId.equals(l.proveedorId()))
+                .map(l -> new CompraDto(l.fecha().toLocalDate(), l.costo(), l.cantidad(), l.proveedorNombre()))
+                .toList();
 
         if (compras.size() < 2) {
             return new HistorialPreciosDto(productoId, producto.getNombre(), producto.getUnidadMedida().getNombre(),
-                    compras, null, null, null, null, null, null, null);
+                    compras, null, null, null, null, null, null, null, porProveedor);
         }
         int ultimo = compras.get(compras.size() - 1).costo();
         int anterior = compras.get(compras.size() - 2).costo();
@@ -213,7 +218,21 @@ public class PanelService {
                 compras.stream().mapToInt(CompraDto::costo).min().orElseThrow(),
                 compras.stream().mapToInt(CompraDto::costo).max().orElseThrow(),
                 redondear(compras.stream().mapToInt(CompraDto::costo).average().orElseThrow()),
-                redondear(ponderado));
+                redondear(ponderado), porProveedor);
+    }
+
+    /** Último costo, promedio ponderado por cantidad y número de compras de cada proveedor, por nombre. */
+    private static List<ProveedorPrecioDto> preciosPorProveedor(List<LineaPanel> compras) {
+        Map<Long, List<LineaPanel>> porProveedor = compras.stream().filter(l -> l.proveedorId() != null)
+                .collect(Collectors.groupingBy(LineaPanel::proveedorId));
+        return porProveedor.values().stream().map(grupo -> {
+            long cantidadTotal = grupo.stream().mapToLong(LineaPanel::cantidad).sum();
+            double ponderado = grupo.stream().mapToDouble(l -> (double) l.costo() * l.cantidad()).sum()
+                    / cantidadTotal;
+            LineaPanel ultima = grupo.get(grupo.size() - 1); // las líneas vienen por fecha
+            return new ProveedorPrecioDto(ultima.proveedorId(), ultima.proveedorNombre(), ultima.costo(),
+                    redondear(ponderado), grupo.size());
+        }).sorted(Comparator.comparing(ProveedorPrecioDto::nombre)).toList();
     }
 
     private static double redondear(double valor) {
@@ -275,7 +294,7 @@ public class PanelService {
     private List<LineaPanel> lineas(FiltroPanel f, Collection<String> tipos) {
         boolean todos = f.productoIds().isEmpty();
         return repositorio.lineas(f.desdeHora(), f.hastaExclusivo(), tipos, f.categoriaId(), todos,
-                todos ? List.of(-1L) : f.productoIds(), f.solicitanteId());
+                todos ? List.of(-1L) : f.productoIds(), f.solicitanteId(), f.proveedorId());
     }
 
     private static List<LineaPanel> deTipo(Collection<LineaPanel> lineas, String tipo) {

@@ -7,15 +7,18 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/** Filtro común de todos los bloques del panel. Las fechas se aplican a la fecha de la operación. */
+/**
+ * Filtro común de todos los bloques del panel. Las fechas se aplican a la fecha de la operación; el proveedor es el
+ * del lote de cada movimiento (con el filtro activo, los lotes sin proveedor quedan fuera).
+ */
 public record FiltroPanel(LocalDate desde, LocalDate hasta, Agrupacion agrupar, Long categoriaId,
-                          List<Long> productoIds, Long solicitanteId) {
+                          List<Long> productoIds, Long solicitanteId, Long proveedorId) {
 
     public static final int MAXIMO_DIAS = 366;
     public static final int MAXIMO_PRODUCTOS = 50;
 
     public static FiltroPanel de(LocalDate desde, LocalDate hasta, Agrupacion agrupar, Long categoriaId,
-                                 List<Long> productoIds, Long solicitanteId) {
+                                 List<Long> productoIds, Long solicitanteId, Long proveedorId) {
         if (desde.isAfter(hasta)) {
             throw new BusinessException("La fecha «desde» no puede ser posterior a «hasta».", "desde");
         }
@@ -27,7 +30,7 @@ public record FiltroPanel(LocalDate desde, LocalDate hasta, Agrupacion agrupar, 
             throw new BusinessException("Elige como máximo " + MAXIMO_PRODUCTOS + " productos.", "productoIds");
         }
         return new FiltroPanel(desde, hasta, agrupar == null ? Agrupacion.SEMANA : agrupar, categoriaId, ids,
-                solicitanteId);
+                solicitanteId, proveedorId);
     }
 
     public LocalDateTime desdeHora() {
