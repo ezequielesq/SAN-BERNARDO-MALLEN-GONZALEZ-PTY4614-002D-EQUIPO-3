@@ -18,7 +18,7 @@ import { EstadoVista } from '../../shared/estado-vista/estado-vista';
 import { Extractores, Orden, ordenar } from '../../shared/ordenamiento/orden';
 import { ThOrden } from '../../shared/ordenamiento/th-orden';
 import { Proveedor, ProveedorService } from '../../shared/proveedor/proveedor.service';
-import { formatearRut, normalizarRut } from '../../shared/proveedor/rut';
+import { errorDeRut, formatearRut, normalizarRut } from '../../shared/proveedor/rut';
 
 type ColumnaOrdenProveedor = 'rut' | 'nombre' | 'estado';
 
@@ -73,6 +73,16 @@ export class ProveedorMantenedor {
   protected readonly errorNuevo = signal<ErroresForm>(SIN_ERRORES);
   protected readonly errorEdicion = signal<ErroresForm>(SIN_ERRORES);
 
+  constructor() {
+    // Un mensaje de un envío anterior (p. ej. «Ya existe…») deja de valer en cuanto se escribe en el formulario.
+    this.nuevoForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.errorNuevo.set(SIN_ERRORES));
+    this.edicionForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.errorEdicion.set(SIN_ERRORES));
+  }
+
   protected agregar(): void {
     if (this.procesando()) return;
     const { rut, nombre } = this.nuevoForm.getRawValue();
@@ -98,6 +108,7 @@ export class ProveedorMantenedor {
   }
 
   protected iniciarEdicion(item: Proveedor): void {
+    this.errorNuevo.set(SIN_ERRORES);
     this.editandoId.set(item.id);
     this.edicionForm.reset({ rut: formatearRut(item.rut), nombre: item.nombre });
     this.errorEdicion.set(SIN_ERRORES);
@@ -136,6 +147,7 @@ export class ProveedorMantenedor {
 
   protected alternar(item: Proveedor): void {
     if (this.procesando()) return;
+    this.errorNuevo.set(SIN_ERRORES);
     const operacion$ = item.activo
       ? this.proveedorService.desactivar(item.id)
       : this.proveedorService.reactivar(item.id);
@@ -156,13 +168,8 @@ export class ProveedorMantenedor {
   ): { rut: string; nombre: string } | { errores: ErroresForm } {
     const rut = normalizarRut(rutTexto);
     const nombre = nombreTexto.trim();
-    let errorRut: string | null = null;
+    const errorRut = errorDeRut(rutTexto);
     let errorNombre: string | null = null;
-    if (rutTexto.trim() === '') {
-      errorRut = 'Ingresa el RUT del proveedor.';
-    } else if (rut === null) {
-      errorRut = 'El RUT no es válido: revisa el dígito verificador.';
-    }
     if (nombre === '') {
       errorNombre = 'Ingresa el nombre del proveedor.';
     } else if (nombre.length > MAX_NOMBRE) {
