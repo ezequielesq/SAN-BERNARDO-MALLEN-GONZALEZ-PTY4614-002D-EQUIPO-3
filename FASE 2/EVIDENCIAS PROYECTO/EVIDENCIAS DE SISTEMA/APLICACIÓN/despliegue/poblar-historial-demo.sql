@@ -3,8 +3,9 @@
 --   psql -h localhost -U <usuario> -d smartrdp -v ON_ERROR_STOP=1 -f poblar-historial-demo.sql
 -- Es idempotente a medias: si la categoría «Demo analítica» ya existe, se detiene sin tocar nada.
 -- Requiere un usuario con rol BODEGUERO y el esquema con la migración V5 (proveedores). Crea 4 proveedores de
--- ejemplo (si ya existen por RUT, se reutilizan) y asigna uno a cada lote de compra; la harina se compra
--- alternando dos proveedores, y «Abarrotes del Sur» cobra un 7 % menos, para que el panel compare precios.
+-- ejemplo (si ya existen por RUT, se reutilizan) y asigna uno a cada lote de compra. Solo la harina se compra
+-- a dos proveedores (alterna semana a semana) y, cuando la vende «Abarrotes del Sur», cuesta un 7 % menos, para que
+-- el panel compare precios; los costos de los demás productos no cambian.
 -- Los lotes de inventario inicial no llevan proveedor. Las fechas pasadas se fijan al INSERTAR (created_at):
 -- el libro es inmutable por triggers y no admite UPDATE.
 
@@ -108,11 +109,11 @@ BEGIN
     FOR v_semana IN 0..11 LOOP
         -- Compras: una por producto cada semana, con un costo que sube un poco y se mueve según el producto.
         FOR v_p IN 1..6 LOOP
-            -- Proveedor de la compra: la harina alterna Norte (semanas pares) y Sur (impares); Sur cobra un 7 % menos.
+            -- Proveedor de la compra: la harina alterna Norte (semanas pares) y Sur (impares); solo en la harina, Sur cobra un 7 % menos.
             v_pv := CASE v_p WHEN 1 THEN CASE WHEN v_semana % 2 = 0 THEN v_prov[1] ELSE v_prov[3] END
                              WHEN 2 THEN v_prov[3] WHEN 3 THEN v_prov[2] WHEN 4 THEN v_prov[3]
                              WHEN 5 THEN v_prov[1] ELSE v_prov[4] END;
-            v_factor := CASE WHEN v_pv = v_prov[3] THEN 0.93 ELSE 1 END;
+            v_factor := CASE WHEN v_p = 1 AND v_pv = v_prov[3] THEN 0.93 ELSE 1 END;
             v_fecha := (v_lunes + 7 * v_semana)::timestamp + interval '1 day' + time '10:00';
             INSERT INTO operaciones (created_at, tipo_id, usuario_id, nota) VALUES (v_fecha, t_compra, v_bod, 'Compra demo') RETURNING id INTO v_op;
             INSERT INTO lotes (created_at, producto_id, numero_lote, fecha_vencimiento, costo_unitario, proveedor_id)

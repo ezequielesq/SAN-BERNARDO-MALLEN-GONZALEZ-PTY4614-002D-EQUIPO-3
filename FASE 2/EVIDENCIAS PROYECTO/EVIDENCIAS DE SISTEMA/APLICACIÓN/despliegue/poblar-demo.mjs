@@ -104,10 +104,11 @@ const dias = (n) => { const d = new Date(Date.UTC(hoy.getFullYear(), hoy.getMont
     ["78345678-8", "Abarrotes del Sur (demo)"],
     ["79456789-1", "Carnes Selectas (demo)"],
   ];
+  const normRut = (r) => String(r).replace(/[.\s]/g, "").toUpperCase();
   const yaCargados = await call("GET", "/proveedores?soloActivos=false", null, bod);
   const prov = [];
   for (const [rut, nombre] of proveedoresDemo) {
-    let p = yaCargados.find((x) => x.rut === rut);
+    let p = yaCargados.find((x) => normRut(x.rut) === normRut(rut));
     if (!p) p = await call("POST", "/proveedores", { rut, nombre }, bod);
     else if (!p.activo) await call("PUT", `/proveedores/${p.id}/reactivar`, null, bod);
     prov.push(p.id);
