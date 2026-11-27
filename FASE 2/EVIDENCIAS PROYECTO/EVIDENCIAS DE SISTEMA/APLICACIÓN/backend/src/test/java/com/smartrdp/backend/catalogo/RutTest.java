@@ -37,6 +37,21 @@ class RutTest {
     }
 
     @Test
+    void ignoraLosCerosALaIzquierda() {
+        assertThat(Rut.normalizar("01234567-4")).isEqualTo(Rut.normalizar("1234567-4")).isEqualTo("1234567-4");
+        assertThat(Rut.normalizar("001.234.567-4")).isEqualTo("1234567-4");
+        assertThat(Rut.normalizar("012345678-5")).isEqualTo("12345678-5");
+        assertThat(Rut.normalizar("01000005-k")).isEqualTo("1000005-K");
+    }
+
+    @Test
+    void rechazaElTodoCerosYLosCuerposDemasiadoCortos() {
+        for (String malo : new String[] {"00000000-0", "0000000-0", "0-0", "00000001-9", "0123456-0"}) {
+            assertThatThrownBy(() -> Rut.normalizar(malo)).as(malo).isInstanceOf(BusinessException.class);
+        }
+    }
+
+    @Test
     void calculaElDigitoVerificador() {
         assertThat(Rut.digitoVerificador("12345678")).isEqualTo("5");
         assertThat(Rut.digitoVerificador("1000005")).isEqualTo("K");

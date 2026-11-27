@@ -71,6 +71,21 @@ class ProveedoresFlujoTest extends FlujoBase {
     }
 
     @Test
+    @DisplayName("HU-220 El RUT con ceros a la izquierda es el mismo RUT: no se puede repetir")
+    void elRutConCerosALaIzquierdaEsElMismo() {
+        post("/api/proveedores", bodeguero().token(), objeto("rut", "1000005-K", "nombre", "Siete " + unico()))
+                .esperando(201);
+
+        var repetido = post("/api/proveedores", bodeguero().token(),
+                objeto("rut", "01.000.005-k", "nombre", "Con cero " + unico())).esperando(422);
+
+        assertThat(repetido.campo()).isEqualTo("rut");
+        var ceros = post("/api/proveedores", bodeguero().token(),
+                objeto("rut", "00000000-0", "nombre", "Ceros " + unico())).esperando(422);
+        assertThat(ceros.campo()).isEqualTo("rut");
+    }
+
+    @Test
     @DisplayName("HU-220 Editar cambia el nombre y el RUT, sin chocar con otro proveedor")
     void edita() {
         Prov a = crearProveedor();
