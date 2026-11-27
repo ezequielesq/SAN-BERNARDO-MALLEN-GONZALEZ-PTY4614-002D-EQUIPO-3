@@ -1,15 +1,15 @@
 # Modelo de datos — Smart RDP
 
 > Proyecto de Título PTY4614-002D · Equipo 3 · Duoc UC, Sede San Bernardo
-> Versión: modelo vigente: libro de operaciones y movimientos, con productos clave del panel de analítica (V4) · 26-11-2026
+> Versión: modelo vigente: libro de operaciones y movimientos, con productos clave del panel de analítica (V4) y proveedores en los lotes (V5) · 26-11-2026
 
 ## 1. Propósito y fuente
 
 Este documento describe el modelo de datos relacional de Smart RDP: el diagrama entidad-relación, el diccionario de datos de cada tabla y las reglas de integridad.
 
-**Fuente.** El esquema se define en `backend/src/main/resources/db/migration/` (migraciones de Flyway: `V1__esquema.sql`, `V2__blindaje_libro_y_catalogos.sql`, `V3__eventos.sql` y `V4__productos_clave.sql`) y se contrastó con la base de desarrollo (PostgreSQL 18, base `smartrdp`) y con las entidades JPA del backend (`backend/src/main/java/com/smartrdp/backend`). Hibernate solo **valida** que las entidades coincidan con ese esquema (`spring.jpa.hibernate.ddl-auto=validate`); no crea ni modifica tablas. Las reglas de integridad que cruzan tablas las garantizan triggers de PostgreSQL definidos en la misma migración. Las tablas `eventos` (V3, una agenda) y `productos_clave` (V4, una preferencia de cada usuario para el panel de analítica) no son registros contables: no llevan triggers ni auditoría.
+**Fuente.** El esquema se define en `backend/src/main/resources/db/migration/` (migraciones de Flyway: `V1__esquema.sql`, `V2__blindaje_libro_y_catalogos.sql`, `V3__eventos.sql`, `V4__productos_clave.sql` y `V5__proveedores.sql`) y se contrastó con la base de desarrollo (PostgreSQL 18, base `smartrdp`) y con las entidades JPA del backend (`backend/src/main/java/com/smartrdp/backend`). Hibernate solo **valida** que las entidades coincidan con ese esquema (`spring.jpa.hibernate.ddl-auto=validate`); no crea ni modifica tablas. Las reglas de integridad que cruzan tablas las garantizan triggers de PostgreSQL definidos en la misma migración. Las tablas `eventos` (V3, una agenda) y `productos_clave` (V4, una preferencia de cada usuario para el panel de analítica) no son registros contables: no llevan triggers ni auditoría. La tabla `proveedores` (V5) es un mantenedor, como `categorias` (se deshabilita, no se borra); no lleva triggers propios ni auditoría. Su única relación es la columna opcional `lotes.proveedor_id`, que agrega la misma migración; como es DDL, el trigger que protege la inmutabilidad de los lotes (que vigila `UPDATE` y `DELETE`) no interviene.
 
-**Cómo leer el diagrama.** La notación es de pata de gallo (crow's foot): `||` exactamente uno, `|o` cero o uno, `o{` cero o muchos, `|{` uno o muchos. Para no recargar el diagrama se omiten las columnas comunes `created_at` y `updated_at` (ver sección 3). El stock no es una columna de ninguna tabla: se calcula con vistas a partir del libro de operaciones y movimientos (ver 3.16).
+**Cómo leer el diagrama.** La notación es de pata de gallo (crow's foot): `||` exactamente uno, `|o` cero o uno, `o{` cero o muchos, `|{` uno o muchos. Para no recargar el diagrama se omiten las columnas comunes `created_at` y `updated_at` (ver sección 3). El stock no es una columna de ninguna tabla: se calcula con vistas a partir del libro de operaciones y movimientos (ver 3.17).
 
 ## 2. Diagrama entidad-relación
 
@@ -39,6 +39,7 @@ erDiagram
     LOTES ||--o{ MOVIMIENTOS : afecta
     PRODUCTOS ||--o{ LOTES : tiene
     PRODUCTOS_CLAVE }o--|| PRODUCTOS : "apunta a"
+    PROVEEDORES |o--o{ LOTES : "provee"
     CATEGORIAS ||--o{ PRODUCTOS : clasifica
     UNIDADES_MEDIDA ||--o{ PRODUCTOS : mide
 
@@ -103,6 +104,7 @@ erDiagram
         varchar numero_lote
         date fecha_vencimiento
         int costo_unitario "opcional"
+        bigint proveedor_id FK "opcional"
     }
     PRODUCTOS {
         bigint id PK
@@ -129,6 +131,12 @@ erDiagram
         bigint id PK
         bigint usuario_id FK "unico con producto_id"
         bigint producto_id FK "unico con usuario_id"
+    }
+    PROVEEDORES {
+        bigint id PK
+        varchar rut UK "normalizado, 12345678-5"
+        varchar nombre "unico sin distinguir mayusculas"
+        boolean activo
     }
     CATEGORIAS {
         bigint id PK
@@ -262,6 +270,7 @@ Todas las tablas de negocio (no las de auditoría) heredan de `BaseEntity` estas
 | `numero_lote` | character varying(50) | Sí | Número de lote del proveedor, si lo hay. |
 | `fecha_vencimiento` | date | Sí | Fecha de vencimiento; nula en productos no perecibles. El FEFO descuenta primero el que vence antes. |
 | `costo_unitario` | integer | Sí | Costo en pesos de esta tanda. La base lo admite nulo, pero el backend lo exige en las compras (`COMPRA`): el panel de analítica lo usa para valorizar el consumo, las pérdidas y el historial de precios de compra. En las demás entradas, si no se indica, el lote toma el costo de referencia del producto. Un lote no se modifica después de creado. |
+| `proveedor_id` | bigint | Sí | Proveedor al que se le compró la tanda (`proveedores`). Clave foránea a `proveedores.id`, con el índice `ix_lotes_proveedor`. La base lo admite nulo; el backend lo exige en las compras y es opcional en el inventario inicial y en los ajustes. Los lotes creados antes de la migración `V5` quedan sin proveedor y, por ser inmutables, no se les asigna uno después. |
 
 ### 3.10 `solicitudes`
 
@@ -327,7 +336,24 @@ Además de las columnas comunes (`id`, `created_at`, `updated_at`, ver 3.1):
 - **Borrado en cascada.** Si se borrara el usuario o el producto, desaparecería la fila. En la práctica no ocurre, porque ni los usuarios ni los productos se borran (se desactivan, ver sección 4); la cascada solo evita filas huérfanas.
 - **Cardinalidad.** Un usuario tiene cero o muchas filas y un producto puede ser clave de cero o muchos usuarios: la tabla resuelve la relación muchos a muchos entre `usuarios` y `productos`.
 
-### 3.16 Vistas de inventario
+### 3.16 `proveedores`
+
+A quién se le compra (migración `V5`). Es un mantenedor de la bodega, como `categorias`: no es un registro contable, no tiene Envers ni triggers, y un proveedor no se borra, se deshabilita. Cada lote puede apuntar a su proveedor mediante `lotes.proveedor_id` (ver 3.9); la pantalla de lotes y el panel de analítica lo usan para filtrar y para comparar precios y compras por proveedor.
+
+| Columna | Tipo | ¿Nulo? | Descripción |
+|---|---|---|---|
+| `rut` | character varying(12) | No | RUT del proveedor, guardado normalizado (`12345678-5`: sin puntos, con guion, `K` en mayúscula y sin ceros a la izquierda). Único (`uq_proveedores_rut`). |
+| `nombre` | character varying(100) | No | Nombre o razón social. Único sin distinguir mayúsculas ni minúsculas (índice `uq_proveedores_nombre` sobre `lower(nombre)`). |
+| `activo` | boolean | No | `false` si el proveedor se deshabilitó (no se borra); un proveedor deshabilitado no se puede elegir en entradas nuevas, pero sus lotes lo conservan. |
+
+Además de las columnas comunes (`id`, `created_at`, `updated_at`, ver 3.1):
+
+- **RUT validado.** El backend acepta el RUT con o sin puntos y guion, valida el dígito verificador con el módulo 11 y lo guarda normalizado; el cuerpo debe tener 7 u 8 dígitos sin contar ceros a la izquierda, así que `00000000-0` no es un RUT. La base solo exige que sea único.
+- **Herencia en el backend.** `Proveedor` extiende `BaseEntity` y no `CatalogoEntity` (desvío justificado): `CatalogoEntity.nombre` tiene largo 50 y un criterio de unicidad distinto, mientras que el proveedor necesita nombre de 100 caracteres, unicidad por `lower(nombre)` y además un RUT único.
+- **Cardinalidad.** Un proveedor tiene cero o muchos lotes y un lote tiene cero o un proveedor.
+- **Sin CHECK de obligatoriedad.** Que una compra exija proveedor no cabe en una fila de `lotes` (depende del tipo de la operación que crea el lote), así que la regla vive en el servicio (ver sección 4).
+
+### 3.17 Vistas de inventario
 
 El stock **no se guarda**: se calcula con estas vistas, que son la única fuente de verdad.
 
@@ -336,7 +362,7 @@ El stock **no se guarda**: se calcula con estas vistas, que son la única fuente
 - **`solicitado_vs_entregado`** — Por solicitud y producto: lo solicitado, lo entregado y si es un agregado (entregado sin haber sido pedido). Columnas: `solicitud_id`, `producto_id`, `cantidad_solicitada`, `cantidad_entregada`, `agregado`.
 - **`devolvible_lote`** — Por pedido y lote: cuánto se entregó, cuánto se devolvió y cuánto aún se puede devolver. Columnas: `pedido_id`, `lote_id`, `producto_id`, `movimiento_id`, `entregado`, `devuelto`, `devolvible`.
 
-### 3.17 Tablas de auditoría (Envers)
+### 3.18 Tablas de auditoría (Envers)
 
 `revinfo` guarda una fila por revisión (marca de tiempo y correo de quien la hizo); `solicitudes_aud` y `usuarios_aud` copian las columnas auditadas de la tabla de negocio más `rev` y `revtype` (0 alta, 1 modificación, 2 baja).
 
@@ -368,14 +394,17 @@ Criterio: lo que cabe en una fila lo garantiza la base con `CHECK`, `UNIQUE` o c
 | El libro y los catálogos no se vacían con `TRUNCATE`; solo el repoblado de desarrollo lo habilita (`SET smartrdp.permitir_truncate = 'on'`). | Triggers `BEFORE TRUNCATE` (V2). |
 | Las salidas descuentan por FEFO: primero el lote que vence antes. | Backend (`MovimientoService`). |
 | En un pedido el bodeguero entrega, de cada producto solicitado, hasta lo que se pidió (o menos), y puede sumar otros productos que no se pidieron: esos son los «agregados». | Backend y vista `solicitado_vs_entregado`. |
-| El panel de analítica calcula el consumo con el libro: entregas de pedidos (`ENTREGA_PEDIDO`) menos devoluciones (`DEVOLUCION`), valorizadas con el costo del lote; las mermas y los vencimientos se cuentan aparte como pérdidas. No cuentan las correcciones ni las operaciones que una corrección anuló. Los productos con neto 0 o negativo no aparecen en «productos más usados». Las líneas cuyo lote no tiene costo valen 0 y se informan como «sin costo». | Backend (`PanelRepository` y `PanelService`). |
+| El panel de analítica calcula el consumo con el libro: entregas de pedidos (`ENTREGA_PEDIDO`) menos devoluciones (`DEVOLUCION`), valorizadas con el costo del lote; las mermas y los vencimientos se cuentan aparte como pérdidas. No cuentan las correcciones ni las operaciones que una corrección anuló. Los productos con neto 0 o negativo no aparecen en «productos más usados». Las líneas cuyo lote no tiene costo valen 0 y se informan como «sin costo». El filtro por proveedor se aplica sobre `lotes.proveedor_id`, y el bloque «Compras por proveedor» suma las compras del período a costo de lote (los lotes sin proveedor aparecen como «Sin proveedor»). | Backend (`PanelRepository` y `PanelService`). |
 | Una compra exige el costo unitario de cada línea; sin él no se puede seguir el precio de compra de un producto. | Backend (`MovimientoService`); en la base `lotes.costo_unitario` admite nulo. |
 | Los productos clave de un usuario no se repiten y no pasan de 50; al guardar, la lista se reemplaza completa. | Base (`uq_productos_clave_usuario_producto`) y backend (`ProductoClaveService`). |
-| No se borran productos, categorías, unidades ni usuarios: se desactivan con `activo = false`. | Backend. Las filas de `productos_clave` caerían en cascada si alguno se borrara. |
+| El RUT de un proveedor se valida (módulo 11) y se guarda normalizado; es único, y el nombre también lo es sin distinguir mayúsculas. | Backend (`Rut` y `ProveedorService`) y base (`uq_proveedores_rut` y `uq_proveedores_nombre`). |
+| Una compra exige el proveedor de cada línea; en el inventario inicial y en los ajustes es opcional, pero si viene debe existir y estar habilitado. | Backend (`MovimientoService`); en la base `lotes.proveedor_id` admite nulo (no hay `CHECK`: la regla depende del tipo de la operación). |
+| Los lotes anteriores a la migración `V5` quedan sin proveedor y no se les asigna después; el proveedor de un lote ya creado no se edita. | Inmutabilidad de `lotes` (trigger `INM` y `@Immutable`). |
+| No se borran productos, categorías, unidades, proveedores ni usuarios: se desactivan con `activo = false`. | Backend. Las filas de `productos_clave` caerían en cascada si alguno de sus productos o usuarios se borrara. |
 
 ## 5. Valores permitidos
 
-Los valores viven en tablas de catálogo (cargadas por la migración `V1`), no en `CHECK` de texto. `productos_clave` (V4) no es un catálogo ni lleva valores permitidos.
+Los valores viven en tablas de catálogo (cargadas por la migración `V1`), no en `CHECK` de texto. `productos_clave` (V4) y `proveedores` (V5) no son catálogos de valores ni llevan valores permitidos: sus filas las crean los usuarios.
 
 | Catálogo | Código | Significado |
 |---|---|---|
