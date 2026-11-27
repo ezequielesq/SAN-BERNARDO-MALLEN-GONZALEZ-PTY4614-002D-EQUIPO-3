@@ -4,7 +4,7 @@ import { FiltroPanel } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { contar, formatearCantidad, formatearPesos } from './formato';
 import { EstadoFiltros } from './panel-estado';
-import { contarPorVencer, decidirMedida, hayDatosEnResumen, sonIguales } from './panel-filtros';
+import { contarPorVencer, decidirMedida, hayDatosEnResumen, solicitadoAplica, sonIguales } from './panel-filtros';
 
 /** Días del umbral de la quinta tarjeta (lotes por vencer). */
 const DIAS_TARJETA_VENCIMIENTOS = 30;
@@ -57,6 +57,12 @@ export class AnaliticaTarjetas {
     return this.enCantidad() && r.cantidadNeta !== null
       ? formatearCantidad(r.cantidadNeta, r.unidadComun)
       : formatearPesos(r.consumoNetoValor);
+  });
+
+  /** Con proveedor elegido no se compara lo entregado con lo solicitado (ver `solicitadoAplica`). */
+  protected readonly comparaSolicitado = computed(() => {
+    const filtro = this.filtro();
+    return filtro === null || solicitadoAplica(filtro);
   });
 
   protected readonly entregadoDeSolicitado = computed(() => {

@@ -96,6 +96,14 @@ export function hayDatosEnResumen(r: ResumenPanel): boolean {
   );
 }
 
+/**
+ * «Solicitado» compara contra lo entregado, pero un pedido no se asigna a un proveedor: con uno elegido lo entregado
+ * es solo de ese proveedor y la proporción engaña.
+ */
+export function solicitadoAplica(filtro: FiltroPanel): boolean {
+  return filtro.proveedorId === null;
+}
+
 export function limiteAlcanzado(productoIds: readonly number[]): boolean {
   return productoIds.length >= MAXIMO_PRODUCTOS;
 }

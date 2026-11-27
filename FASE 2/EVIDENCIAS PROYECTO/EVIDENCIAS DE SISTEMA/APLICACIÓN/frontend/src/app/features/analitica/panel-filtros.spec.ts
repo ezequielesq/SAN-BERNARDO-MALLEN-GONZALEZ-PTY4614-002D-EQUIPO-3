@@ -11,6 +11,7 @@ import {
   parametrosPanel,
   parametrosPrecios,
   rangoDeAtajo,
+  solicitadoAplica,
   sonIguales,
   sugerirAgrupacion,
   validarRango,
@@ -250,5 +251,26 @@ describe('parametrosPrecios', () => {
       hasta: '2026-11-24',
       proveedorId: 7,
     });
+  });
+});
+
+describe('solicitadoAplica', () => {
+  const filtro: FiltroPanel = {
+    desde: '2026-11-01',
+    hasta: '2026-11-24',
+    agrupar: 'DIA',
+    categoriaId: null,
+    productoIds: [],
+    solicitanteId: null,
+    proveedorId: null,
+  };
+
+  it('aplica sin proveedor, aunque haya otros filtros', () => {
+    expect(solicitadoAplica(filtro)).toBe(true);
+    expect(solicitadoAplica({ ...filtro, categoriaId: 2, productoIds: [5], solicitanteId: 12 })).toBe(true);
+  });
+
+  it('no aplica con un proveedor elegido: un pedido no se asigna a un proveedor', () => {
+    expect(solicitadoAplica({ ...filtro, proveedorId: 7 })).toBe(false);
   });
 });

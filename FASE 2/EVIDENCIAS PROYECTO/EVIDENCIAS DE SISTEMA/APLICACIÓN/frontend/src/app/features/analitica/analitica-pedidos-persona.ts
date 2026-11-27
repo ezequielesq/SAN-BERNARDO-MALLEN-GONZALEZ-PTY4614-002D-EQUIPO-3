@@ -16,7 +16,7 @@ import { FilaPersona, FiltroPanel, Importe } from './analitica.modelo';
 import { AnaliticaService } from './analitica.service';
 import { formatearCantidad, formatearPesos } from './formato';
 import { EstadoFiltros } from './panel-estado';
-import { decidirMedida } from './panel-filtros';
+import { decidirMedida, solicitadoAplica } from './panel-filtros';
 
 type ColumnaPersona = 'nombre' | 'pedidos' | 'solicitado' | 'entregado' | 'devuelto' | 'neto';
 
@@ -87,6 +87,12 @@ export class AnaliticaPedidosPersona {
       : { medida: this.estado().medida(), aviso: null },
   );
   protected readonly enCantidad = computed(() => this.decision().medida === 'cantidad');
+
+  /** Con proveedor elegido «Solicitado» no se compara con lo entregado (ver `solicitadoAplica`). */
+  protected readonly muestraSolicitado = computed(() => {
+    const filtro = this.filtro();
+    return filtro === null || solicitadoAplica(filtro);
+  });
 
   protected cambiarTamano(tamano: number): void {
     this.tamano.set(tamano);

@@ -8,6 +8,9 @@
   }
   <p class="w3-small">
     «Solicitado» es referencial: se valoriza con el costo de referencia del producto.
+    @if (!muestraSolicitado()) {
+      No aplica al filtrar por proveedor: un pedido no se asigna a un proveedor.
+    }
   </p>
   <app-estado-vista
     [cargando]="resultado.isLoading()"
@@ -36,7 +39,7 @@
             <tr>
               <td>{{ f.nombre }}</td>
               <td>{{ f.pedidos }}</td>
-              <td>{{ importe(f.solicitado) }}</td>
+              <td>{{ muestraSolicitado() ? importe(f.solicitado) : '—' }}</td>
               <td>{{ importe(f.entregado) }}</td>
               <td>{{ importe(f.devuelto) }}</td>
               <td>

@@ -29,12 +29,17 @@
         </li>
         <li class="tarjeta-kpi w3-card w3-white w3-padding">
           <h3 class="w3-medium">Entregado vs. solicitado</h3>
-          <p class="tarjeta-kpi__valor">
-            {{ entregadoDeSolicitado().porcentaje === null ? '—' : entregadoDeSolicitado().porcentaje + ' %' }}
-          </p>
-          <p class="w3-small">{{ entregadoDeSolicitado().texto }}</p>
-          @if (!enCantidad()) {
-            <p class="w3-small">Referencial: lo solicitado se valoriza con el costo de referencia.</p>
+          @if (comparaSolicitado()) {
+            <p class="tarjeta-kpi__valor">
+              {{ entregadoDeSolicitado().porcentaje === null ? '—' : entregadoDeSolicitado().porcentaje + ' %' }}
+            </p>
+            <p class="w3-small">{{ entregadoDeSolicitado().texto }}</p>
+            @if (!enCantidad()) {
+              <p class="w3-small">Referencial: lo solicitado se valoriza con el costo de referencia.</p>
+            }
+          } @else {
+            <p class="tarjeta-kpi__valor">—</p>
+            <p class="w3-small">No aplica al filtrar por proveedor: un pedido no se asigna a un proveedor.</p>
           }
         </li>
         <li class="tarjeta-kpi w3-card w3-white w3-padding">
