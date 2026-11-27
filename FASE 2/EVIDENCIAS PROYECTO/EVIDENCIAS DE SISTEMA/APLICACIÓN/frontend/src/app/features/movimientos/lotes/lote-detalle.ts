@@ -1,5 +1,4 @@
-import { DatePipe } from '@angular/common';
-import { Location } from '@angular/common';
+import { DatePipe, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -37,7 +36,7 @@ export class LoteDetalle {
    * Se llegó desde la lista de lotes dentro de la app (y no por un enlace directo ni desde otra pantalla):
    * «Volver» retrocede en el historial y la lista reaparece con sus filtros, que viven en su URL.
    */
-  private readonly vieneDeLotes = (() => {
+  protected readonly vieneDeLotes = (() => {
     const previa = this.router.currentNavigation()?.previousNavigation?.finalUrl;
     return esVueltaALotes(previa ? this.router.serializeUrl(previa) : null);
   })();
@@ -45,10 +44,8 @@ export class LoteDetalle {
   protected readonly etiquetaDias = etiquetaDias;
   protected readonly tipoBadge = tipoBadge;
 
-  /** Con historial de la lista retrocede; si no, el enlace lleva a la lista con el umbral (comportamiento por defecto). */
-  protected volver(evento: Event): void {
-    if (!this.vieneDeLotes) return;
-    evento.preventDefault();
+  /** Solo se usa desde el botón que aparece cuando se llegó desde la lista (ver `vieneDeLotes`). */
+  protected volver(): void {
     this.location.back();
   }
 }

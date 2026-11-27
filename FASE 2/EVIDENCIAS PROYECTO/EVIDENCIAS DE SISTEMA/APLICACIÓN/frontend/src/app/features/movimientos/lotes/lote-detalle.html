@@ -1,12 +1,18 @@
 <p class="w3-margin">
-  <a
-    class="w3-button w3-white w3-border w3-round"
-    routerLink="/movimientos/lotes"
-    [queryParams]="{ diasPorVencer: diasPorVencer() }"
-    (click)="volver($event)"
-  >
-    <i class="fa fa-arrow-left" aria-hidden="true"></i> Volver a lotes
-  </a>
+  @if (vieneDeLotes) {
+    <!-- Sin routerLink: el enlace del router navegaría además de retroceder. -->
+    <button type="button" class="w3-button w3-white w3-border w3-round" (click)="volver()">
+      <i class="fa fa-arrow-left" aria-hidden="true"></i> Volver a lotes
+    </button>
+  } @else {
+    <a
+      class="w3-button w3-white w3-border w3-round"
+      routerLink="/movimientos/lotes"
+      [queryParams]="{ diasPorVencer: diasPorVencer() }"
+    >
+      <i class="fa fa-arrow-left" aria-hidden="true"></i> Volver a lotes
+    </a>
+  }
 </p>
 
 <app-estado-vista
