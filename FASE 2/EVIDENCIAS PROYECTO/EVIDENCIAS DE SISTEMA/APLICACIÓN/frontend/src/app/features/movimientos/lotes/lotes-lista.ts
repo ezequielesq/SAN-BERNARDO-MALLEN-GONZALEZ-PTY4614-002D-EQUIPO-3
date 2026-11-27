@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, debounceTime } from 'rxjs';
@@ -131,6 +131,14 @@ export class LotesLista {
       this.pagina.set(v.pagina);
       this.tamanoPagina.set(v.tamano);
     });
+    // Si la URL trae una página fuera de rango (p. ej. pagina=99), la corrige a la última válida, pero solo cuando
+    // los datos acaban de llegar: con la lista vacía o cargando, toda página parecería fuera de rango.
+    effect(() => {
+      if (this.lotes.status() !== 'resolved') return;
+      untracked(() => {
+        if (this.pagina() !== this.paginaActual()) this.aplicar({}, { pagina: this.paginaActual() });
+      });
+    });
     this.textoEscrito
       .pipe(debounceTime(ESPERA_TEXTO_MS), takeUntilDestroyed(this.destroyRef))
       .subscribe((valor) => this.cambiarTexto(valor));
@@ -182,11 +190,13 @@ export class LotesLista {
     this.aplicar({ texto: valor });
   }
 
-  /** Solo aplica un umbral válido; si no lo es, conserva el anterior y avisa. */
-  protected cambiarUmbral(valor: string): void {
-    const dias = normalizarDias(valor);
+  /** Solo aplica un umbral válido; si no lo es, conserva el anterior (y lo restituye en el campo) y avisa. */
+  protected cambiarUmbral(campo: HTMLInputElement): void {
+    const dias = normalizarDias(campo.value);
     this.diasInvalido.set(dias === null);
     if (dias !== null) this.aplicar({ diasPorVencer: dias });
+    // El campo no vuelve a pintarse si el umbral no cambió: se restituye el valor vigente para no mostrar el inválido.
+    else campo.value = String(this.diasPorVencer());
   }
 
   protected cambiarIncluirAgotados(marcado: boolean): void {

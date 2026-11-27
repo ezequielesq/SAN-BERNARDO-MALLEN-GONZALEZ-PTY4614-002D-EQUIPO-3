@@ -89,7 +89,7 @@
         [value]="diasPorVencer()"
         [attr.aria-invalid]="diasInvalido()"
         [attr.aria-describedby]="diasInvalido() ? 'filtro-lote-dias-error' : null"
-        (change)="cambiarUmbral(campoDias.value)"
+        (change)="cambiarUmbral(campoDias)"
       />
       @if (diasInvalido()) {
         <p id="filtro-lote-dias-error" class="w3-text-red w3-small" role="alert">
