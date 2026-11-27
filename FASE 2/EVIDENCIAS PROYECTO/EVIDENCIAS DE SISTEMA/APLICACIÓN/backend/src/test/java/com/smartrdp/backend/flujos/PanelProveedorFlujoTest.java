@@ -220,6 +220,97 @@ class PanelProveedorFlujoTest extends FlujoBase {
         assertThat(filas.get(0).path("valor").asLong()).isEqualTo(10_000);
     }
 
+    @Test
+    @DisplayName("HU-100 El filtro por proveedor recorta también consumo por período, productos más usados y pedidos por persona")
+    void filtroPorProveedorEnLosDemasBloques() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta ana = crearEmpleado();
+        Cuenta beto = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod deA = crearProductoEn(categoria.id(), false);
+        Prod deB = crearProductoEn(categoria.id(), false);
+        Prov a = crearProveedor();
+        Prov b = crearProveedor();
+        comprar(deA, a, 10, 1_500, null, null);
+        comprar(deB, b, 10, 2_000, null, null);
+        entregar(bodeguero, ana, deA.id(), 3, hoy());  // 3 × 1.500 = 4.500 del proveedor A
+        entregar(bodeguero, beto, deB.id(), 2, hoy()); // 2 × 2.000 = 4.000 del proveedor B
+        String rango = "?desde=" + hoy().minusDays(1) + "&hasta=" + hoy().plusDays(1) + "&categoriaId=" + categoria.id();
+        String filtroA = rango + "&proveedorId=" + a.id();
+        String filtroB = rango + "&proveedorId=" + b.id();
+
+        // Consumo por período: la suma de la serie es el consumo del proveedor elegido.
+        assertThat(sumaDeLaSerie(PANEL + "consumo-periodo" + filtroA, "consumoValor")).isEqualTo(4_500);
+        assertThat(sumaDeLaSerie(PANEL + "consumo-periodo" + filtroA, "consumoCantidad")).isEqualTo(3);
+        assertThat(sumaDeLaSerie(PANEL + "consumo-periodo" + filtroB, "consumoValor")).isEqualTo(4_000);
+        assertThat(sumaDeLaSerie(PANEL + "consumo-periodo" + filtroB, "consumoCantidad")).isEqualTo(2);
+        assertThat(sumaDeLaSerie(PANEL + "consumo-periodo" + rango, "consumoValor")).isEqualTo(8_500);
+
+        // Productos más usados: solo el producto del proveedor, con su cantidad y valor.
+        JsonNode topA = get(PANEL + "productos-top" + filtroA, bodeguero.token()).esperando(200).json();
+        assertThat(topA).hasSize(1);
+        assertThat(topA.get(0).path("productoId").asLong()).isEqualTo(deA.id());
+        assertThat(topA.get(0).path("cantidad").asLong()).isEqualTo(3);
+        assertThat(topA.get(0).path("valor").asLong()).isEqualTo(4_500);
+        JsonNode topB = get(PANEL + "productos-top" + filtroB, bodeguero.token()).esperando(200).json();
+        assertThat(topB).hasSize(1);
+        assertThat(topB.get(0).path("productoId").asLong()).isEqualTo(deB.id());
+        assertThat(topB.get(0).path("valor").asLong()).isEqualTo(4_000);
+        assertThat(get(PANEL + "productos-top" + rango, bodeguero.token()).esperando(200).json().findValues("productoId")
+                .stream().map(JsonNode::asLong).toList()).containsExactly(deA.id(), deB.id());
+
+        // Pedidos por persona: solo quien recibió algo del proveedor.
+        JsonNode personasA = get(PANEL + "pedidos-por-persona" + filtroA, bodeguero.token()).esperando(200).json()
+                .path("filas");
+        assertThat(personasA).hasSize(1);
+        assertThat(personasA.get(0).path("usuarioId").asLong()).isEqualTo(ana.id());
+        assertThat(personasA.get(0).path("pedidos").asLong()).isEqualTo(1);
+        assertThat(personasA.get(0).path("neto").path("valor").asLong()).isEqualTo(4_500);
+        JsonNode personasB = get(PANEL + "pedidos-por-persona" + filtroB, bodeguero.token()).esperando(200).json()
+                .path("filas");
+        assertThat(personasB).hasSize(1);
+        assertThat(personasB.get(0).path("usuarioId").asLong()).isEqualTo(beto.id());
+        assertThat(personasB.get(0).path("neto").path("valor").asLong()).isEqualTo(4_000);
+        assertThat(get(PANEL + "pedidos-por-persona" + rango, bodeguero.token()).esperando(200).json().path("filas"))
+                .hasSize(2);
+    }
+
+    @Test
+    @DisplayName("HU-100 Con el filtro por proveedor, un lote sin proveedor (inventario inicial) queda fuera del resumen y de los vencimientos")
+    void loteSinProveedorQuedaFueraConElFiltro() {
+        Cuenta bodeguero = crearBodeguero();
+        Cuenta empleado = crearEmpleado();
+        Catalogo categoria = crearCategoriaPropia(false);
+        Prod producto = crearProductoEn(categoria.id(), true);
+        Prov a = crearProveedor();
+        // El inventario inicial no lleva proveedor y vence antes: FEFO entrega de este lote primero.
+        var inicial = objeto("productoId", producto.id(), "cantidad", 5, "costoUnitario", 1_000,
+                "fechaVencimiento", hoy().plusDays(5).toString(), "numeroLote", "I-" + unico());
+        post("/api/movimientos/entradas", bodeguero.token(), objeto("tipo", "INVENTARIO_INICIAL", "lineas", List.of(inicial)))
+                .esperando(201);
+        comprar(producto, a, 4, 2_000, hoy().plusDays(20), null);
+        entregar(bodeguero, empleado, producto.id(), 3, hoy()); // 3 × 1.000 salen del lote sin proveedor
+        String base = "&categoriaId=" + categoria.id();
+
+        assertThat(resumen(bodeguero, base).path("consumoNetoValor").asLong()).isEqualTo(3_000);
+        JsonNode conFiltro = resumen(bodeguero, base + "&proveedorId=" + a.id());
+        assertThat(conFiltro.path("consumoNetoValor").asLong()).isZero();
+        assertThat(conFiltro.path("pedidos").asLong()).isZero();
+
+        JsonNode sinFiltro = get("/api/analitica/vencimientos?dias=90" + base, bodeguero.token()).esperando(200).json();
+        assertThat(sinFiltro.findValues("cantidadEnRiesgo").stream().map(JsonNode::asInt).toList())
+                .containsExactlyInAnyOrder(2, 4);
+        JsonNode deA = get("/api/analitica/vencimientos?dias=90&proveedorId=" + a.id() + base, bodeguero.token())
+                .esperando(200).json();
+        assertThat(deA.findValues("cantidadEnRiesgo").stream().map(JsonNode::asInt).toList()).containsExactly(4);
+    }
+
+    /** Suma de un campo numérico de los puntos de la serie de consumo (los valores nulos cuentan cero). */
+    private long sumaDeLaSerie(String url, String campo) {
+        JsonNode serie = get(url, bodeguero().token()).esperando(200).json();
+        return serie.path("puntos").findValues(campo).stream().mapToLong(JsonNode::asLong).sum();
+    }
+
     /** Deja sin proveedor los lotes de una operación, como los lotes anteriores a los proveedores. */
     private void quitarProveedorDeLosLotesDe(long operacionId) {
         new TransactionTemplate(transacciones).executeWithoutResult(estado -> {
